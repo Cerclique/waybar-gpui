@@ -82,19 +82,18 @@ two 1920×1080 monitors (DP-2 at x=0, DP-1 at x=1920), Waybar height 36.
       icon re-click 4/4, click inside the card stays open, Esc 2/2, stays open
       while the mouse moves. Opens in ~410 ms when the click starts the daemon,
       130–150 ms after. No 0×0 first open this round.
-- Known limitation: the surface covers only the monitor it opened on; clicks
-  on another monitor don't close it.
-- [ ] Unexplained: the first popover after the daemon was spawned by a real
-      Waybar click stayed 0×0 (never drew) for ~17 s. Not reproducible from
-      the CLI (5/5 cold starts drew in 300–370 ms). Check Waybar's log
-      (`waybar-popup: opened …` lines) next time it happens.
-- [ ] `make install` into `~/.local/bin` — note `~/.local/bin` was not on PATH
-      in the agent shell; Waybar may need absolute paths.
-- [ ] `git init` + first commit (repo is not under git yet).
-- Ideas floated: live-updating panel (subscribe to Hyprland events in the
-  daemon), clickable rows that focus a window (needs Hyprland 0.56 Lua
-  dispatcher syntax — verify on the wiki first), more panels (calendar, volume
-  via gpui-component, which pins the same `gpui-pre =0.3.9`).
+- [x] Git repo + private GitHub repo (Cerclique/waybar_gpui_plugin_template).
+      Pushing over SSH fails from the agent shell (`Permission denied
+      (publickey)`); the agent pushed over HTTPS with `gh auth git-credential`.
+
+Open work is tracked as GitHub issues (see `docs/agents/issue-tracker.md`):
+
+- #1 Popover doesn't close when clicking on another monitor (bug)
+- #2 First popover after daemon start once stayed 0×0 (bug, not reproduced)
+- #3 Try `make install` in the real Waybar bar (PATH question)
+- #4 Workspace panel: update live while open
+- #5 Workspace panel: click a row to focus that window (verify Lua dispatcher)
+- #6 More popover panels (calendar, volume) via gpui-component
 
 ## Side effects from the research session
 
