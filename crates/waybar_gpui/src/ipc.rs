@@ -54,12 +54,13 @@ pub fn send(id: &str, command: &Command) -> io::Result<()> {
 }
 
 /// Best effort: asks every other program's runtime to close its popover, and
-/// deletes sockets nobody answers on (left by crashed programs).
-pub fn close_others(id: &str) {
+/// deletes sockets nobody answers on (left by crashed programs). `include_own`
+/// also asks this program's daemon (used by `preview`, which has no socket).
+pub fn close_others(id: &str, include_own: bool) {
     let own = socket_path(id);
     let Ok(entries) = fs::read_dir(dir()) else { return };
     for path in entries.flatten().map(|e| e.path()) {
-        if path == own || path.extension().is_none_or(|ext| ext != "sock") {
+        if (path == own && !include_own) || path.extension().is_none_or(|ext| ext != "sock") {
             continue;
         }
         match UnixStream::connect(&path) {

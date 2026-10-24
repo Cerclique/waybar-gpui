@@ -2,7 +2,7 @@
 //! the panel drawn inside it through `anchored()` (measured and placed in the
 //! same frame). A click that reaches the backdrop around the card dismisses.
 
-use std::{error::Error, io};
+use std::{cell::Cell, error::Error, io, rc::Rc};
 
 use gpui::{
     AnyView, AnyWindowHandle, App, AppContext as _, Bounds, Context, DisplayId, FocusHandle,
@@ -20,6 +20,18 @@ use crate::{
 struct Registry {
     id: String,
     panels: Vec<(&'static str, Build)>,
+    /// Set in `preview`: closing the popover quits, and a failed open is
+    /// recorded here for the exit status.
+    preview_failed: Option<Rc<Cell<bool>>>,
+}
+
+/// What the process runs as.
+pub enum Mode {
+    /// Listens on the program's socket until `quit`, optionally opening a
+    /// panel (name + arguments) at once.
+    Daemon(Option<Vec<String>>),
+    /// Opens one panel without the socket and exits when it closes.
+    Preview(Vec<String>),
 }
 
 impl Global for Registry {}
@@ -37,17 +49,24 @@ pub fn close(cx: &mut App) {
     });
 }
 
-pub fn run(app: crate::App, initial: Option<Vec<String>>) -> io::Result<()> {
+pub fn run(app: crate::App, mode: Mode) -> io::Result<()> {
     let (tx, rx) = async_channel::unbounded();
-    ipc::listen(&app.id, tx.clone())?;
+    let (initial, preview_failed) = match mode {
+        Mode::Daemon(initial) => {
+            ipc::listen(&app.id, tx.clone())?;
+            (initial, None)
+        }
+        Mode::Preview(target) => (Some(target), Some(Rc::new(Cell::new(false)))),
+    };
     if let Some(target) = initial {
         let _ = tx.try_send(Command::Toggle(target));
     }
     let crate::App { id, theme, panels } = app;
+    let failed = preview_failed.clone();
 
     gpui_platform::application().with_quit_mode(QuitMode::Explicit).run(move |cx: &mut App| {
         cx.set_global(theme);
-        cx.set_global(Registry { id, panels });
+        cx.set_global(Registry { id, panels, preview_failed });
         cx.set_global(OpenPopover::default());
         cx.spawn(async move |cx| {
             while let Ok(command) = rx.recv().await {
@@ -56,7 +75,10 @@ pub fn run(app: crate::App, initial: Option<Vec<String>>) -> io::Result<()> {
         })
         .detach();
     });
-    Ok(())
+    match failed {
+        Some(failed) if failed.get() => Err(io::Error::other("preview failed")),
+        _ => Ok(()),
+    }
 }
 
 fn handle(command: Command, cx: &mut App) {
@@ -67,7 +89,12 @@ fn handle(command: Command, cx: &mut App) {
                 return;
             }
             if let Err(e) = open(target.clone(), cx) {
-                eprintln!("{}: cannot open {target:?}: {e}", cx.global::<Registry>().id);
+                let registry = cx.global::<Registry>();
+                eprintln!("{}: cannot open {target:?}: {e}", registry.id);
+                if let Some(failed) = &registry.preview_failed {
+                    failed.set(true);
+                    cx.quit();
+                }
             }
         }
         Command::Close => {
@@ -84,13 +111,18 @@ fn handle(command: Command, cx: &mut App) {
 fn close_now(reason: &str, cx: &mut App) -> Option<Vec<String>> {
     let (target, handle) = cx.global_mut::<OpenPopover>().0.take()?;
     let _ = handle.update(cx, |_, window, _| window.remove_window());
-    eprintln!("{}: closed {target:?} ({reason})", cx.global::<Registry>().id);
+    let registry = cx.global::<Registry>();
+    eprintln!("{}: closed {target:?} ({reason})", registry.id);
+    if registry.preview_failed.is_some() {
+        cx.quit();
+    }
     Some(target)
 }
 
 fn open(target: Vec<String>, cx: &mut App) -> Result<(), Box<dyn Error>> {
     let registry = cx.global::<Registry>();
     let id = registry.id.clone();
+    let preview = registry.preview_failed.is_some();
     let build = registry
         .panels
         .iter()
@@ -98,7 +130,8 @@ fn open(target: Vec<String>, cx: &mut App) -> Result<(), Box<dyn Error>> {
         .map(|(_, build)| *build)
         .ok_or_else(|| format!("unknown panel {:?}", target[0]))?;
 
-    ipc::close_others(&id);
+    // A preview also closes its own program's daemon popover: one popover at a time.
+    ipc::close_others(&id, preview);
 
     let cursor: hypr::CursorPos = hypr::request("cursorpos")?;
     let monitors: Vec<hypr::Monitor> = hypr::request("monitors")?;
