@@ -12,3 +12,17 @@ Template for custom Waybar modules on Hyprland with a GPUI popover. Start with
   dispatcher/rule syntax against the wiki before writing it.
 - Waybar is 0.15.0; the Waybar wiki documents master, which differs.
 - The live tests open popovers on the user's screen; say so before running them.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues (Cerclique/waybar_gpui_plugin_template) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root, created lazily. See `docs/agents/domain.md`.
