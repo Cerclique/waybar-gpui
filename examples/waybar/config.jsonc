@@ -15,9 +15,11 @@
     "return-type": "json",
     "restart-interval": 5,
     "format": "{icon} {text}",
-    "format-icons": { "normal": "", "fullscreen": "", "default": "" },
+    // Nerd Font glyphs, escaped so editors can't drop them:
+    // window-maximize (normal), expand (fullscreen).
+    "format-icons": { "normal": "\uf2d0", "fullscreen": "\uf065", "default": "\uf2d0" },
     // Waybar doesn't need to re-run the module after a click.
     "exec-on-event": false,
-    "on-click": "waybar-popup toggle workspace"
-  }
+    "on-click": "waybar-popup toggle workspace",
+  },
 }

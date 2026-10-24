@@ -1,8 +1,8 @@
 //! Where to put the popover so it looks attached to the clicked Waybar icon.
 //!
-//! Layer surfaces can't be placed at absolute coordinates, only anchored to
-//! output edges with margins. We anchor to the bar's edge and the left side,
-//! and compute margins from the cursor position at click time.
+//! The popover surface covers the whole output; this computes where inside it
+//! the card goes, from the cursor position at click time and the space Waybar
+//! reserves.
 
 use hypr::{CursorPos, Monitor};
 
@@ -10,10 +10,10 @@ use hypr::{CursorPos, Monitor};
 pub struct Placement {
     /// Hyprland output name, matched to a GPUI display.
     pub monitor: String,
-    /// Anchor to the bottom edge (bar at the bottom) instead of the top.
-    pub bottom: bool,
-    /// CSS order: top, right, bottom, left.
-    pub margin: (f32, f32, f32, f32),
+    /// Output size in logical pixels: the size of the popover surface.
+    pub monitor_size: (f32, f32),
+    /// Card's top-left corner, relative to the output.
+    pub origin: (f32, f32),
 }
 
 /// `size` is the popover size and `gap` the space kept between it and the bar
@@ -33,14 +33,13 @@ pub fn place(cursor: CursorPos, monitors: &[Monitor], size: (f32, f32), gap: f32
     let left = (local_x - size.0 / 2.0).clamp(min_left, max_left);
 
     // The click happened on the bar, so the bar is on the nearer edge.
-    let bottom = local_y > mon_h / 2.0;
-    let margin = if bottom {
-        (0.0, 0.0, res_bottom + gap, left)
+    let top = if local_y > mon_h / 2.0 {
+        mon_h - res_bottom - gap - size.1
     } else {
-        (res_top + gap, 0.0, 0.0, left)
+        res_top + gap
     };
 
-    Some(Placement { monitor: monitor.name.clone(), bottom, margin })
+    Some(Placement { monitor: monitor.name.clone(), monitor_size: (mon_w, mon_h), origin: (left, top) })
 }
 
 #[cfg(test)]
@@ -66,15 +65,14 @@ mod tests {
         let monitors = [monitor("DP-2", 0, [0, 36, 0, 0]), monitor("DP-1", 1920, [0, 36, 0, 0])];
         let p = place(CursorPos { x: 2727.0, y: 18.0 }, &monitors, (320.0, 200.0), 6.0).unwrap();
         assert_eq!(p.monitor, "DP-1");
-        assert!(!p.bottom);
-        assert_eq!(p.margin, (42.0, 0.0, 0.0, 647.0));
+        assert_eq!(p.monitor_size, (1920.0, 1080.0));
+        assert_eq!(p.origin, (647.0, 42.0));
     }
 
     #[test]
     fn clamps_to_screen_edge_and_handles_bottom_bar() {
         let monitors = [monitor("DP-1", 0, [0, 0, 0, 30])];
         let p = place(CursorPos { x: 1910.0, y: 1070.0 }, &monitors, (320.0, 200.0), 6.0).unwrap();
-        assert!(p.bottom);
-        assert_eq!(p.margin, (0.0, 0.0, 36.0, 1594.0));
+        assert_eq!(p.origin, (1594.0, 844.0));
     }
 }

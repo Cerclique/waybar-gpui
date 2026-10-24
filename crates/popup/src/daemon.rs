@@ -1,45 +1,44 @@
 //! The long-running GPUI process. Keeping it alive means the GPU device and
 //! fonts stay warm, so opening a popover after the first one is near-instant.
+//!
+//! An open popover is a single transparent layer surface covering the whole
+//! output (bar included), with exclusive keyboard focus. The panel is drawn as
+//! a card inside it at the computed position. Clicks outside the card land on
+//! the same surface and close it, and Esc always reaches it. This doesn't
+//! depend on focus (Hyprland's `follow_mouse` moves it) or on how the
+//! compositor routes pointer input while an exclusive-keyboard layer is open.
 
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
-};
+use std::{error::Error, io};
 
 use gpui::{
-    AnyWindowHandle, App, AppContext as _, Bounds, DisplayId, Global, QuitMode, Size,
-    WindowBackgroundAppearance, WindowBounds, WindowKind, WindowOptions, layer_shell::*, point, px,
+    AnyView, AnyWindowHandle, App, AppContext as _, Bounds, Context, DisplayId, FocusHandle,
+    Global, IntoElement, QuitMode, Render, Size, Window, WindowBackgroundAppearance, WindowBounds,
+    WindowKind, WindowOptions, div, layer_shell::*, point, prelude::*, px,
 };
 use uuid::Uuid;
 
 use crate::{
     ipc::{self, Command},
     panel::{PanelKind, WorkspacePanel},
-    placement,
+    placement::{self, Placement},
 };
 
 /// Space between the popover and the bar, in logical pixels.
 const GAP: f32 = 6.0;
 
-/// Clicking the Waybar icon while the popover is open can take keyboard focus
-/// from it, so it dismisses itself and *then* receives the toggle. A toggle
-/// this soon after a dismissal is that same click: don't reopen.
-const REOPEN_GUARD: Duration = Duration::from_millis(300);
-
 #[derive(Default)]
 struct PopupState {
     open: Option<(PanelKind, AnyWindowHandle)>,
-    dismissed: Option<(PanelKind, Instant)>,
 }
 
 impl Global for PopupState {}
 
-/// Called by a panel that closed itself (Esc or focus loss).
-pub fn note_dismissed(kind: PanelKind, cx: &mut App) {
-    let state = cx.global_mut::<PopupState>();
-    state.open = None;
-    state.dismissed = Some((kind, Instant::now()));
+/// Closes the popover once the current update finishes. Use this from inside
+/// the popover's own event handlers, where its window can't be updated.
+fn close_deferred(reason: &'static str, cx: &mut App) {
+    cx.defer(move |cx| {
+        close(reason, cx);
+    });
 }
 
 pub fn run(initial_panel: Option<String>) -> io::Result<()> {
@@ -70,13 +69,7 @@ fn handle(command: Command, cx: &mut App) {
                 eprintln!("waybar-popup: unknown panel {name:?}");
                 return;
             };
-            if close(cx) == Some(kind) {
-                return;
-            }
-            if let Some((dismissed, at)) = cx.global::<PopupState>().dismissed
-                && dismissed == kind
-                && at.elapsed() < REOPEN_GUARD
-            {
+            if close("toggle", cx) == Some(kind) {
                 return;
             }
             if let Err(e) = open(kind, cx) {
@@ -84,9 +77,10 @@ fn handle(command: Command, cx: &mut App) {
             }
         }
         Command::Close => {
-            close(cx);
+            close("close command", cx);
         }
         Command::Quit => {
+            close("quit", cx);
             let _ = std::fs::remove_file(ipc::socket_path());
             cx.quit();
         }
@@ -94,20 +88,21 @@ fn handle(command: Command, cx: &mut App) {
 }
 
 /// Closes the open popover, returning which panel it was.
-fn close(cx: &mut App) -> Option<PanelKind> {
+fn close(reason: &str, cx: &mut App) -> Option<PanelKind> {
     let (kind, handle) = cx.global_mut::<PopupState>().open.take()?;
-    handle.update(cx, |_, window, _| window.remove_window()).ok().map(|()| kind)
+    let _ = handle.update(cx, |_, window, _| window.remove_window());
+    eprintln!("waybar-popup: closed {kind:?} ({reason})");
+    Some(kind)
 }
 
 fn open(kind: PanelKind, cx: &mut App) -> Result<(), Box<dyn Error>> {
-    let (width, height) = kind.size();
+    let card_size = kind.size();
     let cursor: hypr::CursorPos = hypr::request("cursorpos")?;
     let monitors: Vec<hypr::Monitor> = hypr::request("monitors")?;
-    let placement = placement::place(cursor, &monitors, (width, height), GAP)
+    let placement = placement::place(cursor, &monitors, card_size, GAP)
         .ok_or("no monitor under the cursor")?;
 
-    let (top, right, bottom, left) = placement.margin;
-    let edge = if placement.bottom { Anchor::BOTTOM } else { Anchor::TOP };
+    let (width, height) = placement.monitor_size;
     let options = WindowOptions {
         titlebar: None,
         window_bounds: Some(WindowBounds::Windowed(Bounds {
@@ -120,12 +115,11 @@ fn open(kind: PanelKind, cx: &mut App) -> Result<(), Box<dyn Error>> {
             // Match this in Hyprland layer rules (see examples/hypr/).
             namespace: "waybar-popup".into(),
             layer: Layer::Overlay,
-            anchor: edge | Anchor::LEFT,
-            // -1: position from the output edge, ignoring Waybar's exclusive
-            // zone; the margins already include it.
+            anchor: Anchor::TOP | Anchor::BOTTOM | Anchor::LEFT | Anchor::RIGHT,
+            // -1: cover the whole output, bar included, so clicking the
+            // module again also counts as "outside".
             exclusive_zone: Some(px(-1.)),
-            margin: Some((px(top), px(right), px(bottom), px(left))),
-            keyboard_interactivity: KeyboardInteractivity::OnDemand,
+            keyboard_interactivity: KeyboardInteractivity::Exclusive,
             ..Default::default()
         }),
         focus: true,
@@ -133,13 +127,63 @@ fn open(kind: PanelKind, cx: &mut App) -> Result<(), Box<dyn Error>> {
         ..Default::default()
     };
 
-    let handle: AnyWindowHandle = match kind {
-        PanelKind::Workspace => cx
-            .open_window(options, |window, cx| cx.new(|cx| WorkspacePanel::new(window, cx)))?
-            .into(),
-    };
-    cx.global_mut::<PopupState>().open = Some((kind, handle));
+    let handle = cx.open_window(options, |window, cx| {
+        let content: AnyView = match kind {
+            PanelKind::Workspace => cx.new(WorkspacePanel::new).into(),
+        };
+        cx.new(|cx| Overlay::new(content, &placement, card_size, window, cx))
+    })?;
+
+    cx.global_mut::<PopupState>().open = Some((kind, handle.into()));
+    eprintln!("waybar-popup: opened {kind:?} on {} at {:?}", placement.monitor, placement.origin);
     Ok(())
+}
+
+/// Full-output root view: transparent everywhere except the panel card.
+struct Overlay {
+    content: AnyView,
+    origin: (f32, f32),
+    size: (f32, f32),
+    focus: FocusHandle,
+}
+
+impl Overlay {
+    fn new(
+        content: AnyView,
+        placement: &Placement,
+        size: (f32, f32),
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let focus = cx.focus_handle();
+        window.focus(&focus, cx);
+        Self { content, origin: placement.origin, size, focus }
+    }
+}
+
+impl Render for Overlay {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        let card = div()
+            .absolute()
+            .left(px(self.origin.0))
+            .top(px(self.origin.1))
+            .w(px(self.size.0))
+            .h(px(self.size.1))
+            // Clicks on the card stay in the card.
+            .occlude()
+            .child(self.content.clone());
+
+        div()
+            .size_full()
+            .track_focus(&self.focus)
+            .on_key_down(|event, _, cx| {
+                if event.keystroke.key == "escape" {
+                    close_deferred("escape", cx);
+                }
+            })
+            .on_any_mouse_down(|_, _, cx| close_deferred("click outside", cx))
+            .child(card)
+    }
 }
 
 /// GPUI's Wayland displays derive their UUID from the `wl_output` name, which

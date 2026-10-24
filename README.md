@@ -34,8 +34,8 @@ driver (GPUI renders with wgpu/Vulkan).
 make dev          # builds, runs a second Waybar with examples/waybar/, Ctrl-C to stop
 ```
 
-Click the workspace label on the test bar to open the popover. Esc, clicking
-the label again or focusing another window closes it.
+Click the workspace label on the test bar to open the popover. Esc or a click
+anywhere outside it (including the label again) closes it.
 
 ## Install into your own bar
 
@@ -52,11 +52,20 @@ rules into your `style.css`. Waybar runs commands with its own `PATH`; if
 
 Wayland only lets a real popover (`xdg_popup`) attach to a surface owned by the
 same process, so a separate program can't attach one to Waybar. Instead the
-daemon opens a **layer-shell surface** on the overlay layer, anchored to the
-bar's edge, with margins computed from `hyprctl cursorpos` and the monitor's
-reserved area so it sits under the clicked icon (`crates/popup/src/placement.rs`).
-It has no border or title bar, shows on the monitor you clicked, and closes on
-Esc or focus loss.
+daemon opens a **layer-shell surface** on the overlay layer and draws the panel
+under the clicked icon, positioned from `hyprctl cursorpos` and the monitor's
+reserved area (`crates/popup/src/placement.rs`).
+It has no border or title bar and shows on the monitor you clicked.
+
+The surface actually covers the **whole output**, bar included, and is
+transparent except for the panel card drawn at the computed position. It has
+exclusive keyboard focus, so Esc always works, and a click anywhere outside the
+card (including on the module again) lands on the same surface and closes it.
+This avoids two dead ends found while testing: closing on focus loss (Hyprland's
+`follow_mouse` moves focus as soon as the pointer moves) and a separate
+backdrop surface (it never received clicks while an exclusive-keyboard layer
+was open). Open/close events are logged to stderr, which ends up in Waybar's
+log.
 
 The first `toggle` starts the daemon in the background (~100 ms to show the
 first popover). Later ones only create a small surface (<20 ms), because the
@@ -67,7 +76,7 @@ GPU device and fonts stay loaded. `waybar-popup quit` stops it.
 - **New module output:** edit `render()` in `crates/module/src/main.rs` and
   `RELEVANT_EVENTS`. The JSON fields are in `output.rs` (`man 5 waybar-custom`).
 - **New popover panel:** add a `PanelKind` variant with a name and size in
-  `crates/popup/src/panel.rs`, write a view (use `install_dismiss` and `frame`
+  `crates/popup/src/panel.rs`, write a view (wrap it in `frame`
   like `WorkspacePanel`), then add it to the `match` in `daemon::open`.
   Point an `on-click` at `waybar-popup toggle <name>`.
 - **More Hyprland data:** add a struct to `crates/hypr` for any `hyprctl -j`
@@ -79,7 +88,8 @@ GPU device and fonts stay loaded. `waybar-popup quit` stops it.
   `=0.3.9`. The official `gpui` crate on crates.io is outdated and lacks
   layer-shell support. The API changes between snapshots, so upgrade
   deliberately and keep `Cargo.lock`.
-- Whether clicking empty desktop closes the popover depends on how Hyprland
-  hands out keyboard focus to on-demand layer surfaces. Esc and the toggle
-  always work.
+- While the popover is open, the first click outside it only closes it; it
+  doesn't reach the window below.
+- The popover covers only the monitor it opened on: clicking on another
+  monitor doesn't close it (Esc does).
 - Waybar runs one module process per monitor. That's expected.

@@ -1,11 +1,9 @@
 //! Popover contents. To add a panel: add a `PanelKind` variant, give it a name
-//! and size, write a view, and add it to the `match` in `daemon::open`.
+//! and size, write a view (wrap it in `frame`, like `WorkspacePanel`), and add
+//! it to the `match` in `daemon::open`. The daemon handles positioning, Esc
+//! and click-outside.
 
-use gpui::{
-    Context, Div, FocusHandle, FontWeight, Window, div, prelude::*, rgb, rgba,
-};
-
-use crate::daemon;
+use gpui::{Context, Div, FontWeight, Window, div, prelude::*, rgb, rgba};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PanelKind {
@@ -20,7 +18,7 @@ impl PanelKind {
         }
     }
 
-    /// Popover size in logical pixels. Layer surfaces have a fixed size.
+    /// Card size in logical pixels.
     pub fn size(self) -> (f32, f32) {
         match self {
             Self::Workspace => (340., 260.),
@@ -35,35 +33,9 @@ const OVERLAY: u32 = 0x45475a;
 const TEXT: u32 = 0xcdd6f4;
 const SUBTEXT: u32 = 0xa6adc8;
 
-/// Takes keyboard focus and closes the popover when it loses it.
-fn install_dismiss<T: 'static>(kind: PanelKind, window: &mut Window, cx: &mut Context<T>) -> FocusHandle {
-    let focus = cx.focus_handle();
-    window.focus(&focus, cx);
-    // Only react to a real "focused → unfocused" change, not to the initial
-    // state if the compositor maps the surface without focus.
-    let mut was_active = window.is_window_active();
-    cx.observe_window_activation(window, move |_, window, cx| {
-        let active = window.is_window_active();
-        if was_active && !active {
-            daemon::note_dismissed(kind, cx);
-            window.remove_window();
-        }
-        was_active |= active;
-    })
-    .detach();
-    focus
-}
-
-/// Shared popover chrome: rounded card, theme colours, Esc to close.
-fn frame(kind: PanelKind, focus: &FocusHandle) -> Div {
+/// Shared card chrome: rounded corners, border, theme colours.
+fn frame() -> Div {
     div()
-        .track_focus(focus)
-        .on_key_down(move |event, window, cx| {
-            if event.keystroke.key == "escape" {
-                daemon::note_dismissed(kind, cx);
-                window.remove_window();
-            }
-        })
         .size_full()
         .flex()
         .flex_col()
@@ -80,14 +52,12 @@ fn frame(kind: PanelKind, focus: &FocusHandle) -> Div {
 
 /// Windows on the active workspace, most recently focused first.
 pub struct WorkspacePanel {
-    focus: FocusHandle,
     workspace: Result<hypr::Workspace, String>,
     clients: Vec<hypr::Client>,
 }
 
 impl WorkspacePanel {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let focus = install_dismiss(PanelKind::Workspace, window, cx);
+    pub fn new(_: &mut Context<Self>) -> Self {
         let workspace = hypr::request::<hypr::Workspace>("activeworkspace").map_err(|e| e.to_string());
         let mut clients: Vec<hypr::Client> = match &workspace {
             Ok(ws) => hypr::request::<Vec<hypr::Client>>("clients")
@@ -98,13 +68,13 @@ impl WorkspacePanel {
             Err(_) => Vec::new(),
         };
         clients.sort_by_key(|c| c.focus_history_id);
-        Self { focus, workspace, clients }
+        Self { workspace, clients }
     }
 }
 
 impl Render for WorkspacePanel {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        let frame = frame(PanelKind::Workspace, &self.focus);
+        let frame = frame();
         let ws = match &self.workspace {
             Ok(ws) => ws,
             Err(e) => return frame.child(format!("Hyprland unavailable: {e}")),

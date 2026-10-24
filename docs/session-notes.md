@@ -42,8 +42,20 @@ Read this, then `README.md`, then the two research docs.
 - **Output selection:** GPUI's Wayland display UUID is
   `Uuid::new_v5(NAMESPACE_DNS, wl_output name)`, matched against the Hyprland
   monitor name.
-- **Reopen guard:** a toggle within 300 ms after the popover dismissed itself on
-  focus loss is ignored (the click on the icon caused the focus loss).
+- **Dismissal (changed twice after real-click tests):**
+  1. Close on focus loss: failed, the user's Hyprland has `follow_mouse = 1`;
+     moving the pointer onto the popover handed focus to the window underneath
+     and the popover closed within ~300 ms.
+  2. Separate transparent full-output backdrop surface under an
+     exclusive-keyboard popover: Esc worked, but clicks outside (and on the
+     icon) did nothing; neither the backdrop nor Waybar got them. Hypothesis
+     (not verified in Hyprland source): Hyprland restricts pointer input to the
+     exclusive-keyboard layer while it is open.
+  3. Current: **one** full-output transparent layer surface (Overlay,
+     `exclusive_zone -1`, covers the bar, `KeyboardInteractivity::Exclusive`);
+     the panel is a card drawn inside it at `Placement::origin`, `.occlude()`d
+     so card clicks stay in the card; any other click or Esc closes. The 300 ms
+     reopen guard is gone.
 
 ## Verified on this machine
 
@@ -60,9 +72,22 @@ two 1920×1080 monitors (DP-2 at x=0, DP-1 at x=1920), Waybar height 36.
 
 ## Not yet tested / next steps
 
-- [ ] `make dev`: clicking the module inside a real Waybar bar.
-- [ ] Focus-loss dismissal (clicking another window / empty desktop) and the
-      300 ms reopen guard — depends on Hyprland's on-demand layer focus.
+- [x] `make dev` click test (first round): opens under the icon in ~130 ms,
+      second click closes. Found the follow_mouse dismissal bug (fixed above)
+      and blank icons (fixed: `\uXXXX` escapes in examples/waybar/config.jsonc).
+- [x] Second real-click round (backdrop design): Esc 4/4, popover stays open
+      while the mouse moves, both monitors OK, icons OK; click-outside and icon
+      re-click did nothing → led to the single-surface design.
+- [x] Third real-click round (single-surface design): click outside 3/3,
+      icon re-click 4/4, click inside the card stays open, Esc 2/2, stays open
+      while the mouse moves. Opens in ~410 ms when the click starts the daemon,
+      130–150 ms after. No 0×0 first open this round.
+- Known limitation: the surface covers only the monitor it opened on; clicks
+  on another monitor don't close it.
+- [ ] Unexplained: the first popover after the daemon was spawned by a real
+      Waybar click stayed 0×0 (never drew) for ~17 s. Not reproducible from
+      the CLI (5/5 cold starts drew in 300–370 ms). Check Waybar's log
+      (`waybar-popup: opened …` lines) next time it happens.
 - [ ] `make install` into `~/.local/bin` — note `~/.local/bin` was not on PATH
       in the agent shell; Waybar may need absolute paths.
 - [ ] `git init` + first commit (repo is not under git yet).
