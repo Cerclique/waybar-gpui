@@ -86,9 +86,9 @@ Public items, and nothing else:
 | Item | Contract |
 |---|---|
 | `trait Panel: Render + Sized` | `const NAME: &'static str` (what `toggle` names) and `fn new(args: &[String], window, cx) -> Self`. `args` are the panel arguments. |
-| `App::new(id)` | Starts a program with its program ID. Rejects an `id` not matching `^[a-z0-9][a-z0-9-]*$` ([Starter template][t21]); how is in §14. |
+| `App::new(id)` | Starts a program with its program ID. Panics with a clear message unless `id` matches `^[a-z0-9][a-z0-9-]*$` ([Starter template][t21]). |
 | `App::theme(Theme)` | Optional; defaults to `Theme::default()`. |
-| `App::panel::<P>()` | Registers a panel. |
+| `App::panel::<P>()` | Registers a panel. Registering two panels with the same `NAME` panics. |
 | `App::run() -> ExitCode` | Parses `std::env::args()` and runs the command (§5). |
 | `card(cx) -> Div` | Opt-in card chrome: rounded corners, border, translucent background, padding, text colour and size, all from `Theme`. |
 | `Theme` | Plain struct of colours, stored by the runtime as a GPUI global; `Theme::get(cx)`. Prototype fields: `base`, `surface`, `overlay`, `text`, `subtext`, `accent`. `Default` is Catppuccin Mocha. |
@@ -149,11 +149,15 @@ of their own handle them before calling `run`.
 | Command | Behaviour |
 |---|---|
 | `toggle <panel> [args…]` | Sends the toggle to the program's daemon, spawning one if none answers (§6). Closes if the same panel with the same panel arguments is open; otherwise closes what is open and opens this one. |
-| `close` | Closes the program's popover, if any. |
-| `quit` | Stops the program's daemon. |
+| `close` | Closes the program's popover, if any. Succeeds silently when no daemon runs. |
+| `quit` | Stops the program's daemon. Succeeds silently when no daemon runs. |
 | `daemon [<panel> [args…]]` | Runs the daemon in the foreground, optionally opening a panel at once. This is what `toggle` spawns. |
 | `preview <panel> [args…]` | Foreground, logs to the terminal, opens the panel at once and **exits when the popover closes**. Does not bind the program's socket, so it never displaces the daemon; still sends `close` to the other sockets before opening (§7). |
-| no arguments, or `help` | Usage text: the commands, the registered panels, and one ready-to-paste `on-click` line per panel using the real absolute path from `current_exe()`, e.g. `"on-click": "/home/me/.cargo/bin/my-panels toggle hello"`. |
+| no arguments, or `help` | Usage text: the commands, the registered panels, and one ready-to-paste `on-click` line per panel using the real absolute path from `current_exe()`, e.g. `"on-click": "/home/me/.cargo/bin/my-panels toggle hello"`. Printed to stdout, exit 0. |
+
+An unknown command or panel name, a missing panel name, or arguments to
+`close`/`quit`/`help` print the problem and the usage text to stderr and exit
+with status 2. Panel names are checked before anything is sent to the daemon.
 
 ## 6. Daemon
 
@@ -312,15 +316,6 @@ Order: rename the repo to `waybar-gpui`, tag `v0.1.0`, make the repo public.
 - The socket line encoding and the shape of the daemon's identity reply (§6.4).
 - Exact `card()` styling values and any `Theme` fields beyond the prototype's.
 - Wording of the usage text and log lines.
-
-Proposed while writing this spec, not decided by a ticket (confirm or change
-when building):
-
-- `App::new` panics with a clear message on an invalid ID (rather than
-  `run()` failing later).
-- Registering two panels with the same `NAME` panics.
-- An unknown command or panel name prints the usage text to stderr and exits
-  non-zero.
 
 [map]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/7
 [proto]: https://github.com/Cerclique/waybar_gpui_plugin_template/tree/prototype/panel-api
