@@ -6,10 +6,10 @@ clicking the module.
 ```
  Waybar ── exec ──────▶ waybar-hypr-ws  ◀── Hyprland .socket2.sock (events)
    │                    prints one JSON line per change
-   └── on-click ──────▶ waybar-popup toggle workspace
-                            │ Unix socket ($XDG_RUNTIME_DIR/waybar-popup.sock)
+   └── on-click ──────▶ example-panels toggle workspace
+                            │ Unix socket ($XDG_RUNTIME_DIR/waybar-gpui/example-panels.sock)
                             ▼
-                        waybar-popup daemon (GPUI, stays running)
+                        example-panels daemon (GPUI, stays running)
                         opens/closes a layer-shell popover under the cursor
 ```
 
@@ -17,10 +17,11 @@ clicking the module.
 |---|---|
 | `crates/hypr` | Minimal Hyprland IPC: `request::<T>("activeworkspace")`, `Events` iterator. No dependencies besides serde. |
 | `crates/module` | `waybar-hypr-ws`, a continuous `custom/*` module (active workspace). Event-driven, no polling. |
-| `crates/popup` | `waybar-popup`, the GPUI popover daemon plus its toggle client. |
-| `python/hypr_ws.py` | Stdlib-only Python version of the module, for quick hacking. |
-| `examples/waybar/` | Waybar config + CSS (also used by `scripts/dev.sh`). |
-| `examples/hypr/popup.lua` | Optional Hyprland layer rule (blur/animation) for the popover. |
+| `crates/waybar_gpui` | The SDK: `Panel`, `App`, `card`, `Theme`, `close`; the runtime (daemon, placement, dismissal) is private inside it. |
+| `crates/example-panels` | `example-panels`, a program built on the SDK the way an author's would be. |
+| `examples/waybar/` | Waybar config + CSS (also used by `scripts/dev.sh`): a top bar and a left bar. |
+| `examples/hypr/waybar-gpui.lua` | Optional Hyprland layer rule (blur/animation) for every program's popovers. |
+| `docs/spec.md` | What is being built: the runtime + SDK spec. |
 | `docs/research/` | Background research: Waybar extension mechanisms, GPUI on Wayland. |
 
 ## Requirements
@@ -46,7 +47,8 @@ make install      # release build into ~/.local/bin, then reloads Waybar
 Copy the `"custom/hypr-ws"` block from `examples/waybar/config.jsonc` into
 `~/.config/waybar/config.jsonc`, add it to a `modules-*` list, and copy the CSS
 rules into your `style.css`. Waybar runs commands with its own `PATH`; if
-`~/.local/bin` isn't on it, use absolute paths in `exec` and `on-click`.
+`~/.local/bin` isn't on it, use absolute paths in `exec` and `on-click`
+(`~` works: Waybar runs them through `/bin/sh -c`).
 
 ## How the popover works
 
@@ -54,7 +56,7 @@ Wayland only lets a real popover (`xdg_popup`) attach to a surface owned by the
 same process, so a separate program can't attach one to Waybar. Instead the
 daemon opens a **layer-shell surface** on the overlay layer and draws the panel
 under the clicked icon, positioned from `hyprctl cursorpos` and the monitor's
-reserved area (`crates/popup/src/placement.rs`).
+reserved area (`crates/waybar_gpui/src/placement.rs`).
 It has no border or title bar and shows on the monitor you clicked.
 
 The surface actually covers the **whole output**, bar included, and is
@@ -69,16 +71,16 @@ log.
 
 The first `toggle` starts the daemon in the background (~100 ms to show the
 first popover). Later ones only create a small surface (<20 ms), because the
-GPU device and fonts stay loaded. `waybar-popup quit` stops it.
+GPU device and fonts stay loaded. `example-panels quit` stops it.
 
 ## Adding things
 
 - **New module output:** edit `render()` in `crates/module/src/main.rs` and
   `RELEVANT_EVENTS`. The JSON fields are in `output.rs` (`man 5 waybar-custom`).
-- **New popover panel:** add a `PanelKind` variant with a name and size in
-  `crates/popup/src/panel.rs`, write a view (wrap it in `frame`
-  like `WorkspacePanel`), then add it to the `match` in `daemon::open`.
-  Point an `on-click` at `waybar-popup toggle <name>`.
+- **New popover panel:** implement `waybar_gpui::Panel` (a `NAME` and a
+  `new`) plus GPUI `Render` like `crates/example-panels/src/workspace.rs`,
+  wrap the content in `card(cx)`, and register it with `.panel::<YourPanel>()`
+  in `main.rs`. Point an `on-click` at `example-panels toggle <name>`.
 - **More Hyprland data:** add a struct to `crates/hypr` for any `hyprctl -j`
   command.
 

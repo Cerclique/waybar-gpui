@@ -1316,6 +1316,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "example-panels"
+version = "0.1.0"
+dependencies = [
+ "hypr",
+ "waybar_gpui",
+]
+
+[[package]]
 name = "exr"
 version = "1.74.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5316,7 +5324,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "waybar-popup"
+name = "waybar_gpui"
 version = "0.1.0"
 dependencies = [
  "async-channel",
