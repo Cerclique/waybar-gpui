@@ -45,6 +45,10 @@ _Avoid_: module, plugin, popup, view
 The words after the panel's name in a bar module's `on-click`, handed to the panel when it opens.
 _Avoid_: options, parameters, config
 
+**Preview**:
+Opening a panel from a terminal, without a bar module, until it is dismissed.
+_Avoid_: demo, test mode
+
 **Program**:
 An author's executable that registers one or more panels; each program runs its own runtime.
 _Avoid_: binary, app, plugin
