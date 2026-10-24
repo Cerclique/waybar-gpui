@@ -1,0 +1,13 @@
+[package]
+name = "waybar-popup"
+description = "GPUI popover daemon toggled from Waybar on-click"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+hypr.workspace = true
+gpui.workspace = true
+gpui_platform.workspace = true
+async-channel = "2"
+uuid = { version = "1", features = ["v5"] }

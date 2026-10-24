@@ -1,0 +1,18 @@
+/* Selectors: #custom-<name> and #custom-<name>.<class> for each "class"
+   the module prints. */
+window#waybar {
+  background: rgba(30, 30, 46, 0.9);
+  color: #cdd6f4;
+}
+
+#custom-hypr-ws {
+  padding: 0 10px;
+}
+
+#custom-hypr-ws.empty {
+  color: #a6adc8;
+}
+
+#custom-hypr-ws.fullscreen {
+  color: #f38ba8;
+}

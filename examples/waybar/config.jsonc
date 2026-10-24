@@ -1,0 +1,23 @@
+// Standalone test bar: scripts/dev.sh runs a second Waybar with this config.
+// To use in your own bar, copy the "custom/hypr-ws" block into
+// ~/.config/waybar/config.jsonc and add it to a modules-* list.
+{
+  "layer": "top",
+  "position": "top",
+  "height": 30,
+  "reload_style_on_change": true,
+  "modules-left": ["custom/hypr-ws"],
+  "modules-right": ["clock"],
+
+  "custom/hypr-ws": {
+    // No "interval": continuous script, one JSON line per update.
+    "exec": "waybar-hypr-ws",
+    "return-type": "json",
+    "restart-interval": 5,
+    "format": "{icon} {text}",
+    "format-icons": { "normal": "", "fullscreen": "", "default": "" },
+    // Waybar doesn't need to re-run the module after a click.
+    "exec-on-event": false,
+    "on-click": "waybar-popup toggle workspace"
+  }
+}

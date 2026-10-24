@@ -1,0 +1,11 @@
+[package]
+name = "waybar-hypr-ws"
+description = "Waybar custom/* module: active Hyprland workspace, event-driven"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+hypr.workspace = true
+serde.workspace = true
+serde_json.workspace = true

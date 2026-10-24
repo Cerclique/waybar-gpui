@@ -1,0 +1,10 @@
+[package]
+name = "hypr"
+description = "Minimal Hyprland IPC client (request socket + event socket)"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true

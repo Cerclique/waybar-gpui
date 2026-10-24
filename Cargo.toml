@@ -1,0 +1,22 @@
+[workspace]
+resolver = "3"
+members = ["crates/hypr", "crates/module", "crates/popup"]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+version = "0.1.0"
+
+[workspace.dependencies]
+hypr = { path = "crates/hypr" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# GPUI is pre-1.0 and breaks between snapshots: keep these pinned exactly
+# (see docs/research/gpui-popup-windows.md).
+gpui          = { package = "gpui-pre",          version = "=0.3.9" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.9", features = ["wayland"] }
+
+[profile.release]
+lto = "thin"
+strip = true
