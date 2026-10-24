@@ -1,5 +1,5 @@
 PREFIX ?= $(HOME)/.local
-BINS := waybar-hypr-ws waybar-popup
+BINS := waybar-hypr-ws example-panels
 
 .PHONY: build test lint dev install reload uninstall
 
@@ -19,12 +19,12 @@ install: build
 	install -Dm755 $(addprefix target/release/,$(BINS)) -t $(PREFIX)/bin
 	$(MAKE) reload
 
-# Restart the popup daemon (next click respawns it) and make Waybar re-spawn
+# Restart the panel daemon (next click respawns it) and make Waybar re-spawn
 # custom modules, picking up new binaries.
 reload:
-	-waybar-popup quit
+	-example-panels quit
 	-pkill -SIGUSR2 -x waybar
 
 uninstall:
-	-waybar-popup quit
+	-example-panels quit
 	rm -f $(addprefix $(PREFIX)/bin/,$(BINS))

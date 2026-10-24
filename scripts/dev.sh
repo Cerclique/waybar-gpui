@@ -6,8 +6,8 @@ cd "$(dirname "$0")/.."
 
 cargo build
 export PATH="$PWD/target/debug:$PATH"
-# Make sure the popup daemon is the one just built.
-waybar-popup quit 2>/dev/null || true
+# Make sure the daemon is the one just built.
+example-panels quit 2>/dev/null || true
 
-trap 'waybar-popup quit 2>/dev/null || true' EXIT
+trap 'example-panels quit 2>/dev/null || true' EXIT
 waybar -c examples/waybar/config.jsonc -s examples/waybar/style.css -l debug "$@"

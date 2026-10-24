@@ -1,0 +1,15 @@
+# Plays the author: a program built on waybar_gpui exactly as one in its own
+# repository would be, except for the path dependency.
+[package]
+name = "example-panels"
+description = "Example panels for waybar_gpui"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+publish = false
+
+[dependencies]
+# In an author's repository:
+# waybar_gpui = { git = "https://github.com/Cerclique/waybar-gpui", tag = "v0.1.0" }
+waybar_gpui = { path = "../waybar_gpui" }
+hypr.workspace = true

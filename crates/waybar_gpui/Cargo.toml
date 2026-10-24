@@ -1,6 +1,6 @@
 [package]
-name = "waybar-popup"
-description = "GPUI popover daemon toggled from Waybar on-click"
+name = "waybar_gpui"
+description = "Write a GPUI panel, get a Waybar popover on Hyprland"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
