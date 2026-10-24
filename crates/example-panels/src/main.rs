@@ -2,9 +2,15 @@
 //!
 //! Waybar `on-click` lines (see `examples/waybar/config.jsonc`):
 //!   example-panels toggle workspace
+//!   example-panels toggle controls    (with the `components` feature)
 
+#[cfg(feature = "components")]
+mod controls;
 mod workspace;
 
 fn main() -> std::process::ExitCode {
-    waybar_gpui::App::new("example-panels").panel::<workspace::WorkspacePanel>().run()
+    let app = waybar_gpui::App::new("example-panels").panel::<workspace::WorkspacePanel>();
+    #[cfg(feature = "components")]
+    let app = app.panel::<controls::ControlsPanel>();
+    app.run()
 }

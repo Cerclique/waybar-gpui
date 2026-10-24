@@ -4,7 +4,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-cargo build
+# With gpui-component, so the controls panel is there too.
+cargo build --features example-panels/components
 export PATH="$PWD/target/debug:$PATH"
 # Make sure the daemon is the one just built.
 example-panels quit 2>/dev/null || true

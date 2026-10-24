@@ -8,6 +8,10 @@ license.workspace = true
 version.workspace = true
 publish = false
 
+[features]
+# The `controls` panel, built with gpui-component widgets.
+components = ["waybar_gpui/components"]
+
 [dependencies]
 # In an author's repository:
 # waybar_gpui = { git = "https://github.com/Cerclique/waybar-gpui", tag = "v0.1.0" }

@@ -8,7 +8,7 @@
     "height": 30,
     "reload_style_on_change": true,
     "modules-left": ["custom/hypr-ws"],
-    "modules-right": ["clock"],
+    "modules-right": ["custom/controls", "clock"],
 
     "custom/hypr-ws": {
       // No "interval": continuous script, one JSON line per update.
@@ -23,19 +23,42 @@
       "exec-on-event": false,
       "on-click": "example-panels toggle workspace",
     },
+
+    // Needs example-panels built with its `components` feature (scripts/dev.sh does).
+    "custom/controls": {
+      "exec": "echo controls",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle controls",
+    },
   },
   {
     // A vertical bar, to check placement beside a side bar.
     "layer": "top",
     "position": "left",
     "width": 40,
-    "modules-center": ["custom/side-ws"],
+    "modules-center": ["custom/side-ws", "custom/side-controls"],
 
     "custom/side-ws": {
       "exec": "echo WS",
       "interval": "once",
       "exec-on-event": false,
       "on-click": "example-panels toggle workspace",
+    },
+
+    "custom/side-controls": {
+      "exec": "echo CTL",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle controls",
+    },
+
+    // Needs example-panels built with its `components` feature (scripts/dev.sh does).
+    "custom/controls": {
+      "exec": "echo controls",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle controls",
     },
   },
 ]

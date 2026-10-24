@@ -58,3 +58,39 @@ pub fn card(cx: &App) -> Div {
         .text_color(theme.text)
         .text_sm()
 }
+
+/// Copies the base colours into gpui-component's theme; it derives the rest.
+#[cfg(feature = "components")]
+pub(crate) fn apply_to_components(theme: &Theme, cx: &mut App) {
+    use std::rc::Rc;
+
+    use gpui_component::theme::{Theme as ComponentTheme, ThemeConfig, ThemeConfigColors, ThemeMode};
+
+    fn hex(c: Rgba) -> Option<gpui::SharedString> {
+        let [r, g, b, a] = [c.r, c.g, c.b, c.a].map(|v| (v * 255.0).round() as u8);
+        Some(format!("#{r:02x}{g:02x}{b:02x}{a:02x}").into())
+    }
+
+    // Only the base colours; gpui-component derives the rest (button, input,
+    // hover…) from these through its own fallbacks.
+    // (ThemeConfigColors has private fields, so no struct literal.)
+    let mut colors = ThemeConfigColors::default();
+    colors.background = hex(theme.base);
+    colors.foreground = hex(theme.text);
+    colors.border = hex(theme.overlay);
+    colors.muted = hex(theme.surface);
+    colors.muted_foreground = hex(theme.subtext);
+    colors.primary = hex(theme.accent);
+    // Text on accent-coloured buttons: the card colour, opaque.
+    colors.primary_foreground = hex(Rgba { a: 1.0, ..theme.base });
+    colors.accent = hex(theme.overlay);
+    colors.accent_foreground = hex(theme.text);
+    colors.popover = hex(theme.surface);
+    colors.popover_foreground = hex(theme.text);
+    colors.secondary = hex(theme.surface);
+    colors.secondary_foreground = hex(theme.text);
+    colors.input = hex(theme.overlay);
+    colors.ring = hex(theme.accent);
+    let config = ThemeConfig { name: "waybar-gpui".into(), mode: ThemeMode::Dark, colors, ..Default::default() };
+    ComponentTheme::global_mut(cx).apply_config(&Rc::new(config));
+}

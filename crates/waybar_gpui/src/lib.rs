@@ -42,6 +42,13 @@ use gpui::{AnyView, AppContext as _, Context, Render, Window};
 /// them.
 pub use gpui;
 
+/// gpui-component's widgets, with the `components` feature. The runtime
+/// initialises the library and copies [`Theme`] into its theme at startup.
+/// Menus and in-window popovers work; dialogs and notifications don't, because
+/// they need gpui-component's `Root`, which breaks layer surfaces.
+#[cfg(feature = "components")]
+pub use gpui_component as components;
+
 pub use runtime::close;
 pub use theme::{Theme, card};
 
