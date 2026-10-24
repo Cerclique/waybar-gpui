@@ -27,6 +27,8 @@
 //!
 //! Waybar's `on-click` then runs `my-panels toggle hello [args…]`.
 
+#![deny(missing_docs)]
+
 mod cli;
 mod ipc;
 mod placement;
