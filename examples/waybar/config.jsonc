@@ -7,7 +7,7 @@
     "position": "top",
     "height": 30,
     "reload_style_on_change": true,
-    "modules-left": ["custom/hypr-ws"],
+    "modules-left": ["custom/hypr-ws", "custom/clock-paris", "custom/clock-tokyo"],
     "modules-right": ["custom/controls", "clock"],
 
     "custom/hypr-ws": {
@@ -22,6 +22,20 @@
       // Waybar doesn't need to re-run the module after a click.
       "exec-on-event": false,
       "on-click": "example-panels toggle workspace",
+    },
+
+    // Panel arguments: a label and a UTC offset in hours.
+    "custom/clock-paris": {
+      "exec": "echo Paris",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle clock Paris 1",
+    },
+    "custom/clock-tokyo": {
+      "exec": "echo Tokyo",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle clock Tokyo 9",
     },
 
     // Needs example-panels built with its `components` feature (scripts/dev.sh does).
@@ -51,6 +65,20 @@
       "interval": "once",
       "exec-on-event": false,
       "on-click": "example-panels toggle controls",
+    },
+
+    // Panel arguments: a label and a UTC offset in hours.
+    "custom/clock-paris": {
+      "exec": "echo Paris",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle clock Paris 1",
+    },
+    "custom/clock-tokyo": {
+      "exec": "echo Tokyo",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle clock Tokyo 9",
     },
 
     // Needs example-panels built with its `components` feature (scripts/dev.sh does).

@@ -1,7 +1,9 @@
 //! The active workspace and its windows, updated live while open. Shows:
-//! - live updates from a blocking source (Hyprland events) with plain GPUI
-//! - closing from inside the panel after an action
-//! - GPUI derive macros through the SDK's re-export
+//! - live data from a blocking source (Hyprland's event socket): read it on a
+//!   background thread, update the panel on the foreground one. After close,
+//!   the background thread lingers until the next event arrives, then ends.
+//! - closing from inside the panel after an action, with `close(cx)`
+//! - GPUI derive macros through the SDK's re-export (`use waybar_gpui::gpui;`)
 
 use waybar_gpui::{
     Panel, Theme, card, close,
