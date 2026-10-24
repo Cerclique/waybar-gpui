@@ -3,10 +3,10 @@
 //!
 //! An open popover is a single transparent layer surface covering the whole
 //! output (bar included), with exclusive keyboard focus. The panel is drawn as
-//! a card inside it at the computed position. Clicks outside the card land on
-//! the same surface and close it, and Esc always reaches it. This doesn't
-//! depend on focus (Hyprland's `follow_mouse` moves it) or on how the
-//! compositor routes pointer input while an exclusive-keyboard layer is open.
+//! a card inside it at the computed position. Esc always reaches it, and
+//! while it is open Hyprland routes every click to it (even on other
+//! monitors), so any click outside the card closes it. Nothing depends on
+//! focus, which Hyprland's `follow_mouse` moves around.
 
 use std::{error::Error, io};
 
@@ -169,8 +169,12 @@ impl Render for Overlay {
             .top(px(self.origin.1))
             .w(px(self.size.0))
             .h(px(self.size.1))
-            // Clicks on the card stay in the card.
-            .occlude()
+            // A geometric "outside the card" test rather than a hover test:
+            // while an exclusive-keyboard layer is open, Hyprland sends every
+            // click to it, including clicks on other monitors, which arrive
+            // with coordinates outside this surface (InputManager.cpp, "forced
+            // above all"). Hover-based handlers never see those.
+            .on_mouse_down_out(|_, _, cx| close_deferred("click outside", cx))
             .child(self.content.clone());
 
         div()
@@ -181,7 +185,6 @@ impl Render for Overlay {
                     close_deferred("escape", cx);
                 }
             })
-            .on_any_mouse_down(|_, _, cx| close_deferred("click outside", cx))
             .child(card)
     }
 }

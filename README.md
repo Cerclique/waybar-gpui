@@ -90,6 +90,4 @@ GPU device and fonts stay loaded. `waybar-popup quit` stops it.
   deliberately and keep `Cargo.lock`.
 - While the popover is open, the first click outside it only closes it; it
   doesn't reach the window below.
-- The popover covers only the monitor it opened on: clicking on another
-  monitor doesn't close it (Esc does).
 - Waybar runs one module process per monitor. That's expected.

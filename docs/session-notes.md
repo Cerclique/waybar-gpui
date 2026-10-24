@@ -85,11 +85,23 @@ two 1920×1080 monitors (DP-2 at x=0, DP-1 at x=1920), Waybar height 36.
 - [x] Git repo + private GitHub repo (Cerclique/waybar_gpui_plugin_template).
       Pushing over SSH fails from the agent shell (`Permission denied
       (publickey)`); the agent pushed over HTTPS with `gh auth git-credential`.
+      Root cause: the key has a passphrase and no ssh-agent runs in the
+      session; the user's terminal prompts, the agent shell can't. Left as is
+      for now (fix options: systemd `ssh-agent.socket` + `SSH_AUTH_SOCK`, or
+      HTTPS via `gh auth setup-git`).
+- [x] #1 fixed: Hyprland routes every click to the exclusive-keyboard layer
+      while it is open, including clicks on other monitors, which arrive with
+      coordinates outside the surface (InputManager.cpp L453–465 at v0.56.2,
+      "forced above all"; also explains why the round-2 backdrop never got
+      clicks). The card now closes via `on_mouse_down_out` (geometric test),
+      not a hover-based handler. Confirmed with real clicks both ways.
+- [x] #2 closed as not reproducible: ~27 cold starts (CLI + spawn path) and
+      four real-click rounds after the redesign all drew in 250–410 ms. Only
+      seen once, with the old focus-loss design. Reopen if Waybar's log shows
+      an `opened` line with no drawn popover.
 
 Open work is tracked as GitHub issues (see `docs/agents/issue-tracker.md`):
 
-- #1 Popover doesn't close when clicking on another monitor (bug)
-- #2 First popover after daemon start once stayed 0×0 (bug, not reproduced)
 - #3 Try `make install` in the real Waybar bar (PATH question)
 - #4 Workspace panel: update live while open
 - #5 Workspace panel: click a row to focus that window (verify Lua dispatcher)
