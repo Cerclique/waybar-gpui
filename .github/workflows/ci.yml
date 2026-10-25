@@ -30,8 +30,8 @@ jobs:
       - run: cargo build --all-targets
       # Also runs the doctests.
       - run: cargo test
-      # When the `components` feature lands, add a `features: ["", "--features
-      # components"]` matrix to this job and pass `${{ matrix.features }}` here.
+      # Both sides of the `components` feature.
+      - run: cargo clippy --all-targets -- -D warnings
       - run: cargo clippy --all-targets --all-features -- -D warnings
       - run: cargo doc --no-deps --all-features
         env:
