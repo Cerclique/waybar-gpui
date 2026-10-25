@@ -48,6 +48,7 @@
 mod cli;
 mod client;
 mod files;
+mod hypr;
 mod ipc;
 mod panels;
 mod placement;

@@ -156,13 +156,13 @@ Tags are plain `vX.Y.Z` and always equal the single `version` in
 `[workspace.package]`, which every crate inherits. 0.x semver: a breaking
 change to the SDK bumps the minor, a fix the patch. Any change to the
 `gpui-pre`, `gpui-pre-platform` or `gpui-component` pins is a breaking release
-whose changelog names the new versions. The internal `hypr` crate isn't
-covered by the tags.
+whose changelog names the new versions.
 
 1. On a `release/vX.Y.Z` branch from `main`, bump `version` in
    `[workspace.package]` of the top-level `Cargo.toml` (`cargo build` updates
    `Cargo.lock`) and every versioned SDK reference with it: the template's
-   `tag`, the README's `--tag`, tagged guide links. `make check-template` lists
+   and the guide's `waybar_gpui` version, the README's `--tag`, tagged guide
+   links. `make check-template` lists
    any left behind.
 2. Add the release's section to the changelog:
 
@@ -185,6 +185,16 @@ covered by the tags.
    Pushing the tag runs the `Release` workflow: it creates the GitHub Release
    with the tag's section of `CHANGELOG.md` as notes, and fails if that
    section is missing or undated.
+5. Publish the SDK on crates.io from the tagged commit (once, `cargo login`
+   with a crates.io API token):
+
+   ```sh
+   cargo publish -p waybar_gpui
+   ```
+
+   It can't be undone: a published version can be yanked, never replaced
+   ([ADR 0004](adr/0004-published-on-crates-io.md)). If it fails, fix the
+   cause in a new patch release rather than moving the tag.
 
 v0.1.0 differs: the version is already 0.1.0 and its entry is hand-written,
 so its release pull request only replaces `Unreleased` in the entry's heading

@@ -32,8 +32,9 @@ let _tick = cx.spawn(async move |this, cx| loop {
 **From a blocking source** (a socket, a pipe, a D-Bus call), as in
 [`workspace.rs`](../../crates/example-panels/src/workspace.rs), which follows
 Hyprland's event socket: block on a background thread, update on the
-foreground one. (`hypr` is this repository's internal Hyprland client, not
-part of the SDK; in your program, use your own client or crate.)
+foreground one. (`hypr` is the example's own small Hyprland client,
+[`hypr.rs`](../../crates/example-panels/src/hypr.rs); the SDK doesn't provide
+one, so bring your own or a crate.)
 
 ```rust
 let _events = cx.spawn(async move |this, cx| {

@@ -5,6 +5,7 @@
 //! - closing from inside the panel after an action, with `close(cx)`
 //! - GPUI derive macros through the SDK's re-export (`use waybar_gpui::gpui;`)
 
+use crate::hypr;
 use waybar_gpui::{
     Panel, Theme, card, close,
     gpui::{self, Context, FontWeight, IntoElement, RenderOnce, Task, Window, div, prelude::*},
@@ -55,7 +56,7 @@ impl Panel for WorkspacePanel {
                     .await;
                 events = back;
                 let Some(Ok(event)) = event else { return };
-                if !RELEVANT.contains(&event.name.as_str()) {
+                if !RELEVANT.contains(&event.as_str()) {
                     continue;
                 }
                 let alive = this.update(cx, |panel, cx| {

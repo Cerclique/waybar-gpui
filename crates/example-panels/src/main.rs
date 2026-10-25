@@ -22,6 +22,7 @@
 mod clock;
 #[cfg(feature = "components")]
 mod controls;
+mod hypr;
 mod workspace;
 
 fn main() -> std::process::ExitCode {

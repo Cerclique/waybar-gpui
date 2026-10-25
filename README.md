@@ -53,7 +53,7 @@ replace the `{{…}}` placeholders by hand.
   widgets, the dev loop, installing, limits, troubleshooting.
 - [Using a waybar-gpui program](docs/guide/using-a-program.md): for people
   who install a program built with it.
-- Rustdoc: `cargo doc --open` in your project.
+- [API reference](https://docs.rs/waybar_gpui) on docs.rs.
 - [Example panels](crates/example-panels/src/main.rs): one runnable panel per
   pattern.
 
@@ -63,7 +63,6 @@ replace the `{{…}}` placeholders by hand.
 |---|---|
 | `crates/waybar_gpui` | The SDK (and the runtime, private inside it). |
 | `crates/example-panels` | A program built on the SDK the way yours would be; `waybar/` holds the test bars `make dev` runs. |
-| `crates/hypr` | Minimal Hyprland IPC used by the runtime and the examples; internal. |
 | `template/` | The cargo-generate starter. |
 | `scripts/` | `check-template.sh`, shared by CI and `make check-template`. |
 | `docs/` | The guide, the [architecture](docs/architecture.md) and ADRs. |
@@ -77,8 +76,9 @@ make check-template   # the starter template, as CI checks it (needs cargo-gener
 
 ## Versions
 
-A git dependency with `vX.Y.Z` tags, not on crates.io: GPUI is pre-1.0, pinned
-exactly (`gpui-pre =0.3.9`). 0.x semver; every GPUI pin change is a breaking
+On crates.io as [`waybar_gpui`](https://crates.io/crates/waybar_gpui); each
+release is also tagged `vX.Y.Z`. GPUI is pre-1.0 and pinned exactly
+(`gpui-pre =0.3.9`). 0.x semver; every GPUI pin change is a breaking
 release. Details: [Limits](docs/guide/limits.md#versions).
 
 ## Contributing

@@ -1472,7 +1472,8 @@ dependencies = [
 name = "example-panels"
 version = "0.1.0"
 dependencies = [
- "hypr",
+ "serde",
+ "serde_json",
  "waybar_gpui",
 ]
 
@@ -2825,14 +2826,6 @@ dependencies = [
  "tokio",
  "tower-service",
  "tracing",
-]
-
-[[package]]
-name = "hypr"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -6795,7 +6788,8 @@ dependencies = [
  "gpui-kit-assets",
  "gpui-pre",
  "gpui-pre-platform",
- "hypr",
+ "serde",
+ "serde_json",
  "uuid",
 ]
 
