@@ -56,7 +56,6 @@ replace the `{{…}}` placeholders by hand.
 |---|---|
 | `crates/waybar_gpui` | The SDK (and the runtime, private inside it). |
 | `crates/example-panels` | A program built on the SDK the way yours would be; `waybar/` holds the test bars `make dev` runs. |
-| `crates/module` | `waybar-hypr-ws`, an example `custom/*` bar module (active Hyprland workspace). |
 | `crates/hypr` | Minimal Hyprland IPC used by the runtime and the examples; internal. |
 | `template/` | The cargo-generate starter. |
 | `scripts/` | `check-template.sh`, shared by CI and `make check-template`. |

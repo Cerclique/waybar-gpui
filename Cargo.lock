@@ -6787,15 +6787,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "waybar-hypr-ws"
-version = "0.1.0"
-dependencies = [
- "hypr",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "waybar_gpui"
 version = "0.1.0"
 dependencies = [

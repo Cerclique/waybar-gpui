@@ -6,8 +6,8 @@ Only the latest release receives security fixes.
 
 ## Scope
 
-The SDK and its runtime, the starter template, and the programs and bar module
-in this repository. The part most worth a look: every program's daemon listens
+The SDK and its runtime, the starter template, and the programs in this
+repository. The part most worth a look: every program's daemon listens
 on a per-user socket in `$XDG_RUNTIME_DIR/waybar-gpui/` (the system temp
 directory if `XDG_RUNTIME_DIR` is unset) and accepts `toggle`, `close` and
 `quit` from any local process that can connect to it. Anything that lets
