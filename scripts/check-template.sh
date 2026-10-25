@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Checks the starter template: every versioned reference to the SDK (the
 # template's dependency, tagged guide links, the README quickstart) matches the
-# workspace version, the template declares the workspace's rust-version, and
+# workspace version, every GPUI version the docs mention matches the
+# `gpui-pre` pin, the template declares the workspace's rust-version, and
 # both variants (with and without `components`) generate and pass clippy
 # against this checkout. The generated crates.io dependency is rewritten to a
 # path one: the version only exists on crates.io once released.
@@ -24,6 +25,18 @@ if [[ -n "$stale" ]]; then
   exit 1
 fi
 echo "every SDK version reference is v$version"
+
+# Every mention of the GPUI pin in the docs (the README badge and its docs.rs
+# link, the Versions section, the guide, AGENTS.md) matches Cargo.toml's.
+gpui=$(sed -n 's/^gpui *= {.*version = "=\([^"]*\)".*/\1/p' Cargo.toml)
+stale=$(grep -rnoE 'gpui-?-pre[-/ ]*(=|%3D)?[0-9]+\.[0-9]+\.[0-9]+' \
+  README.md AGENTS.md docs --exclude-dir=research | grep -vE "[-/ =D]$gpui\$" || true)
+if [[ -n "$stale" ]]; then
+  echo "mentions of another GPUI version than $gpui (the gpui-pre pin):" >&2
+  echo "$stale" >&2
+  exit 1
+fi
+echo "every GPUI version mention is $gpui"
 
 # The template declares the workspace's MSRV.
 msrv=$(sed -n '/^\[workspace.package\]/,/^\[/s/^rust-version = "\(.*\)"/\1/p' Cargo.toml)
