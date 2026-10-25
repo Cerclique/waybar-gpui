@@ -12,9 +12,10 @@ recorded as ADRs in `docs/adr/`
 | File | What it owns |
 |---|---|
 | `lib.rs` | Public API: `Panel`, `App`, re-exports. |
-| `cli.rs` | argv parsing, usage text, the click client (`toggle`, `close`, `quit`), spawning the daemon with stderr appended to the log. |
+| `cli.rs` | argv parsing, usage text, dispatching each command to `client.rs` or `runtime.rs`. |
+| `client.rs` | The click client: making sure a daemon of *this* program receives `toggle`, `close` or `quit`. Behind `toggle`: comparing the daemon's identity with its own, replacing a daemon of another executable (`quit`, wait for it to go, start ours) and starting one when none runs. The seam is `Executable` (its identity, starting its daemon): `CurrentExe` re-runs `current_exe() daemon <panel> [args…]` detached with stderr appended to the log; tests start fake daemons in a temp directory. |
 | `files.rs` | What a program owns on disk: `ProgramFiles` (socket directory, socket, lock and log paths, resolved once from `XDG_RUNTIME_DIR`, `XDG_STATE_HOME` and `HOME`, the only place reading them), and the daemon taking ownership (`claim`: lock, check, remove a stale socket, bind, claim the log, serve) and giving it up (`Ownership::give_up` removes the socket on `quit`). |
-| `ipc.rs` | Line protocol, `Target` (a panel name and its arguments), daemon identity, serving a bound socket, closing other programs' popovers. |
+| `ipc.rs` | Line protocol, `Target` (a panel name and its arguments), daemon identity (`ExeId`), and its two ends: `Connection` (the client's) and `serve` (the daemon's, on a bound socket); closing other programs' popovers. |
 | `popovers.rs` | The popover rules without GPUI: what a toggle, `close`, `quit` or a dismissal does, and when the process quits. Returns effects; unit-tested. |
 | `runtime.rs` | The GPUI side: `daemon` and `preview`, carrying out `popovers.rs`'s effects, the popover surface, focus, dismissal. |
 | `placement.rs` | Monitor and bar-edge detection, the anchor point and margins. |
@@ -28,13 +29,14 @@ recorded as ADRs in `docs/adr/`
 Every program runs its own runtime. One executable plays two roles, picked by
 argv in `cli.rs`:
 
-- **Click client:** `toggle <panel> [args…]`, `close`, `quit`. Short-lived:
-  connects to the program's socket, sends one command, exits. Panel names are
-  checked against the registered panels before anything is sent; usage errors
-  exit with status 2.
+- **Click client** (`client.rs`): `toggle <panel> [args…]`, `close`, `quit`.
+  Short-lived: connects to the program's socket, sends one command, exits.
+  Panel names are checked against the registered panels in `cli.rs` before
+  anything is sent; usage errors exit with status 2. `close` and `quit` with
+  no daemon succeed and do nothing.
 - **Daemon:** `daemon [<panel> [args…]]`. Binds the socket, runs GPUI with
   `QuitMode::Explicit` so closing the last popover doesn't exit, and stays warm
-  (GPU device and fonts loaded) until `quit` or logout. `toggle` spawns it when
+  (GPU device and fonts loaded) until `quit` or logout. `toggle` starts it when
   no daemon answers (socket missing or refusing the connection) as
   `current_exe() daemon <panel> [args…]`, in its own process group
   (`process_group(0)`) with stdin and stdout null, so a Waybar reload killing
@@ -75,7 +77,7 @@ sequenceDiagram
         D-->>C: exe<TAB>dev<TAB>ino
         alt same file as C's current_exe()
             C->>D: toggle<TAB><panel><TAB>arg…
-        else another binary, or no reply within 1 s
+        else another executable, or no reply within 1 s
             C->>D: quit
             C->>C: wait until nothing answers (max 2 s)
             C->>D: spawn `daemon <panel> [args…]`
@@ -107,8 +109,8 @@ sequenceDiagram
   through an `async_channel`.
 - **Identity and stale-binary replacement:** at startup the daemon records the
   device and inode of `/proc/self/exe`, which keep naming the file it started
-  from even after that file is replaced. `toggle` compares them with
-  `stat(current_exe())`. A rebuild or `cargo install` writes a new inode, and
+  from even after that file is replaced. `toggle` (`client.rs`) compares them
+  with `stat(current_exe())`. A rebuild or `cargo install` writes a new inode, and
   another copy is another file, so on mismatch `toggle` sends `quit`, polls
   until nothing answers (20 ms steps, 2 s limit) and spawns itself. A daemon
   that sends no valid identity within 1 s (one from before the handshake) is

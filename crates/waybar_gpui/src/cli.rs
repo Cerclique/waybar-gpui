@@ -1,19 +1,12 @@
 //! The author's command line, owned entirely by the SDK.
 
-use std::{
-    env,
-    fs::{self, File, OpenOptions},
-    io,
-    os::unix::process::CommandExt,
-    path::Path,
-    process::{self, ExitCode, Stdio},
-    time::Duration,
-};
+use std::{env, io, path::Path, process::ExitCode};
 
 use crate::{
     App,
+    client::{self, CurrentExe},
     files::ProgramFiles,
-    ipc::{self, Command, Decision, ExeId, Target},
+    ipc::Target,
     runtime::{self, Mode},
 };
 
@@ -79,73 +72,12 @@ fn usage(exe: &Path, panels: &[&str]) -> String {
     text
 }
 
-/// How long `toggle` waits for a daemon from another executable to quit.
-const REPLACE_TIMEOUT: Duration = Duration::from_secs(2);
-
-/// Creates the log's directory and opens the log for appending. `toggle`
-/// doesn't truncate it: a second `toggle` racing this one would wipe the log
-/// of the daemon that wins. The winner empties it in [`ProgramFiles::claim`].
-fn open_log(path: &Path) -> io::Result<File> {
-    if let Some(dir) = path.parent() {
-        fs::create_dir_all(dir)?;
-    }
-    OpenOptions::new().create(true).append(true).open(path)
-}
-
-/// Starts `exe args…` detached, stderr into `log` (or discarded).
-fn spawn_detached(exe: &Path, args: &[String], log: Option<File>) -> io::Result<process::Child> {
-    process::Command::new(exe)
-        .args(args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(log.map_or_else(Stdio::null, Stdio::from))
-        // Own process group, so it outlives Waybar reloads killing on-click children.
-        .process_group(0)
-        .spawn()
-}
-
-fn spawn_daemon(files: &ProgramFiles, target: &Target) -> io::Result<()> {
-    let log = files.log().and_then(|path| {
-        open_log(path).map_err(|e| eprintln!("{}: cannot open log {}: {e}", files.id(), path.display())).ok()
-    });
-    let args: Vec<String> = ["daemon"].into_iter().chain(target.words()).map(str::to_owned).collect();
-    spawn_detached(&env::current_exe()?, &args, log).map(drop)
-}
-
-/// Sends the toggle to the running daemon if it runs this very executable;
-/// otherwise replaces it, so a rebuilt or reinstalled program shows its own
-/// panels.
-fn toggle(files: &ProgramFiles, target: Target) -> io::Result<()> {
-    let mut daemon = match ipc::Connection::open(files) {
-        Err(e) if ipc::no_daemon(&e) => return spawn_daemon(files, &target),
-        result => result?,
-    };
-    let own = env::current_exe().and_then(|exe| ExeId::of(&exe)).ok();
-    match Decision::new(daemon.identity(), own) {
-        Decision::Send => daemon.send(&Command::Toggle(target)),
-        Decision::Replace => {
-            eprintln!("{}: replacing the daemon of another executable", files.id());
-            daemon.send(&Command::Quit)?;
-            ipc::wait_gone(files, REPLACE_TIMEOUT)?;
-            spawn_daemon(files, &target)
-        }
-    }
-}
-
-/// `close` and `quit` have nothing to do without a daemon.
-fn send_if_running(files: &ProgramFiles, command: &Command) -> io::Result<()> {
-    match ipc::send(files, command) {
-        Err(e) if ipc::no_daemon(&e) => Ok(()),
-        result => result,
-    }
-}
-
 fn run(app: App, invocation: Invocation, usage_text: String) -> io::Result<()> {
     let files = ProgramFiles::from_env(&app.id);
     match invocation {
-        Invocation::Toggle(target) => toggle(&files, target),
-        Invocation::Close => send_if_running(&files, &Command::Close),
-        Invocation::Quit => send_if_running(&files, &Command::Quit),
+        Invocation::Toggle(target) => client::toggle(&files, target, &CurrentExe),
+        Invocation::Close => client::close(&files),
+        Invocation::Quit => client::quit(&files),
         Invocation::Daemon(initial) => runtime::run(app, files, Mode::Daemon(initial)),
         Invocation::Preview(target) => runtime::run(app, files, Mode::Preview(target)),
         Invocation::Help => {
@@ -220,24 +152,5 @@ mod tests {
         assert!(text.starts_with("usage: /home/me/.cargo/bin/my-panels <command>\n"));
         assert!(text.contains("  workspace    \"on-click\": \"/home/me/.cargo/bin/my-panels toggle workspace\"\n"));
         assert!(text.contains("  clock        \"on-click\": \"/home/me/.cargo/bin/my-panels toggle clock\"\n"));
-    }
-
-    /// The spawn path with a stand-in program: the log directory is created,
-    /// stderr lands in the log, and spawning appends instead of truncating.
-    #[test]
-    fn spawned_stderr_is_appended_to_the_log() {
-        let state = env::temp_dir().join(format!("waybar-gpui-log-test-{}", process::id()));
-        let files = ProgramFiles::under(&state, "test");
-        let path = files.log().unwrap();
-        let spawn_and_wait = |message: &str| {
-            let args = ["-c".to_owned(), format!("echo {message} >&2; echo stdout")];
-            let status = spawn_detached(Path::new("/bin/sh"), &args, Some(open_log(path).unwrap())).unwrap().wait();
-            assert!(status.unwrap().success());
-        };
-        spawn_and_wait("first run");
-        assert_eq!(fs::read_to_string(path).unwrap(), "first run\n");
-        spawn_and_wait("second");
-        assert_eq!(fs::read_to_string(path).unwrap(), "first run\nsecond\n");
-        fs::remove_dir_all(&state).unwrap();
     }
 }

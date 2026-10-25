@@ -173,7 +173,7 @@ mod tests {
     };
 
     use super::*;
-    use crate::ipc::{Connection, Target, no_daemon};
+    use crate::ipc::{Connection, Target};
 
     /// A fresh directory standing in for the runtime and state directories.
     struct Root(PathBuf);
@@ -232,7 +232,7 @@ mod tests {
         client.send(&Command::Toggle(clock.clone())).unwrap();
         assert_eq!(rx.recv_blocking(), Ok(Command::Toggle(clock)));
 
-        ipc::send(&files, &Command::Close).unwrap();
+        Connection::open(&files).unwrap().send(&Command::Close).unwrap();
         assert_eq!(rx.recv_blocking(), Ok(Command::Close));
         ownership.give_up();
     }
@@ -278,7 +278,7 @@ mod tests {
         let files = ProgramFiles::under(&root.0, "stale");
         fs::create_dir_all(files.dir()).unwrap();
         drop(UnixListener::bind(files.socket()).unwrap());
-        assert!(Connection::open(&files).is_err_and(|e| no_daemon(&e)));
+        assert!(Connection::open(&files).is_err_and(|e| e.kind() == io::ErrorKind::ConnectionRefused));
 
         let ownership = files.claim(elsewhere(&root).as_fd(), async_channel::unbounded().0).unwrap();
         assert!(Connection::open(&files).is_ok());
@@ -293,7 +293,7 @@ mod tests {
         assert!(files.socket().exists());
         ownership.give_up();
         assert!(!files.socket().exists());
-        assert!(Connection::open(&files).is_err_and(|e| no_daemon(&e)));
+        assert!(Connection::open(&files).is_err_and(|e| e.kind() == io::ErrorKind::NotFound));
         // The next daemon claims without a stale file to remove.
         files.claim(elsewhere(&root).as_fd(), async_channel::unbounded().0).unwrap().give_up();
     }
