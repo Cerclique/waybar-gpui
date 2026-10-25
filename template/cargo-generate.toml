@@ -1,0 +1,13 @@
+[template]
+cargo_generate_version = ">=0.23"
+# Files of this repository's template folder that aren't part of a new project.
+exclude = ["pre-script.rhai"]
+
+[placeholders.components]
+type = "bool"
+prompt = "Use gpui-component widgets?"
+default = false
+
+[hooks]
+# Asks for the program ID, defaulting to the project name.
+pre = ["pre-script.rhai"]

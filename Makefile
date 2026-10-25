@@ -1,7 +1,7 @@
 PREFIX ?= $(HOME)/.local
 BINS := waybar-hypr-ws example-panels
 
-.PHONY: build test lint dev install reload uninstall
+.PHONY: build test lint check-template dev install reload uninstall
 
 build:
 	cargo build --release
@@ -14,6 +14,10 @@ lint:
 	cargo clippy --all-targets -- -D warnings
 	cargo clippy --all-targets --all-features -- -D warnings
 	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
+
+# The starter template, as CI checks it. Needs cargo-generate.
+check-template:
+	./scripts/check-template.sh
 
 dev:
 	./scripts/dev.sh
