@@ -8,7 +8,7 @@
 //! Clients that don't care who answers (`close`, `quit`, other programs closing
 //! this one's popover) write their command without reading the identity.
 //! `toggle` reads it first and, when it isn't its own executable's, writes `quit`
-//! instead (see [`Decision`]).
+//! instead (see [`crate::client`]).
 //!
 //! Where the sockets live, and binding one, belong to [`crate::files`].
 
@@ -97,6 +97,11 @@ pub struct ExeId {
 }
 
 impl ExeId {
+    #[cfg(test)]
+    pub const fn new(dev: u64, ino: u64) -> Self {
+        Self { dev, ino }
+    }
+
     /// The identity of the file at `path`, symlinks followed.
     pub fn of(path: &Path) -> io::Result<Self> {
         let meta = fs::metadata(path)?;
@@ -122,33 +127,11 @@ impl ExeId {
     }
 }
 
-/// What `toggle` does with the daemon it reached.
-#[derive(Debug, PartialEq, Eq)]
-pub enum Decision {
-    /// Same executable: send it the command.
-    Send,
-    /// Another executable, or one too old to say: `quit` it and spawn ourselves.
-    Replace,
-}
-
-impl Decision {
-    /// `daemon` is the identity the daemon replied with, `own` the file at the
-    /// client's `current_exe()`. Without our own identity there is nothing to
-    /// compare, so the daemon stays.
-    pub fn new(daemon: Option<ExeId>, own: Option<ExeId>) -> Self {
-        match (daemon, own) {
-            (_, None) => Self::Send,
-            (Some(daemon), Some(own)) if daemon == own => Self::Send,
-            _ => Self::Replace,
-        }
-    }
-}
-
 /// A client's connection to a running daemon.
 pub struct Connection(UnixStream);
 
 impl Connection {
-    /// Fails as [`no_daemon`] recognises when nothing listens.
+    /// Fails with `NotFound` or `ConnectionRefused` when nothing listens.
     pub fn open(files: &ProgramFiles) -> io::Result<Self> {
         UnixStream::connect(files.socket()).map(Self)
     }
@@ -165,29 +148,6 @@ impl Connection {
     pub fn send(mut self, command: &Command) -> io::Result<()> {
         self.0.write_all(command.to_line().as_bytes())
     }
-}
-
-pub fn send(files: &ProgramFiles, command: &Command) -> io::Result<()> {
-    Connection::open(files)?.send(command)
-}
-
-/// A connect error meaning no daemon listens: nothing is open and nothing runs.
-pub fn no_daemon(e: &io::Error) -> bool {
-    matches!(e.kind(), io::ErrorKind::NotFound | io::ErrorKind::ConnectionRefused)
-}
-
-/// Polls until no daemon answers on the program's socket, for at most `timeout`.
-pub fn wait_gone(files: &ProgramFiles, timeout: Duration) -> io::Result<()> {
-    const STEP: Duration = Duration::from_millis(20);
-    let mut waited = Duration::ZERO;
-    while UnixStream::connect(files.socket()).is_ok() {
-        if waited >= timeout {
-            return Err(io::Error::new(io::ErrorKind::TimedOut, "the old daemon did not quit"));
-        }
-        thread::sleep(STEP);
-        waited += STEP;
-    }
-    Ok(())
 }
 
 /// Best effort: asks every other program's runtime to close its popover, and
@@ -291,18 +251,6 @@ mod tests {
         for line in ["", "\n", "exe\t1\n", "exe\t1\t2\t3\n", "exe\t1\tx\n", "dev\t1\t2\n", "toggle\tclock\n"] {
             assert_eq!(ExeId::parse(line), None, "{line:?}");
         }
-    }
-
-    #[test]
-    fn replaces_only_a_different_or_silent_daemon() {
-        let own = Some(ExeId { dev: 1, ino: 10 });
-        let rebuilt = Some(ExeId { dev: 1, ino: 11 });
-        let elsewhere = Some(ExeId { dev: 2, ino: 10 });
-        assert_eq!(Decision::new(own, own), Decision::Send);
-        assert_eq!(Decision::new(rebuilt, own), Decision::Replace);
-        assert_eq!(Decision::new(elsewhere, own), Decision::Replace);
-        assert_eq!(Decision::new(None, own), Decision::Replace);
-        assert_eq!(Decision::new(own, None), Decision::Send);
     }
 
     #[test]
