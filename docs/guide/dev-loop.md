@@ -53,8 +53,8 @@ tail -f ~/.local/state/waybar-gpui/my-panels.log
 ```
 
 Everything written to stderr lands there: the runtime's lines
-(`my-panels: opened ["hello"] on DP-1 (Top bar)`,
-`my-panels: closed ["hello"] (escape)`), your `eprintln!`, any logger you set
+(`my-panels: opened hello on DP-1 (Top bar)`,
+`my-panels: closed hello (escape)`), your `eprintln!`, any logger you set
 up (`env_logger`, `tracing-subscriber`), and panic messages. `preview`, and
 `daemon` run by hand, log to the terminal instead. The SDK has no logging
 dependency; use whatever you like.
