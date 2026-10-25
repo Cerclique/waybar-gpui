@@ -44,8 +44,14 @@ impl Global for OpenPopover {}
 /// Closes this program's popover once the current update finishes. Call it
 /// from the panel's own event handlers.
 pub fn close(cx: &mut App) {
-    cx.defer(|cx| {
-        close_now("panel", cx);
+    defer_close("panel", cx);
+}
+
+/// Closes the popover after the current event, so nothing removes the window
+/// during its own dispatch.
+fn defer_close(reason: &'static str, cx: &mut App) {
+    cx.defer(move |cx| {
+        close_now(reason, cx);
     });
 }
 
@@ -175,7 +181,7 @@ fn open(target: Vec<String>, cx: &mut App) -> Result<(), Box<dyn Error>> {
         // client-side decorations), which grows the surface by 20 px per side
         // and paints a shadow over the whole output. Menus and popovers work
         // without it; dialogs and notifications don't.
-        cx.new(|cx| Overlay::new(content, placement.clone(), window, cx))
+        cx.new(|cx| Popover::new(content, placement.clone(), window, cx))
     })?;
 
     cx.global_mut::<OpenPopover>().0 = Some((target.clone(), handle.into()));
@@ -183,13 +189,15 @@ fn open(target: Vec<String>, cx: &mut App) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-struct Overlay {
+/// The popover's root view: the full-monitor backdrop, with the panel's card
+/// placed inside it.
+struct Popover {
     content: AnyView,
     placement: Placement,
     focus: FocusHandle,
 }
 
-impl Overlay {
+impl Popover {
     fn new(content: AnyView, placement: Placement, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let focus = cx.focus_handle();
         // The panel may have focused one of its own elements in `new`; keep
@@ -201,7 +209,7 @@ impl Overlay {
     }
 }
 
-impl Render for Overlay {
+impl Render for Popover {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         let p = &self.placement;
         let [left, top, right, bottom] = p.margins;
@@ -225,9 +233,7 @@ impl Render for Overlay {
                 let inside_surface =
                     event.position.x >= px(0.) && event.position.y >= px(0.) && event.position.x < px(w) && event.position.y < px(h);
                 if !inside_surface {
-                    cx.defer(|cx| {
-                        close_now("click on another monitor", cx);
-                    })
+                    defer_close("click on another monitor", cx);
                 }
             })
             .child(self.content.clone());
@@ -236,22 +242,12 @@ impl Render for Overlay {
             .size_full()
             // Only clicks nothing else handles reach the backdrop: the card
             // and widget overlays (menus that overflow the card) occlude it.
-            .on_mouse_down(gpui::MouseButton::Left, |_, _, cx| {
-                cx.defer(|cx| {
-                    close_now("click outside", cx);
-                })
-            })
-            .on_mouse_down(gpui::MouseButton::Right, |_, _, cx| {
-                cx.defer(|cx| {
-                    close_now("click outside", cx);
-                })
-            })
+            .on_mouse_down(gpui::MouseButton::Left, |_, _, cx| defer_close("click outside", cx))
+            .on_mouse_down(gpui::MouseButton::Right, |_, _, cx| defer_close("click outside", cx))
             .track_focus(&self.focus)
             .on_key_down(|event, _, cx| {
                 if event.keystroke.key == "escape" {
-                    cx.defer(|cx| {
-                        close_now("escape", cx);
-                    });
+                    defer_close("escape", cx);
                 }
             })
             .child(

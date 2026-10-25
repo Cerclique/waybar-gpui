@@ -28,8 +28,9 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --all-targets
-      # Also runs the doctests.
+      # Also runs the doctests, with and without the `components` feature.
       - run: cargo test
+      - run: cargo test --all-features
       # Both sides of the `components` feature.
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo clippy --all-targets --all-features -- -D warnings

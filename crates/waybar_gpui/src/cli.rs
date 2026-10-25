@@ -80,7 +80,7 @@ fn usage(exe: &Path, panels: &[&str]) -> String {
     text
 }
 
-/// How long `toggle` waits for a daemon from another binary to quit.
+/// How long `toggle` waits for a daemon from another executable to quit.
 const REPLACE_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// Where a spawned daemon's stderr goes: `$XDG_STATE_HOME/waybar-gpui/<id>.log`,
@@ -121,7 +121,7 @@ fn spawn_daemon(id: &str, target: &[String]) -> io::Result<()> {
     spawn_detached(&env::current_exe()?, &args, log).map(drop)
 }
 
-/// Sends the toggle to the running daemon if it runs this very binary;
+/// Sends the toggle to the running daemon if it runs this very executable;
 /// otherwise replaces it, so a rebuilt or reinstalled program shows its own
 /// panels.
 fn toggle(id: &str, target: Vec<String>) -> io::Result<()> {
@@ -133,7 +133,7 @@ fn toggle(id: &str, target: Vec<String>) -> io::Result<()> {
     match Decision::new(daemon.identity(), own) {
         Decision::Send => daemon.send(&Command::Toggle(target)),
         Decision::Replace => {
-            eprintln!("{id}: replacing the daemon of another binary");
+            eprintln!("{id}: replacing the daemon of another executable");
             daemon.send(&Command::Quit)?;
             ipc::wait_gone(id, REPLACE_TIMEOUT)?;
             spawn_daemon(id, &target)

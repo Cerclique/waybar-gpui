@@ -38,4 +38,4 @@ people installing this program:
 
 | Panel | on-click | Arguments |
 |---|---|---|
-| `hello` | `{{project-name}} toggle hello` | none |
+| `hello` | `~/.cargo/bin/{{project-name}} toggle hello` | none |
