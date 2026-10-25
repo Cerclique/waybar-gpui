@@ -66,7 +66,7 @@ scope:
 use waybar_gpui::gpui;
 ```
 
-[`workspace.rs`](../../crates/example-panels/src/workspace.rs) in the example
+[`workspace.rs`](../../examples/example-panels/src/workspace.rs) in the example
 panels shows a `#[derive(IntoElement)]` row.
 
 ## Size
@@ -104,4 +104,4 @@ the other.
 
 - Try it without Waybar: [Dev loop](dev-loop.md).
 - Patterns, each shown in one runnable example:
-  [`crates/example-panels`](../../crates/example-panels/src/main.rs).
+  [`examples/example-panels`](../../examples/example-panels/src/main.rs).

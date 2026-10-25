@@ -21,7 +21,7 @@ card(cx)
 ```
 
 Full example with switches and a dropdown:
-[`controls.rs`](../../crates/example-panels/src/controls.rs).
+[`controls.rs`](../../examples/example-panels/src/controls.rs).
 
 ## What the runtime does for you
 

@@ -30,8 +30,8 @@ check-template:
 dev:
 	cargo build --features example-panels/components
 	PATH="$(CURDIR)/target/debug:$$PATH" waybar \
-		-c crates/example-panels/waybar/config.jsonc \
-		-s crates/example-panels/waybar/style.css -l debug $(ARGS)
+		-c examples/example-panels/waybar/config.jsonc \
+		-s examples/example-panels/waybar/style.css -l debug $(ARGS)
 
 install: build
 	install -Dm755 $(addprefix target/release/,$(BINS)) -t $(PREFIX)/bin

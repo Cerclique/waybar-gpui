@@ -17,7 +17,7 @@ Crates: `waybar_gpui` (SDK + runtime, with its private Hyprland IPC in
 - Build/test: `cargo build`, `cargo test`, `make lint` (clippy without and with
   `--all-features`, plus `cargo doc` with `-D warnings`).
 - Try it: `make dev` builds with the `components` feature and runs a second
-  Waybar from `crates/example-panels/waybar/` wired to `example-panels`.
+  Waybar from `examples/example-panels/waybar/` wired to `example-panels`.
 - GPUI is `gpui-pre =0.3.9` and the API is pre-1.0: check the source in
   `~/.cargo/registry/src/*/gpui-pre-0.3.9/` before using an API; don't bump the
   pin casually.

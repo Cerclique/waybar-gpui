@@ -13,7 +13,7 @@ close belongs to the daemon, in a GPUI `Global`.
 Store the `Task` in a field. Dropping the panel drops the task, which stops it;
 there's nothing to clean up.
 
-**From a timer**, as in [`clock.rs`](../../crates/example-panels/src/clock.rs):
+**From a timer**, as in [`clock.rs`](../../examples/example-panels/src/clock.rs):
 
 ```rust
 pub struct ClockPanel {
@@ -30,10 +30,10 @@ let _tick = cx.spawn(async move |this, cx| loop {
 ```
 
 **From a blocking source** (a socket, a pipe, a D-Bus call), as in
-[`workspace.rs`](../../crates/example-panels/src/workspace.rs), which follows
+[`workspace.rs`](../../examples/example-panels/src/workspace.rs), which follows
 Hyprland's event socket: block on a background thread, update on the
 foreground one. (`hypr` is the example's own small Hyprland client,
-[`hypr.rs`](../../crates/example-panels/src/hypr.rs); the SDK doesn't provide
+[`hypr.rs`](../../examples/example-panels/src/hypr.rs); the SDK doesn't provide
 one, so bring your own or a crate.)
 
 ```rust
@@ -77,6 +77,6 @@ let opens = {
 };
 ```
 
-[`clock.rs`](../../crates/example-panels/src/clock.rs) counts its opens this
+[`clock.rs`](../../examples/example-panels/src/clock.rs) counts its opens this
 way. For anything that must survive the daemon too (settings, history), write
 it to a file yourself.

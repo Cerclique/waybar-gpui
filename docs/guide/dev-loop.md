@@ -67,7 +67,7 @@ else to do.
 
 ## Example panels
 
-This repository's [`crates/example-panels`](../../crates/example-panels/src/main.rs)
+This repository's [`examples/example-panels`](../../examples/example-panels/src/main.rs)
 is a program built the way yours is, with one panel per pattern. Clone the
 repo and run `make dev` to get a second Waybar wired to them, or
 `cargo run -p example-panels -- preview clock Paris 1`.
