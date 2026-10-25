@@ -12,16 +12,16 @@ use gpui::{
 use uuid::Uuid;
 
 use crate::{
-    Build,
     files::{Ownership, ProgramFiles},
     ipc::{self, Command, Target},
+    panels::Panels,
     placement::{self, Placement},
     popovers::{Effect, Popovers},
 };
 
 struct Registry {
     id: String,
-    panels: Vec<(&'static str, Build)>,
+    panels: Panels,
     /// Running as `preview`: it also closes its own daemon's popover.
     preview: bool,
     /// Set when a preview can't open its panel, for the exit status.
@@ -139,12 +139,7 @@ fn open(target: &Target, cx: &mut App) -> Result<AnyWindowHandle, Box<dyn Error>
     let registry = cx.global::<Registry>();
     let id = registry.id.clone();
     let preview = registry.preview;
-    let build = registry
-        .panels
-        .iter()
-        .find(|(name, _)| *name == target.panel)
-        .map(|(_, build)| *build)
-        .ok_or_else(|| format!("unknown panel {:?}", target.panel))?;
+    let build = registry.panels.get(&target.panel).ok_or_else(|| format!("unknown panel {:?}", target.panel))?;
 
     // A preview also closes its own program's daemon popover: one popover at a time.
     ipc::close_others(cx.global::<ProgramFiles>(), preview);
