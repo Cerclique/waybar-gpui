@@ -35,7 +35,7 @@ it), `hypr` (internal IPC).
 
 ### Issue tracker
 
-Issues are tracked in GitHub Issues (Cerclique/waybar_gpui_plugin_template) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues (Cerclique/waybar-gpui) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

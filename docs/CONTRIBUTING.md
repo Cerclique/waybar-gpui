@@ -190,4 +190,4 @@ with the date. Its gate and order are in [spec §13](spec.md#13-release-v010).
 By contributing, you agree that your contributions are licensed under the
 [MIT License](../LICENSE).
 
-[new-issue]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/new/choose
+[new-issue]: https://github.com/Cerclique/waybar-gpui/issues/new/choose

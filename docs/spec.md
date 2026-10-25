@@ -336,20 +336,20 @@ make the repo public.
 - Exact `card()` styling values and any `Theme` fields beyond the prototype's.
 - Wording of the usage text and log lines.
 
-[map]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/7
-[proto]: https://github.com/Cerclique/waybar_gpui_plugin_template/tree/prototype/panel-api
-[t8]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/8
-[t9]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/9
-[t10]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/10
-[t11]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/11
-[t12]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/12
-[t13]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/13
-[t14]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/14
-[t15]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/15
-[t16]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/16
-[t17]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/17
-[t18]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/18
-[t19]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/19
-[t20]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/20
-[t21]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/21
-[t22]: https://github.com/Cerclique/waybar_gpui_plugin_template/issues/22
+[map]: https://github.com/Cerclique/waybar-gpui/issues/7
+[proto]: https://github.com/Cerclique/waybar-gpui/tree/prototype/panel-api
+[t8]: https://github.com/Cerclique/waybar-gpui/issues/8
+[t9]: https://github.com/Cerclique/waybar-gpui/issues/9
+[t10]: https://github.com/Cerclique/waybar-gpui/issues/10
+[t11]: https://github.com/Cerclique/waybar-gpui/issues/11
+[t12]: https://github.com/Cerclique/waybar-gpui/issues/12
+[t13]: https://github.com/Cerclique/waybar-gpui/issues/13
+[t14]: https://github.com/Cerclique/waybar-gpui/issues/14
+[t15]: https://github.com/Cerclique/waybar-gpui/issues/15
+[t16]: https://github.com/Cerclique/waybar-gpui/issues/16
+[t17]: https://github.com/Cerclique/waybar-gpui/issues/17
+[t18]: https://github.com/Cerclique/waybar-gpui/issues/18
+[t19]: https://github.com/Cerclique/waybar-gpui/issues/19
+[t20]: https://github.com/Cerclique/waybar-gpui/issues/20
+[t21]: https://github.com/Cerclique/waybar-gpui/issues/21
+[t22]: https://github.com/Cerclique/waybar-gpui/issues/22

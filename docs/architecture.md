@@ -295,7 +295,7 @@ real clicks):
 ## Rejected designs
 
 Each was tried or considered; details in the tickets of the
-[map](https://github.com/Cerclique/waybar_gpui_plugin_template/issues/7).
+[map](https://github.com/Cerclique/waybar-gpui/issues/7).
 
 - **`xdg_popup` attached to Waybar's icon:** a Wayland popup needs a parent
   surface owned by the same client, so another process can't attach one to
@@ -333,8 +333,8 @@ Each was tried or considered; details in the tickets of the
   [`docs/research/waybar-custom-modules.md`](research/waybar-custom-modules.md).
 - **Wrapping popovers in gpui-component `Root`:** see above and ADR 0003.
 - **Catching panics in the daemon, idle exit, a logging crate, journald:**
-  rejected in [#19](https://github.com/Cerclique/waybar_gpui_plugin_template/issues/19)
-  and [#16](https://github.com/Cerclique/waybar_gpui_plugin_template/issues/16);
+  rejected in [#19](https://github.com/Cerclique/waybar-gpui/issues/19)
+  and [#16](https://github.com/Cerclique/waybar-gpui/issues/16);
   the daemon is cheap to respawn and stderr is the log.
 
 ## Verified behaviour
@@ -370,4 +370,4 @@ reader (Hyprland's socket) keeps its thread until the next event after close.
 
 [hypr-research]: research/hyprland-two-exclusive-layers.md
 [component-research]: research/gpui-component-compat.md
-[proto]: https://github.com/Cerclique/waybar_gpui_plugin_template/tree/prototype/panel-api
+[proto]: https://github.com/Cerclique/waybar-gpui/tree/prototype/panel-api

@@ -1,6 +1,6 @@
 # gpui-component compatibility with gpui-pre 0.3.9
 
-Research date: 2026-10-24. Ticket: [#13](https://github.com/Cerclique/waybar_gpui_plugin_template/issues/13), part of map [#7](https://github.com/Cerclique/waybar_gpui_plugin_template/issues/7). Local toolchain: rustc 1.97.1. The repo pins `gpui = { package = "gpui-pre", version = "=0.3.9" }` and `gpui_platform = { package = "gpui-pre-platform", version = "=0.3.9", features = ["wayland"] }`. That snapshot is `zed@93d7456`; see [gpui-popup-windows.md](gpui-popup-windows.md).
+Research date: 2026-10-24. Ticket: [#13](https://github.com/Cerclique/waybar-gpui/issues/13), part of map [#7](https://github.com/Cerclique/waybar-gpui/issues/7). Local toolchain: rustc 1.97.1. The repo pins `gpui = { package = "gpui-pre", version = "=0.3.9" }` and `gpui_platform = { package = "gpui-pre-platform", version = "=0.3.9", features = ["wayland"] }`. That snapshot is `zed@93d7456`; see [gpui-popup-windows.md](gpui-popup-windows.md).
 
 ## TL;DR
 
