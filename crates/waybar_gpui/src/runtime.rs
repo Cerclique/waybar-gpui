@@ -20,9 +20,10 @@ use crate::{
 struct Registry {
     id: String,
     panels: Vec<(&'static str, Build)>,
-    /// Set in `preview`: closing the popover quits, and a failed open is
-    /// recorded here for the exit status.
-    preview_failed: Option<Rc<Cell<bool>>>,
+    /// Running as `preview`: closing the popover quits.
+    preview: bool,
+    /// Set when a preview can't open its panel, for the exit status.
+    open_failed: Rc<Cell<bool>>,
 }
 
 /// What the process runs as.
@@ -57,18 +58,19 @@ fn defer_close(reason: &'static str, cx: &mut App) {
 
 pub fn run(app: crate::App, mode: Mode) -> io::Result<()> {
     let (tx, rx) = async_channel::unbounded();
-    let (initial, preview_failed) = match mode {
+    let (initial, preview) = match mode {
         Mode::Daemon(initial) => {
             ipc::listen(&app.id, tx.clone())?;
-            (initial, None)
+            (initial, false)
         }
-        Mode::Preview(target) => (Some(target), Some(Rc::new(Cell::new(false)))),
+        Mode::Preview(target) => (Some(target), true),
     };
     if let Some(target) = initial {
         let _ = tx.try_send(Command::Toggle(target));
     }
     let crate::App { id, theme, panels } = app;
-    let failed = preview_failed.clone();
+    let open_failed = Rc::new(Cell::new(false));
+    let failed = open_failed.clone();
 
     let application = gpui_platform::application().with_quit_mode(QuitMode::Explicit);
     #[cfg(feature = "components")]
@@ -80,7 +82,7 @@ pub fn run(app: crate::App, mode: Mode) -> io::Result<()> {
             crate::theme::apply_to_components(&theme, cx);
         }
         cx.set_global(theme);
-        cx.set_global(Registry { id, panels, preview_failed });
+        cx.set_global(Registry { id, panels, preview, open_failed });
         cx.set_global(OpenPopover::default());
         cx.spawn(async move |cx| {
             while let Ok(command) = rx.recv().await {
@@ -89,10 +91,10 @@ pub fn run(app: crate::App, mode: Mode) -> io::Result<()> {
         })
         .detach();
     });
-    match failed {
-        Some(failed) if failed.get() => Err(io::Error::other("preview failed")),
-        _ => Ok(()),
+    if failed.get() {
+        return Err(io::Error::other("preview failed"));
     }
+    Ok(())
 }
 
 fn handle(command: Command, cx: &mut App) {
@@ -105,8 +107,8 @@ fn handle(command: Command, cx: &mut App) {
             if let Err(e) = open(target.clone(), cx) {
                 let registry = cx.global::<Registry>();
                 eprintln!("{}: cannot open {target}: {e}", registry.id);
-                if let Some(failed) = &registry.preview_failed {
-                    failed.set(true);
+                if registry.preview {
+                    registry.open_failed.set(true);
                     cx.quit();
                 }
             }
@@ -127,7 +129,7 @@ fn close_now(reason: &str, cx: &mut App) -> Option<Target> {
     let _ = handle.update(cx, |_, window, _| window.remove_window());
     let registry = cx.global::<Registry>();
     eprintln!("{}: closed {target} ({reason})", registry.id);
-    if registry.preview_failed.is_some() {
+    if registry.preview {
         cx.quit();
     }
     Some(target)
@@ -136,7 +138,7 @@ fn close_now(reason: &str, cx: &mut App) -> Option<Target> {
 fn open(target: Target, cx: &mut App) -> Result<(), Box<dyn Error>> {
     let registry = cx.global::<Registry>();
     let id = registry.id.clone();
-    let preview = registry.preview_failed.is_some();
+    let preview = registry.preview;
     let build = registry
         .panels
         .iter()
