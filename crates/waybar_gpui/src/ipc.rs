@@ -10,7 +10,8 @@
 //! `toggle` reads it first and, when it isn't its own executable's, writes `quit`
 //! instead (see [`crate::client`]).
 //!
-//! Where the sockets live, and binding one, belong to [`crate::files`].
+//! Where the sockets live, binding one and scanning their directory belong to
+//! [`crate::files`].
 
 use std::{
     fmt, fs,
@@ -23,8 +24,6 @@ use std::{
     thread,
     time::Duration,
 };
-
-use crate::files::ProgramFiles;
 
 /// How long a client waits for the daemon's identity line. A daemon from before
 /// the identity reply never sends one.
@@ -131,9 +130,10 @@ impl ExeId {
 pub struct Connection(UnixStream);
 
 impl Connection {
-    /// Fails with `NotFound` or `ConnectionRefused` when nothing listens.
-    pub fn open(files: &ProgramFiles) -> io::Result<Self> {
-        UnixStream::connect(files.socket()).map(Self)
+    /// Connects to the daemon on `socket`. Fails with `NotFound` or
+    /// `ConnectionRefused` when nothing listens.
+    pub fn open(socket: &Path) -> io::Result<Self> {
+        UnixStream::connect(socket).map(Self)
     }
 
     /// The daemon's identity; `None` if its line is malformed or doesn't
@@ -147,29 +147,6 @@ impl Connection {
 
     pub fn send(mut self, command: &Command) -> io::Result<()> {
         self.0.write_all(command.to_line().as_bytes())
-    }
-}
-
-/// Best effort: asks every other program's runtime to close its popover, and
-/// deletes sockets nobody answers on (left by crashed programs). `include_own`
-/// also asks this program's daemon (used by `preview`, which has no socket).
-pub fn close_others(files: &ProgramFiles, include_own: bool) {
-    let id = files.id();
-    let Ok(entries) = fs::read_dir(files.dir()) else { return };
-    for path in entries.flatten().map(|e| e.path()) {
-        if (path == files.socket() && !include_own) || path.extension().is_none_or(|ext| ext != "sock") {
-            continue;
-        }
-        match UnixStream::connect(&path) {
-            Ok(mut stream) => {
-                let _ = stream.write_all(Command::Close.to_line().as_bytes());
-            }
-            Err(e) if e.kind() == io::ErrorKind::ConnectionRefused => {
-                eprintln!("{id}: removing stale socket {}", path.display());
-                let _ = fs::remove_file(&path);
-            }
-            Err(_) => {}
-        }
     }
 }
 

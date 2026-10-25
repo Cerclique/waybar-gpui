@@ -55,7 +55,7 @@ impl Executable for CurrentExe {
 /// replaces it, so a rebuilt or reinstalled program shows its own panels.
 /// Starts `exe`'s daemon with `target` when none runs.
 pub fn toggle(files: &ProgramFiles, target: Target, exe: &impl Executable) -> io::Result<()> {
-    let mut daemon = match Connection::open(files) {
+    let mut daemon = match Connection::open(files.socket()) {
         Err(e) if no_daemon(&e) => return exe.start_daemon(files, &target),
         result => result?,
     };
@@ -81,7 +81,7 @@ pub fn quit(files: &ProgramFiles) -> io::Result<()> {
 }
 
 fn send_if_running(files: &ProgramFiles, command: &Command) -> io::Result<()> {
-    match Connection::open(files) {
+    match Connection::open(files.socket()) {
         Err(e) if no_daemon(&e) => Ok(()),
         result => result?.send(command),
     }

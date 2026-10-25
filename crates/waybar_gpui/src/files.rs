@@ -8,7 +8,7 @@
 //! | log | `$XDG_STATE_HOME/waybar-gpui/<id>.log`, `$XDG_STATE_HOME` defaulting to `~/.local/state` |
 //!
 //! Every program's socket lives in the same directory so runtimes can close
-//! each other's popover. This module is the only place that reads those
+//! each other's popover ([`ProgramFiles::close_others`]). This module is the only place that reads those
 //! environment variables.
 
 use std::{
@@ -26,7 +26,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::ipc::{self, Command, ExeId};
+use crate::ipc::{self, Command, Connection, ExeId};
 
 /// Everything a program owns on disk, resolved once.
 #[derive(Debug, Clone)]
@@ -69,7 +69,8 @@ impl ProgramFiles {
         &self.id
     }
 
-    /// The directory every program's socket lives in.
+    /// The directory every program's socket lives in; tests create it.
+    #[cfg(test)]
     pub fn dir(&self) -> &Path {
         &self.dir
     }
@@ -108,6 +109,31 @@ impl ProgramFiles {
         }
         ipc::serve(self.id.clone(), listener, ExeId::running()?, tx);
         Ok(Ownership { socket: self.socket.clone() })
+    }
+
+    /// Best effort: writes `close` to every other program's daemon in the
+    /// socket directory, and deletes sockets that refuse the connection (left
+    /// by crashed programs). `include_own` also closes this program's daemon's
+    /// popover (a preview, which has no socket of its own). Only `*.sock` files
+    /// count, and no lock is taken: a daemon caught between `bind` and `listen`
+    /// also refuses, and losing its socket would orphan it.
+    pub fn close_others(&self, include_own: bool) {
+        let Ok(entries) = fs::read_dir(&self.dir) else { return };
+        for path in entries.flatten().map(|e| e.path()) {
+            if (path == self.socket && !include_own) || path.extension().is_none_or(|ext| ext != "sock") {
+                continue;
+            }
+            match Connection::open(&path) {
+                Ok(daemon) => {
+                    let _ = daemon.send(&Command::Close);
+                }
+                Err(e) if e.kind() == io::ErrorKind::ConnectionRefused => {
+                    eprintln!("{}: removing stale socket {}", self.id, path.display());
+                    let _ = fs::remove_file(&path);
+                }
+                Err(_) => {}
+            }
+        }
     }
 
     fn bind_unless_running(&self) -> io::Result<UnixListener> {
@@ -165,7 +191,7 @@ fn truncate_if_same(fd: BorrowedFd, path: &Path) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use std::{
-        io::Write as _,
+        io::{BufRead as _, BufReader, Write as _},
         os::fd::AsFd,
         process,
         sync::Barrier,
@@ -173,7 +199,7 @@ mod tests {
     };
 
     use super::*;
-    use crate::ipc::{Connection, Target};
+    use crate::ipc::Target;
 
     /// A fresh directory standing in for the runtime and state directories.
     struct Root(PathBuf);
@@ -190,6 +216,16 @@ mod tests {
     impl Drop for Root {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// A socket file nobody answers on, as a crashed program leaves it. A
+    /// process another test spawns at that moment holds a copy of the listener
+    /// until it execs, so wait until connecting is refused.
+    fn stale_socket(path: &Path) {
+        drop(UnixListener::bind(path).unwrap());
+        while UnixStream::connect(path).is_ok() {
+            thread::sleep(std::time::Duration::from_millis(1));
         }
     }
 
@@ -226,13 +262,13 @@ mod tests {
         let (tx, rx) = async_channel::unbounded();
         let ownership = files.claim(elsewhere(&root).as_fd(), tx).unwrap();
 
-        let mut client = Connection::open(&files).unwrap();
+        let mut client = Connection::open(files.socket()).unwrap();
         assert_eq!(client.identity(), Some(ExeId::of(&env::current_exe().unwrap()).unwrap()));
         let clock = Target { panel: "clock".into(), args: vec!["Paris".into()] };
         client.send(&Command::Toggle(clock.clone())).unwrap();
         assert_eq!(rx.recv_blocking(), Ok(Command::Toggle(clock)));
 
-        Connection::open(&files).unwrap().send(&Command::Close).unwrap();
+        Connection::open(files.socket()).unwrap().send(&Command::Close).unwrap();
         assert_eq!(rx.recv_blocking(), Ok(Command::Close));
         ownership.give_up();
     }
@@ -248,7 +284,7 @@ mod tests {
         let stderr = elsewhere(&root);
         for _ in 0..20 {
             // Left by a crashed daemon: a file with no listener behind it.
-            drop(UnixListener::bind(files.socket()).unwrap());
+            stale_socket(files.socket());
             let start = Barrier::new(4);
             let results: Vec<_> = thread::scope(|s| {
                 let handles: Vec<_> = (0..4)
@@ -267,7 +303,7 @@ mod tests {
                 assert_eq!(e.kind(), io::ErrorKind::AddrInUse);
                 assert_eq!(e.to_string(), "daemon already running");
             }
-            assert!(Connection::open(&files).is_ok());
+            assert!(Connection::open(files.socket()).is_ok());
             won.into_iter().for_each(|o| o.unwrap().give_up());
         }
     }
@@ -277,11 +313,11 @@ mod tests {
         let root = Root::new("claim-stale");
         let files = ProgramFiles::under(&root.0, "stale");
         fs::create_dir_all(files.dir()).unwrap();
-        drop(UnixListener::bind(files.socket()).unwrap());
-        assert!(Connection::open(&files).is_err_and(|e| e.kind() == io::ErrorKind::ConnectionRefused));
+        stale_socket(files.socket());
+        assert!(Connection::open(files.socket()).is_err_and(|e| e.kind() == io::ErrorKind::ConnectionRefused));
 
         let ownership = files.claim(elsewhere(&root).as_fd(), async_channel::unbounded().0).unwrap();
-        assert!(Connection::open(&files).is_ok());
+        assert!(Connection::open(files.socket()).is_ok());
         ownership.give_up();
     }
 
@@ -293,7 +329,7 @@ mod tests {
         assert!(files.socket().exists());
         ownership.give_up();
         assert!(!files.socket().exists());
-        assert!(Connection::open(&files).is_err_and(|e| e.kind() == io::ErrorKind::NotFound));
+        assert!(Connection::open(files.socket()).is_err_and(|e| e.kind() == io::ErrorKind::NotFound));
         // The next daemon claims without a stale file to remove.
         files.claim(elsewhere(&root).as_fd(), async_channel::unbounded().0).unwrap().give_up();
     }
@@ -329,5 +365,68 @@ mod tests {
         let files = ProgramFiles::under(&root.0, "nolog");
         files.claim(elsewhere(&root).as_fd(), async_channel::unbounded().0).unwrap().give_up();
         assert!(!files.log().unwrap().exists());
+    }
+
+    /// A daemon that never accepts: a connection to it waits in the backlog,
+    /// so [`pending_line`] tells afterwards whether one was made.
+    fn unaccepting_daemon(socket: &Path) -> UnixListener {
+        let listener = UnixListener::bind(socket).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        listener
+    }
+
+    /// What the connection waiting on `listener` wrote; `None` without one.
+    fn pending_line(listener: &UnixListener) -> Option<String> {
+        let (stream, _) = listener.accept().ok()?;
+        stream.set_nonblocking(false).unwrap();
+        let mut line = String::new();
+        BufReader::new(stream).read_line(&mut line).unwrap();
+        Some(line)
+    }
+
+
+    #[test]
+    fn close_others_closes_other_daemons_and_ours_only_when_asked() {
+        let root = Root::new("close-others");
+        let other = ProgramFiles::under(&root.0, "other");
+        let (tx, rx) = async_channel::unbounded();
+        let ownership = other.claim(elsewhere(&root).as_fd(), tx).unwrap();
+        let own = ProgramFiles::under(&root.0, "own");
+        let own_daemon = unaccepting_daemon(own.socket());
+
+        own.close_others(false);
+        assert_eq!(rx.recv_blocking(), Ok(Command::Close));
+        assert_eq!(pending_line(&own_daemon), None);
+
+        // A preview: its own program's daemon closes too.
+        own.close_others(true);
+        assert_eq!(rx.recv_blocking(), Ok(Command::Close));
+        assert_eq!(pending_line(&own_daemon).as_deref(), Some("close\n"));
+        ownership.give_up();
+    }
+
+    #[test]
+    fn close_others_deletes_stale_sockets_and_ignores_other_files() {
+        let root = Root::new("close-stale");
+        let own = ProgramFiles::under(&root.0, "own");
+        fs::create_dir_all(own.dir()).unwrap();
+        let crashed = own.dir().join("crashed.sock");
+        stale_socket(&crashed);
+        stale_socket(own.socket());
+        // Connecting to either would be refused, so only the name spares them.
+        let lock = own.dir().join("crashed.lock");
+        File::create(&lock).unwrap();
+        let renamed = own.dir().join("crashed.sock.old");
+        stale_socket(&renamed);
+
+        own.close_others(false);
+        assert!(!crashed.exists());
+        assert!(own.socket().exists());
+        assert!(lock.exists());
+        assert!(renamed.exists());
+
+        own.close_others(true);
+        assert!(!own.socket().exists());
+        assert!(lock.exists());
     }
 }
