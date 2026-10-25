@@ -4,11 +4,12 @@ For contributors changing the runtime inside `crates/waybar_gpui`. It describes
 what the code does today and why. Terms follow [`GLOSSARY.md`](GLOSSARY.md);
 the decisions behind it come from the tickets of the
 [map](https://github.com/Cerclique/waybar-gpui/issues/7), which keep the
-alternatives rejected and why; the three decisions that are hardest to reverse are
+alternatives rejected and why; the decisions that are hardest to reverse are
 recorded as ADRs in `docs/adr/`
 ([0001](adr/0001-full-monitor-surface-with-drawn-card.md),
 [0002](adr/0002-daemon-per-program.md),
-[0003](adr/0003-no-gpui-component-root.md)).
+[0003](adr/0003-no-gpui-component-root.md),
+[0004](adr/0004-published-on-crates-io.md)).
 
 | File | What it owns |
 |---|---|

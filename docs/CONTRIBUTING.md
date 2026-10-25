@@ -185,6 +185,16 @@ whose changelog names the new versions.
    Pushing the tag runs the `Release` workflow: it creates the GitHub Release
    with the tag's section of `CHANGELOG.md` as notes, and fails if that
    section is missing or undated.
+5. Publish the SDK on crates.io from the tagged commit (once, `cargo login`
+   with a crates.io API token):
+
+   ```sh
+   cargo publish -p waybar_gpui
+   ```
+
+   It can't be undone: a published version can be yanked, never replaced
+   ([ADR 0004](adr/0004-published-on-crates-io.md)). If it fails, fix the
+   cause in a new patch release rather than moving the tag.
 
 v0.1.0 differs: the version is already 0.1.0 and its entry is hand-written,
 so its release pull request only replaces `Unreleased` in the entry's heading
