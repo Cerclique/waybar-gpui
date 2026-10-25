@@ -3,7 +3,7 @@
 What to build when this repo becomes `waybar-gpui`: a Rust **SDK** that lets an
 **author** write **panels** in their own repository, and a **runtime** that opens
 a panel as a **popover** when a Waybar **bar module** is clicked. Terms follow
-[`GLOSSARY.md`](../GLOSSARY.md).
+[`GLOSSARY.md`](GLOSSARY.md).
 
 Every decision here came from a closed ticket of the map
 [Wayfinder: split into runtime + panel SDK][map]. Each section links its sources;

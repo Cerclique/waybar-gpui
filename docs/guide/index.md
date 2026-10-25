@@ -2,7 +2,7 @@
 
 For **authors**: people writing their own panels with the `waybar_gpui` SDK,
 in their own repository. Terms (bar module, panel, popover, card, backdrop,
-program, program ID…) are defined in the [glossary](../../GLOSSARY.md).
+program, program ID…) are defined in the [glossary](../GLOSSARY.md).
 
 New here? Start with the quickstart in the [README](../../README.md), then
 [Writing a panel](writing-a-panel.md).

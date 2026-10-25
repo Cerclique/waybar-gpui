@@ -12,7 +12,7 @@ vulnerability, do **not** open a public issue; follow
 
 ## Before you change anything
 
-- [`GLOSSARY.md`](../GLOSSARY.md): the terms used in code, docs and issues
+- [`GLOSSARY.md`](GLOSSARY.md): the terms used in code, docs and issues
   (a panel is never a "module", an executable is a "program"); please stick to
   them.
 - [`architecture.md`](architecture.md): how the runtime works and why, what
