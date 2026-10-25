@@ -26,7 +26,10 @@ vulnerability, do **not** open a public issue; follow
 
 ## Setup
 
-- Rust 1.97.1, the version CI tests with, with clippy and rustfmt.
+- Rust 1.97.1, the version CI tests with, with clippy and rustfmt. The
+  minimum supported Rust version (MSRV) is the `rust-version` in
+  [`Cargo.toml`](../Cargo.toml), 1.95 (GPUI needs it); don't use language or
+  library features newer than it. CI checks it builds.
 - The system libraries GPUI's Wayland platform links against. On Debian or
   Ubuntu, as CI installs them:
 
@@ -39,6 +42,8 @@ vulnerability, do **not** open a public issue; follow
 - [cargo-generate](https://github.com/cargo-generate/cargo-generate)
   (`cargo install cargo-generate`), for `make check-template`.
 - [prek](https://github.com/j178/prek), for the [Git hooks](#git-hooks).
+- [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)
+  (`cargo install --locked cargo-deny`), for `cargo deny check`.
 
 ## Git hooks
 
@@ -72,11 +77,37 @@ make lint             # cargo fmt --all --check, clippy without and with
 make test             # unit tests and doctests, without and with --all-features
 make check-template   # every versioned SDK reference matches the workspace version;
                       # both template variants generate and pass clippy
+cargo deny check      # advisories, licenses, bans, sources (deny.toml)
 ```
+
+Cargo commands run with `--locked`: commit `Cargo.lock` with any dependency
+change. Lints are set in `[workspace.lints]` of the top-level `Cargo.toml`
+(`unsafe_code` is forbidden) and every crate opts in with
+`[lints] workspace = true`; the SDK also denies missing docs.
 
 CI also checks Markdown links offline with
 [lychee](https://github.com/lycheeverse/lychee):
 `lychee --offline --exclude-path target './**/*.md'`.
+
+## CI
+
+The workflows live in [`.github/workflows/`](../.github/workflows/):
+
+| Workflow | Runs on | What it does |
+| --- | --- | --- |
+| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on Rust 1.97.1, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`; `template`: `make check-template`; `links`: the lychee link check |
+| `pr-title.yml` | PRs (opened, edited, pushed to) | `conventional`: the PR title is a conventional commit |
+| `release.yml` | `v*` tag push | Creates the GitHub Release from the tag's `CHANGELOG.md` section |
+
+A new push to a PR cancels its running `ci.yml` run. Jobs time out after 45
+minutes (build jobs, which build all of GPUI on a cold cache) or less.
+Actions are pinned to a commit, with the release in a comment.
+
+[Dependabot](../.github/dependabot.yml) opens one grouped PR a week for Cargo
+dependencies (`build(deps): …`, listed in the changelog) and one for actions
+(`ci(deps): …`). It leaves the exactly pinned GPUI crates (`gpui-pre`,
+`gpui-pre-platform`, `gpui-component`, `gpui-kit-assets`) and the starter
+template alone: those move by hand, as a breaking release.
 
 ## Trying it on screen
 

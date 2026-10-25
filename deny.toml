@@ -1,0 +1,54 @@
+# cargo-deny configuration, checked by the `deny` job of ci.yml.
+# https://embarkstudios.github.io/cargo-deny/checks/cfg.html
+#
+# Run locally: cargo deny check
+
+[graph]
+# Both sides of the `components` feature.
+all-features = true
+
+[advisories]
+# Vulnerabilities fail for any crate in the graph. Unmaintained-crate notices
+# fail only for our direct dependencies: the ones flagged today (instant,
+# paste, rustls-pemfile, rustybuzz, ttf-parser, zbus_names, zvariant,
+# zvariant_derive) all come in through gpui-pre and gpui-component, which are
+# pinned exactly and have no release without them.
+unmaintained = "workspace"
+ignore = []
+
+[licenses]
+# Every license the graph needs, all permissive. Less common ones, and who
+# brings them in:
+# - MPL-2.0 (file-level copyleft; fine to link unmodified): option-ext (via
+#   dirs), cbindgen (build tool), dwrote (Windows only).
+# - Zlib: foldhash, slotmap and others; BSL-1.0 isn't needed (ryu is also
+#   Apache-2.0).
+# - ISC: ring (`Apache-2.0 AND ISC`), rustls-webpki, untrusted, inotify,
+#   libloading.
+# - BSD-2-Clause, BSD-3-Clause: arrayref, tiny-skia, exr, subtle, sha1_smol,
+#   encoding_rs (`(Apache-2.0 OR MIT) AND BSD-3-Clause`)…
+# - 0BSD: enum-iterator; CC0-1.0: notify, hexf-parse.
+# - Unicode-3.0: the ICU4X crates (URL handling).
+allow = [
+    "0BSD",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "CC0-1.0",
+    "ISC",
+    "MIT",
+    "MPL-2.0",
+    "Unicode-3.0",
+    "Zlib",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# The workspace crates depend on each other by path (none is published).
+allow-wildcard-paths = true
+
+[sources]
+# crates.io only: GPUI's snapshot is a crates.io package, no git sources.
+unknown-registry = "deny"
+unknown-git = "deny"

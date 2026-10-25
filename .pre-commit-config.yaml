@@ -39,13 +39,13 @@ repos:
       # Both sides of the `components` feature.
       - id: cargo-clippy
         name: cargo clippy
-        entry: cargo clippy --all-targets -- -D warnings
+        entry: cargo clippy --locked --all-targets -- -D warnings
         language: system
         types_or: [rust, toml]
         pass_filenames: false
       - id: cargo-clippy-all-features
         name: cargo clippy --all-features
-        entry: cargo clippy --all-targets --all-features -- -D warnings
+        entry: cargo clippy --locked --all-targets --all-features -- -D warnings
         language: system
         types_or: [rust, toml]
         pass_filenames: false
