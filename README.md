@@ -19,7 +19,7 @@ Hyprland and it opens as a popover next to the bar.
 
 ![A popover opened from a bar module at the top of the screen](docs/guide/img/social-preview.png)
 
-`waybar_gpui` is an SDK: your own program depends on it, registers its panels
+The `waybar_gpui` crate is an SDK: your own program depends on it, registers its panels
 and hands over the command line. The SDK's runtime does the rest: the
 background daemon, placing the popover next to the clicked bar module, closing
 it on Esc or a click outside, and keeping one popover open at a time across
