@@ -13,7 +13,7 @@ every program that uses it.
 
 ## Quickstart
 
-Requirements: Hyprland (tested with 0.56), Waybar, Rust 1.97+, a Vulkan driver,
+Requirements: Hyprland (tested with 0.56), Waybar, Rust 1.95+, a Vulkan driver,
 and [cargo-generate](https://github.com/cargo-generate/cargo-generate)
 (`cargo install cargo-generate`).
 

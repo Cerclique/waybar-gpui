@@ -10,10 +10,12 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Creates the GitHub Release.
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The notes are the tag's section of CHANGELOG.md, as the release PR wrote
       # it (git-cliff after 0.1.0, by hand for 0.1.0), without its heading: the
       # release title already names the version. Re-rendering with

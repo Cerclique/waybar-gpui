@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Checks the starter template: every versioned reference to the SDK (the
 # template's dependency, tagged guide links, the README quickstart) matches the
-# workspace version, and both variants (with and without `components`) generate and pass
-# clippy against this checkout. The generated git dependency is rewritten to a
+# workspace version, the template declares the workspace's rust-version, and
+# both variants (with and without `components`) generate and pass clippy
+# against this checkout. The generated git dependency is rewritten to a
 # path one: Cargo fetches a git source even when it's patched, and the tag only
 # exists once released.
 # Needs cargo-generate. Used by CI; run it locally with `make check-template`.
@@ -21,6 +22,14 @@ if [[ -n "$stale" ]]; then
   exit 1
 fi
 echo "every SDK version reference is v$version"
+
+# The template declares the workspace's MSRV.
+msrv=$(sed -n '/^\[workspace.package\]/,/^\[/s/^rust-version = "\(.*\)"/\1/p' Cargo.toml)
+if ! grep -qx "rust-version = \"$msrv\"" template/Cargo.toml; then
+  echo "template/Cargo.toml must declare rust-version = \"$msrv\" (the workspace's)" >&2
+  exit 1
+fi
+echo "the template's rust-version is $msrv"
 
 out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT

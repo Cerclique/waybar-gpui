@@ -7,15 +7,15 @@ build:
 	cargo build --release
 
 test:
-	cargo test
-	cargo test --all-features
+	cargo test --locked
+	cargo test --locked --all-features
 
 # The Rust checks CI runs (.github/workflows/ci.yml); `test` covers doctests.
 lint:
 	cargo fmt --all --check
-	cargo clippy --all-targets -- -D warnings
-	cargo clippy --all-targets --all-features -- -D warnings
-	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
+	cargo clippy --locked --all-targets -- -D warnings
+	cargo clippy --locked --all-targets --all-features -- -D warnings
+	RUSTDOCFLAGS="-D warnings" cargo doc --locked --no-deps --all-features
 
 # The starter template, as CI checks it. Needs cargo-generate.
 check-template:
