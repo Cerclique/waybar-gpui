@@ -49,6 +49,7 @@ mod cli;
 mod client;
 mod files;
 mod ipc;
+mod panels;
 mod placement;
 mod popovers;
 mod runtime;
@@ -56,7 +57,9 @@ mod theme;
 
 use std::process::ExitCode;
 
-use gpui::{AnyView, AppContext as _, Context, Render, Window};
+use gpui::{Context, Render, Window};
+
+use panels::Panels;
 
 /// GPUI, re-exported so authors never pin it themselves. GPUI's derive macros
 /// emit `gpui::…` paths, so write `use waybar_gpui::gpui;` in modules that use
@@ -89,17 +92,11 @@ pub trait Panel: Render + Sized {
     fn new(args: &[String], window: &mut Window, cx: &mut Context<Self>) -> Self;
 }
 
-type Build = fn(&[String], &mut Window, &mut gpui::App) -> AnyView;
-
-fn build<P: Panel>(args: &[String], window: &mut Window, cx: &mut gpui::App) -> AnyView {
-    cx.new(|cx| P::new(args, window, cx)).into()
-}
-
 /// The author's program: an ID, a theme and its panels.
 pub struct App {
     id: String,
     theme: Theme,
-    panels: Vec<(&'static str, Build)>,
+    panels: Panels,
 }
 
 impl App {
@@ -114,7 +111,7 @@ impl App {
     pub fn new(id: impl Into<String>) -> Self {
         let id = id.into();
         assert!(valid_id(&id), "waybar_gpui: invalid program ID {id:?}: use a-z, 0-9 and '-', not starting with '-'");
-        Self { id, theme: Theme::default(), panels: Vec::new() }
+        Self { id, theme: Theme::default(), panels: Panels::default() }
     }
 
     /// Replaces the default theme (Catppuccin Mocha).
@@ -129,12 +126,7 @@ impl App {
     ///
     /// If a panel with the same name is already registered.
     pub fn panel<P: Panel>(mut self) -> Self {
-        assert!(
-            self.panels.iter().all(|(name, _)| *name != P::NAME),
-            "waybar_gpui: two panels are named {:?}",
-            P::NAME
-        );
-        self.panels.push((P::NAME, build::<P>));
+        self.panels.add::<P>();
         self
     }
 
@@ -172,24 +164,5 @@ mod tests {
     #[should_panic(expected = "invalid program ID")]
     fn new_rejects_invalid_id() {
         App::new("My Panels");
-    }
-
-    struct Dummy;
-    impl Render for Dummy {
-        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl gpui::IntoElement {
-            gpui::div()
-        }
-    }
-    impl Panel for Dummy {
-        const NAME: &'static str = "dummy";
-        fn new(_: &[String], _: &mut Window, _: &mut Context<Self>) -> Self {
-            Dummy
-        }
-    }
-
-    #[test]
-    #[should_panic(expected = "two panels are named \"dummy\"")]
-    fn panel_rejects_duplicate_names() {
-        let _ = App::new("my-panels").panel::<Dummy>().panel::<Dummy>();
     }
 }

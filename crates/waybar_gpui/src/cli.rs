@@ -7,6 +7,7 @@ use crate::{
     client::{self, CurrentExe},
     files::ProgramFiles,
     ipc::Target,
+    panels::Panels,
     runtime::{self, Mode},
 };
 
@@ -25,10 +26,10 @@ enum Invocation {
 #[derive(Debug, PartialEq, Eq)]
 struct UsageError(String);
 
-fn parse(args: &[String], panels: &[&str]) -> Result<Invocation, UsageError> {
+fn parse(args: &[String], panels: &Panels) -> Result<Invocation, UsageError> {
     let target = |rest: &[String]| match Target::from_words(rest.iter().cloned()) {
         None => Err(UsageError("missing panel name".into())),
-        Some(t) if !panels.contains(&t.panel.as_str()) => Err(UsageError(format!("unknown panel {:?}", t.panel))),
+        Some(t) if panels.get(&t.panel).is_none() => Err(UsageError(format!("unknown panel {:?}", t.panel))),
         Some(t) => Ok(t),
     };
     let (command, rest) = match args.split_first() {
@@ -53,7 +54,7 @@ fn parse(args: &[String], panels: &[&str]) -> Result<Invocation, UsageError> {
 
 /// The commands, the registered panels and a ready-to-paste `on-click` line
 /// per panel, using the program's real path.
-fn usage(exe: &Path, panels: &[&str]) -> String {
+fn usage(exe: &Path, panels: &Panels) -> String {
     let exe = exe.display();
     let mut text = format!(
         "usage: {exe} <command>\n\n\
@@ -66,7 +67,7 @@ fn usage(exe: &Path, panels: &[&str]) -> String {
          \x20 help                      show this text\n\n\
          panels and their Waybar on-click lines:\n"
     );
-    for panel in panels {
+    for panel in panels.names() {
         text.push_str(&format!("  {panel:<12} \"on-click\": \"{exe} toggle {panel}\"\n"));
     }
     text
@@ -89,10 +90,9 @@ fn run(app: App, invocation: Invocation, usage_text: String) -> io::Result<()> {
 
 pub fn main(app: App) -> ExitCode {
     let exe = env::current_exe().unwrap_or_else(|_| env::args().next().unwrap_or_default().into());
-    let names: Vec<&str> = app.panels.iter().map(|(name, _)| *name).collect();
     let args: Vec<String> = env::args().skip(1).collect();
-    let usage_text = usage(&exe, &names);
-    let invocation = match parse(&args, &names) {
+    let usage_text = usage(&exe, &app.panels);
+    let invocation = match parse(&args, &app.panels) {
         Ok(invocation) => invocation,
         Err(UsageError(message)) => {
             eprint!("{}: {message}\n\n{usage_text}", app.id);
@@ -113,11 +113,19 @@ pub fn main(app: App) -> ExitCode {
 mod tests {
     use super::*;
 
-    const PANELS: &[&str] = &["workspace", "clock"];
+    crate::panels::test_panel!(Workspace, "workspace");
+    crate::panels::test_panel!(Clock, "clock");
+
+    fn panels() -> Panels {
+        let mut panels = Panels::default();
+        panels.add::<Workspace>();
+        panels.add::<Clock>();
+        panels
+    }
 
     fn parse_words(line: &str) -> Result<Invocation, UsageError> {
         let args: Vec<String> = line.split_whitespace().map(str::to_owned).collect();
-        parse(&args, PANELS)
+        parse(&args, &panels())
     }
 
     fn target(panel: &str, args: &[&str]) -> Target {
@@ -148,7 +156,7 @@ mod tests {
 
     #[test]
     fn usage_lists_panels_with_on_click_lines() {
-        let text = usage(Path::new("/home/me/.cargo/bin/my-panels"), PANELS);
+        let text = usage(Path::new("/home/me/.cargo/bin/my-panels"), &panels());
         assert!(text.starts_with("usage: /home/me/.cargo/bin/my-panels <command>\n"));
         assert!(text.contains("  workspace    \"on-click\": \"/home/me/.cargo/bin/my-panels toggle workspace\"\n"));
         assert!(text.contains("  clock        \"on-click\": \"/home/me/.cargo/bin/my-panels toggle clock\"\n"));
