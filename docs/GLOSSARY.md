@@ -65,6 +65,10 @@ _Avoid_: style, palette
 The Rust crate authors build panels and programs against.
 _Avoid_: API, framework, library (as a name for it)
 
+**waybar-gpui**:
+This project as a whole: the SDK, its runtime and the guide. The SDK's crate alone is `waybar_gpui`.
+_Avoid_: waybar_gpui (except for the crate)
+
 ### What makes it work
 
 **Runtime**:
