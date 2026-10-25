@@ -55,11 +55,11 @@ replace the `{{…}}` placeholders by hand.
 | Path | What |
 |---|---|
 | `crates/waybar_gpui` | The SDK (and the runtime, private inside it). |
-| `crates/example-panels` | A program built on the SDK the way yours would be. |
+| `crates/example-panels` | A program built on the SDK the way yours would be; `waybar/` holds the test bars `make dev` runs. |
 | `crates/module` | `waybar-hypr-ws`, an example `custom/*` bar module (active Hyprland workspace). |
 | `crates/hypr` | Minimal Hyprland IPC used by the runtime and the examples; internal. |
 | `template/` | The cargo-generate starter. |
-| `examples/` | Waybar and Hyprland config used by `make dev`. |
+| `scripts/` | `check-template.sh`, shared by CI and `make check-template`. |
 | `docs/` | The guide, the [spec](docs/spec.md), the [architecture](docs/architecture.md) and ADRs. |
 
 ```sh

@@ -13,8 +13,8 @@
 //! | GPUI derive macros (`use waybar_gpui::gpui;`) | `workspace.rs` |
 //! | gpui-component widgets (`components` feature) | `controls.rs` |
 //!
-//! Waybar `on-click` lines (see `examples/waybar/config.jsonc`), or try any of
-//! them with `preview` instead of `toggle`:
+//! Waybar `on-click` lines (see `waybar/config.jsonc` in this crate), or try
+//! any of them with `preview` instead of `toggle`:
 //!   example-panels toggle workspace
 //!   example-panels toggle clock Paris 1
 //!   example-panels toggle controls    (with the `components` feature)

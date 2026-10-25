@@ -1,4 +1,4 @@
-// Standalone test bars: scripts/dev.sh runs a second Waybar with this config.
+// Standalone test bars: `make dev` runs a second Waybar with this config.
 // To use in your own bar, copy the "custom/hypr-ws" block into
 // ~/.config/waybar/config.jsonc and add it to a modules-* list.
 [
@@ -38,7 +38,7 @@
       "on-click": "example-panels toggle clock Tokyo 9",
     },
 
-    // Needs example-panels built with its `components` feature (scripts/dev.sh does).
+    // Needs example-panels built with its `components` feature (`make dev` does).
     "custom/controls": {
       "exec": "echo controls",
       "interval": "once",
@@ -81,7 +81,7 @@
       "on-click": "example-panels toggle clock Tokyo 9",
     },
 
-    // Needs example-panels built with its `components` feature (scripts/dev.sh does).
+    // Needs example-panels built with its `components` feature (`make dev` does).
     "custom/controls": {
       "exec": "echo controls",
       "interval": "once",
