@@ -38,13 +38,13 @@ Source: [Crate layout][t18].
 | `crates/waybar_gpui` | The SDK; the runtime is a private module inside it | new |
 | `crates/hypr` | Hand-rolled Hyprland IPC; internal workspace crate, not re-exported, not covered by tags | stays |
 | `crates/example-panels` | `publish = false` binary playing the author, path dependency on `waybar_gpui`, may use `hypr`; receives the workspace panel | new |
-| `crates/module` (`waybar-hypr-ws`) | Bar-module example | stays |
+| `crates/module` (`waybar-hypr-ws`) | Bar-module example | deleted after the build: what a bar module shows is outside the SDK |
 | `template/` | cargo-generate starter (§9) | new |
 | `examples/waybar/`, `examples/hypr/` | Waybar and Hyprland configs for `make dev` and the docs | stay, updated |
 | `crates/popup`, `python/hypr_ws.py` | Today's daemon and Python module | deleted |
 
 - `make dev` builds, puts `target/debug` first on PATH and runs a second Waybar
-  wired to `waybar-hypr-ws` and `example-panels`. It no longer needs `quit` (§6.5).
+  wired to `example-panels`. It no longer needs `quit` (§6.5).
 - **Versioning:** plain `vX.Y.Z` repo tags, always equal to `waybar_gpui`'s version;
   every crate inherits the single `[workspace.package] version`. 0.x semver: a
   breaking change bumps the minor. Any change to the three pins (`gpui-pre`,

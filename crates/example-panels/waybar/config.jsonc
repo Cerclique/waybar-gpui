@@ -1,5 +1,5 @@
 // Standalone test bars: `make dev` runs a second Waybar with this config.
-// To use in your own bar, copy the "custom/hypr-ws" block into
+// To use in your own bar, copy a "custom/*" block into
 // ~/.config/waybar/config.jsonc and add it to a modules-* list.
 [
   {
@@ -7,18 +7,12 @@
     "position": "top",
     "height": 30,
     "reload_style_on_change": true,
-    "modules-left": ["custom/hypr-ws", "custom/clock-paris", "custom/clock-tokyo"],
+    "modules-left": ["custom/workspace", "custom/clock-paris", "custom/clock-tokyo"],
     "modules-right": ["custom/controls", "clock"],
 
-    "custom/hypr-ws": {
-      // No "interval": continuous script, one JSON line per update.
-      "exec": "waybar-hypr-ws",
-      "return-type": "json",
-      "restart-interval": 5,
-      "format": "{icon} {text}",
-      // Nerd Font glyphs, escaped so editors can't drop them:
-      // window-maximize (normal), expand (fullscreen).
-      "format-icons": { "normal": "", "fullscreen": "", "default": "" },
+    "custom/workspace": {
+      "exec": "echo Workspace",
+      "interval": "once",
       // Waybar doesn't need to re-run the module after a click.
       "exec-on-event": false,
       "on-click": "example-panels toggle workspace",

@@ -284,9 +284,6 @@ real clicks):
 
 ## Elsewhere in the repo
 
-- **Bar module:** `waybar-hypr-ws` is a continuous `custom/*` program printing
-  one JSON line per change, driven by Hyprland's `.socket2.sock` events, no
-  polling. Waybar runs one per monitor.
 - **Hyprland IPC** (`crates/hypr`) is hand-rolled (~150 lines) instead of the
   `hyprland` crate, whose 0.4 line has been in beta since 2024. The request
   socket (`.socket.sock`) is opened and closed per request: Hyprland serves it
@@ -358,7 +355,7 @@ before it became `waybar_gpui`); not re-measured since:
   starts and four real-click rounds since all drew normally (250–410 ms). If
   the log shows an `opened` line with no visible popover, that is the bug
   back.
-- Release sizes: daemon binary 26 MB, `waybar-hypr-ws` 450 KB; the
+- Release sizes: daemon binary 26 MB; the
   `components` feature adds ~10 MB.
 - `hyprctl -j layers` showed the surface on the Overlay layer at the expected
   geometry.

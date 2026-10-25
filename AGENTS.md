@@ -13,13 +13,12 @@ bar modules on Hyprland. Read before working:
   A behaviour change updates the one doc that owns the fact.
 
 Crates: `waybar_gpui` (SDK + runtime), `example-panels` (a program built on
-it), `waybar-hypr-ws` in `crates/module` (bar module), `hypr` (internal IPC).
+it), `hypr` (internal IPC).
 
 - Build/test: `cargo build`, `cargo test`, `make lint` (clippy without and with
   `--all-features`, plus `cargo doc` with `-D warnings`).
 - Try it: `make dev` builds with the `components` feature and runs a second
-  Waybar from `crates/example-panels/waybar/` wired to `waybar-hypr-ws` and
-  `example-panels`.
+  Waybar from `crates/example-panels/waybar/` wired to `example-panels`.
 - GPUI is `gpui-pre =0.3.9` and the API is pre-1.0: check the source in
   `~/.cargo/registry/src/*/gpui-pre-0.3.9/` before using an API; don't bump the
   pin casually.

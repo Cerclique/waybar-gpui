@@ -1,5 +1,5 @@
 PREFIX ?= $(HOME)/.local
-BINS := waybar-hypr-ws example-panels
+BINS := example-panels
 
 .PHONY: build test lint check-template dev install reload uninstall
 
@@ -37,8 +37,8 @@ install: build
 	install -Dm755 $(addprefix target/release/,$(BINS)) -t $(PREFIX)/bin
 	$(MAKE) reload
 
-# Restart the panel daemon (next click respawns it) and make Waybar re-spawn
-# bar modules, picking up the new programs.
+# Restart the panel daemon (next click respawns it) and make Waybar reload,
+# picking up the new program.
 reload:
 	-example-panels quit
 	-pkill -SIGUSR2 -x waybar

@@ -30,8 +30,6 @@ Hyprland (0.56) and it opens as a popover next to the bar. Built on
   outside the card. At most one popover is open across every program. A rebuilt
   or reinstalled program replaces its running daemon on the next click. The
   daemon logs to `$XDG_STATE_HOME/waybar-gpui/<id>.log`.
-- **Bar module** `waybar-hypr-ws`: an example `custom/*` module showing the
-  active Hyprland workspace.
 - **Example panels** (`example-panels`): workspace, clock and, with
   `components`, controls; with `make dev`, a second Waybar (top and left bars)
   to try them on.

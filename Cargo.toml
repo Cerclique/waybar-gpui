@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/hypr", "crates/module", "crates/waybar_gpui", "crates/example-panels"]
+members = ["crates/hypr", "crates/waybar_gpui", "crates/example-panels"]
 # The starter template is a cargo-generate template, not a crate.
 exclude = ["template"]
 
