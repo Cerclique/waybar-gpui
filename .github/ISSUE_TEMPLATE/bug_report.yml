@@ -1,0 +1,64 @@
+name: Bug report
+description: Something doesn't work as documented
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: >-
+        From a fresh start: the panel, the bar module's `on-click` line (or the
+        `preview` command), and what you clicked or typed. A minimal panel or
+        repository that shows the problem helps most.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Daemon log
+      description: >-
+        The relevant lines of `~/.local/state/waybar-gpui/<id>.log`, where
+        `<id>` is the program ID (for `preview`, the terminal output instead).
+      render: text
+  - type: input
+    id: sdk-version
+    attributes:
+      label: waybar_gpui version
+      description: The SDK release tag or commit (the `tag` in your Cargo.toml), e.g. `v0.1.0`.
+    validations:
+      required: true
+  - type: dropdown
+    id: components
+    attributes:
+      label: "`components` feature"
+      options:
+        - "Off"
+        - "On"
+    validations:
+      required: true
+  - type: input
+    id: hyprland-version
+    attributes:
+      label: Hyprland version
+      description: Output of `hyprctl version | head -1`.
+    validations:
+      required: true
+  - type: input
+    id: waybar-version
+    attributes:
+      label: Waybar version
+      description: Output of `waybar --version`.
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Distribution and GPU
+      description: e.g. Arch Linux, AMD RX 6600 (Mesa 25.1).
