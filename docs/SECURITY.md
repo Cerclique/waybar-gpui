@@ -21,7 +21,7 @@ Please do **not** report security vulnerabilities through public issues, pull
 requests or discussions.
 
 Report them privately through GitHub instead:
-[**Report a vulnerability**](https://github.com/Cerclique/waybar_gpui_plugin_template/security/advisories/new)
+[**Report a vulnerability**](https://github.com/Cerclique/waybar-gpui/security/advisories/new)
 (Security tab → Advisories → Report a vulnerability).
 
 Please include:
