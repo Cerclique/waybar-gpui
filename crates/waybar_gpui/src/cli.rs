@@ -13,19 +13,18 @@ use std::{
 
 use crate::{
     App,
-    ipc::{self, Command, Decision, ExeId},
+    ipc::{self, Command, Decision, ExeId, Target},
     runtime::{self, Mode},
 };
 
-/// A parsed command line. Panel targets are the panel name followed by its
-/// arguments.
+/// A parsed command line.
 #[derive(Debug, PartialEq, Eq)]
 enum Invocation {
-    Toggle(Vec<String>),
+    Toggle(Target),
     Close,
     Quit,
-    Daemon(Option<Vec<String>>),
-    Preview(Vec<String>),
+    Daemon(Option<Target>),
+    Preview(Target),
     Help,
 }
 
@@ -34,10 +33,10 @@ enum Invocation {
 struct UsageError(String);
 
 fn parse(args: &[String], panels: &[&str]) -> Result<Invocation, UsageError> {
-    let target = |rest: &[String]| match rest.first() {
+    let target = |rest: &[String]| match Target::from_words(rest.iter().cloned()) {
         None => Err(UsageError("missing panel name".into())),
-        Some(name) if !panels.contains(&name.as_str()) => Err(UsageError(format!("unknown panel {name:?}"))),
-        Some(_) => Ok(rest.to_vec()),
+        Some(t) if !panels.contains(&t.panel.as_str()) => Err(UsageError(format!("unknown panel {:?}", t.panel))),
+        Some(t) => Ok(t),
     };
     let (command, rest) = match args.split_first() {
         None => return Ok(Invocation::Help),
@@ -113,18 +112,18 @@ fn spawn_detached(exe: &Path, args: &[String], log: Option<File>) -> io::Result<
         .spawn()
 }
 
-fn spawn_daemon(id: &str, target: &[String]) -> io::Result<()> {
+fn spawn_daemon(id: &str, target: &Target) -> io::Result<()> {
     let log = log_path(id, env::var_os("XDG_STATE_HOME"), env::var_os("HOME")).and_then(|path| {
         open_log(&path).map_err(|e| eprintln!("{id}: cannot open log {}: {e}", path.display())).ok()
     });
-    let args: Vec<String> = ["daemon".to_owned()].into_iter().chain(target.iter().cloned()).collect();
+    let args: Vec<String> = ["daemon"].into_iter().chain(target.words()).map(str::to_owned).collect();
     spawn_detached(&env::current_exe()?, &args, log).map(drop)
 }
 
 /// Sends the toggle to the running daemon if it runs this very executable;
 /// otherwise replaces it, so a rebuilt or reinstalled program shows its own
 /// panels.
-fn toggle(id: &str, target: Vec<String>) -> io::Result<()> {
+fn toggle(id: &str, target: Target) -> io::Result<()> {
     let mut daemon = match ipc::Connection::open(id) {
         Err(e) if ipc::no_daemon(&e) => return spawn_daemon(id, &target),
         result => result?,
@@ -197,18 +196,18 @@ mod tests {
         parse(&args, PANELS)
     }
 
-    fn target(words: &str) -> Vec<String> {
-        words.split_whitespace().map(str::to_owned).collect()
+    fn target(panel: &str, args: &[&str]) -> Target {
+        Target { panel: panel.into(), args: args.iter().map(|a| a.to_string()).collect() }
     }
 
     #[test]
     fn parses_every_command() {
         assert_eq!(parse_words(""), Ok(Invocation::Help));
         assert_eq!(parse_words("help"), Ok(Invocation::Help));
-        assert_eq!(parse_words("toggle clock Paris 2"), Ok(Invocation::Toggle(target("clock Paris 2"))));
-        assert_eq!(parse_words("preview workspace"), Ok(Invocation::Preview(target("workspace"))));
+        assert_eq!(parse_words("toggle clock Paris 2"), Ok(Invocation::Toggle(target("clock", &["Paris", "2"]))));
+        assert_eq!(parse_words("preview workspace"), Ok(Invocation::Preview(target("workspace", &[]))));
         assert_eq!(parse_words("daemon"), Ok(Invocation::Daemon(None)));
-        assert_eq!(parse_words("daemon clock Tokyo"), Ok(Invocation::Daemon(Some(target("clock Tokyo")))));
+        assert_eq!(parse_words("daemon clock Tokyo"), Ok(Invocation::Daemon(Some(target("clock", &["Tokyo"])))));
         assert_eq!(parse_words("close"), Ok(Invocation::Close));
         assert_eq!(parse_words("quit"), Ok(Invocation::Quit));
     }

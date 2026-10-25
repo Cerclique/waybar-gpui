@@ -14,7 +14,7 @@
 //! each other's popover.
 
 use std::{
-    env, fs,
+    env, fmt, fs,
     io::{self, BufRead, BufReader, Write},
     os::unix::{
         fs::MetadataExt,
@@ -29,10 +29,40 @@ use std::{
 /// the identity reply never sends one.
 const REPLY_TIMEOUT: Duration = Duration::from_secs(1);
 
+/// A panel to open and the arguments its build function receives. Equal
+/// targets are the same popover: toggling the open one closes it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Target {
+    pub panel: String,
+    pub args: Vec<String>,
+}
+
+impl Target {
+    /// The panel name followed by its arguments; `None` without a name.
+    pub fn from_words(words: impl IntoIterator<Item = String>) -> Option<Self> {
+        let mut words = words.into_iter();
+        Some(Self { panel: words.next()?, args: words.collect() })
+    }
+
+    /// The inverse of [`Target::from_words`].
+    pub fn words(&self) -> impl Iterator<Item = &str> {
+        std::iter::once(&self.panel).chain(&self.args).map(String::as_str)
+    }
+}
+
+/// For logs: `clock ["Paris", "2"]`, or `workspace` without arguments.
+impl fmt::Display for Target {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.args.as_slice() {
+            [] => write!(f, "{}", self.panel),
+            args => write!(f, "{} {args:?}", self.panel),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
-    /// Panel name followed by its arguments.
-    Toggle(Vec<String>),
+    Toggle(Target),
     Close,
     Quit,
 }
@@ -41,10 +71,7 @@ impl Command {
     fn parse(line: &str) -> Option<Self> {
         let mut words = line.trim_end_matches('\n').split('\t');
         match words.next()? {
-            "toggle" => {
-                let target: Vec<String> = words.map(str::to_owned).collect();
-                (!target.is_empty()).then_some(Self::Toggle(target))
-            }
+            "toggle" => Target::from_words(words.map(str::to_owned)).map(Self::Toggle),
             "close" => Some(Self::Close),
             "quit" => Some(Self::Quit),
             _ => None,
@@ -53,7 +80,7 @@ impl Command {
 
     fn to_line(&self) -> String {
         match self {
-            Self::Toggle(target) => format!("toggle\t{}\n", target.join("\t")),
+            Self::Toggle(target) => format!("toggle\t{}\n", target.words().collect::<Vec<_>>().join("\t")),
             Self::Close => "close\n".into(),
             Self::Quit => "quit\n".into(),
         }
@@ -233,11 +260,31 @@ fn serve(id: String, listener: UnixListener, identity: ExeId, tx: async_channel:
 mod tests {
     use super::*;
 
+    fn target(words: &[&str]) -> Target {
+        Target::from_words(words.iter().map(|w| w.to_string())).unwrap()
+    }
+
+    #[test]
+    fn splits_target_words_into_panel_and_args() {
+        assert_eq!(target(&["workspace"]), Target { panel: "workspace".into(), args: vec![] });
+        let clock = target(&["clock", "Paris", "2"]);
+        assert_eq!(clock, Target { panel: "clock".into(), args: vec!["Paris".into(), "2".into()] });
+        assert_eq!(clock.words().collect::<Vec<_>>(), ["clock", "Paris", "2"]);
+        assert_eq!(Target::from_words(Vec::new()), None);
+    }
+
+    #[test]
+    fn displays_target_for_logs() {
+        assert_eq!(target(&["workspace"]).to_string(), "workspace");
+        assert_eq!(target(&["clock", "New York", "2"]).to_string(), r#"clock ["New York", "2"]"#);
+    }
+
     #[test]
     fn round_trips_commands() {
+        assert_eq!(Command::Toggle(target(&["clock", "New York"])).to_line(), "toggle\tclock\tNew York\n");
         for command in [
-            Command::Toggle(vec!["workspace".into()]),
-            Command::Toggle(vec!["clock".into(), "Paris".into(), "2".into()]),
+            Command::Toggle(target(&["workspace"])),
+            Command::Toggle(target(&["clock", "Paris", "2"])),
             Command::Close,
             Command::Quit,
         ] {
@@ -297,8 +344,8 @@ mod tests {
 
         let mut client = Connection(UnixStream::connect(&path).unwrap());
         assert_eq!(client.identity(), Some(identity));
-        client.send(&Command::Toggle(vec!["clock".into(), "Paris".into()])).unwrap();
-        assert_eq!(rx.recv_blocking(), Ok(Command::Toggle(vec!["clock".into(), "Paris".into()])));
+        client.send(&Command::Toggle(target(&["clock", "Paris"]))).unwrap();
+        assert_eq!(rx.recv_blocking(), Ok(Command::Toggle(target(&["clock", "Paris"]))));
 
         Connection(UnixStream::connect(&path).unwrap()).send(&Command::Close).unwrap();
         assert_eq!(rx.recv_blocking(), Ok(Command::Close));
