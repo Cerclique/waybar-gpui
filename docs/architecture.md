@@ -139,7 +139,10 @@ At most one popover is open across all programs. Before opening, a runtime
 (`ipc::close_others`) connects to every other `*.sock` in the directory and
 writes `close`. Best effort: no lock, no central process, no waiting for
 replies. A socket that refuses the connection was left by a crashed program and
-is deleted. Clicking a bar module while any popover is open can't reach Waybar
+is deleted. It takes no lock, not even another program's `<id>.lock`: a daemon
+caught between `bind` and `listen` also refuses, and losing its socket file
+would orphan it. That window lies between two consecutive syscalls; it is
+accepted. Clicking a bar module while any popover is open can't reach Waybar
 (see [Hyprland input routing](#hyprland-exclusive-layer-input-routing)), so
 this mainly matters for popovers opened from keybinds and scripts, which would
 otherwise fight over keyboard focus.

@@ -32,6 +32,8 @@ sequenceDiagram
 - The daemon's socket is `$XDG_RUNTIME_DIR/waybar-gpui/<id>.sock`, named by
   your program ID. Every program's socket is in that one directory, which is
   how programs close each other's popovers: at most one is open at a time.
+  Next to it, an empty `<id>.lock` is used only while a daemon starts, so two
+  clicks at once start one daemon, not two; it stays there, and that's normal.
 
 ## The popover is a full-screen, transparent layer
 
