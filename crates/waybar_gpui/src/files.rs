@@ -384,7 +384,6 @@ mod tests {
         Some(line)
     }
 
-
     #[test]
     fn close_others_closes_other_daemons_and_ours_only_when_asked() {
         let root = Root::new("close-others");

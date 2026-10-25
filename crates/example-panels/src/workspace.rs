@@ -11,7 +11,8 @@ use waybar_gpui::{
 };
 
 /// Events after which the panel re-reads Hyprland.
-const RELEVANT: &[&str] = &["workspacev2", "openwindow", "closewindow", "movewindowv2", "activewindowv2", "windowtitlev2"];
+const RELEVANT: &[&str] =
+    &["workspacev2", "openwindow", "closewindow", "movewindowv2", "activewindowv2", "windowtitlev2"];
 
 pub struct WorkspacePanel {
     workspace: Result<hypr::Workspace, String>,
@@ -123,8 +124,7 @@ impl Render for WorkspacePanel {
 
         let rows = self.clients.iter().map(|client| Row { client: client.clone(), theme });
 
-        card
-            .child(header)
+        card.child(header)
             .child(div().id("rows").flex().flex_col().gap_1().overflow_y_scroll().children(rows))
             .when(self.clients.is_empty(), |card| card.child(div().text_color(theme.subtext).child("No windows")))
     }

@@ -22,17 +22,11 @@ use serde::{Deserialize, de::DeserializeOwned};
 /// Directory holding this Hyprland instance's sockets.
 pub fn socket_dir() -> io::Result<PathBuf> {
     let his = env::var_os("HYPRLAND_INSTANCE_SIGNATURE").ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::NotFound,
-            "HYPRLAND_INSTANCE_SIGNATURE is not set (not running under Hyprland?)",
-        )
+        io::Error::new(io::ErrorKind::NotFound, "HYPRLAND_INSTANCE_SIGNATURE is not set (not running under Hyprland?)")
     })?;
     let runtime = env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from);
     // Hyprland falls back to /tmp/hypr when $XDG_RUNTIME_DIR/hypr is missing.
-    let base = runtime
-        .map(|r| r.join("hypr"))
-        .filter(|p| p.is_dir())
-        .unwrap_or_else(|| PathBuf::from("/tmp/hypr"));
+    let base = runtime.map(|r| r.join("hypr")).filter(|p| p.is_dir()).unwrap_or_else(|| PathBuf::from("/tmp/hypr"));
     Ok(base.join(his))
 }
 
