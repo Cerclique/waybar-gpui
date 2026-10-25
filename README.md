@@ -17,7 +17,7 @@
 Write a [GPUI](https://www.gpui.rs) panel in Rust; click a Waybar bar module on
 Hyprland and it opens as a popover next to the bar.
 
-![A popover open under the top bar](docs/guide/img/popover.png)
+![A popover opened from a bar module at the top of the screen](docs/guide/img/social-preview.png)
 
 `waybar_gpui` is an SDK: your own program depends on it, registers its panels
 and hands over the command line. The SDK's runtime does the rest: the
