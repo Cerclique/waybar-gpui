@@ -2,7 +2,7 @@
 //! the panel drawn inside it through `anchored()` (measured and placed in the
 //! same frame). A click that reaches the backdrop around the card dismisses.
 
-use std::{cell::Cell, error::Error, io, rc::Rc};
+use std::{cell::Cell, error::Error, io, os::fd::AsFd, rc::Rc};
 
 use gpui::{
     AnyView, AnyWindowHandle, App, AppContext as _, Bounds, Context, DisplayId, FocusHandle,
@@ -13,6 +13,7 @@ use uuid::Uuid;
 
 use crate::{
     Build,
+    files::{Ownership, ProgramFiles},
     ipc::{self, Command, Target},
     placement::{self, Placement},
     popovers::{Effect, Popovers},
@@ -25,6 +26,8 @@ struct Registry {
     preview: bool,
     /// Set when a preview can't open its panel, for the exit status.
     open_failed: Rc<Cell<bool>>,
+    /// The daemon's socket, given up on `quit`; `None` in a preview.
+    ownership: Option<Ownership>,
 }
 
 /// What the process runs as.
@@ -55,14 +58,13 @@ fn defer_close(reason: &'static str, cx: &mut App) {
     });
 }
 
-pub fn run(app: crate::App, mode: Mode) -> io::Result<()> {
+impl Global for ProgramFiles {}
+
+pub fn run(app: crate::App, files: ProgramFiles, mode: Mode) -> io::Result<()> {
     let (tx, rx) = async_channel::unbounded();
-    let (initial, preview) = match mode {
-        Mode::Daemon(initial) => {
-            ipc::listen(&app.id, tx.clone())?;
-            (initial, false)
-        }
-        Mode::Preview(target) => (Some(target), true),
+    let (initial, preview, ownership) = match mode {
+        Mode::Daemon(initial) => (initial, false, Some(files.claim(io::stderr().as_fd(), tx.clone())?)),
+        Mode::Preview(target) => (Some(target), true, None),
     };
     if let Some(target) = initial {
         let _ = tx.try_send(Command::Toggle(target));
@@ -81,7 +83,8 @@ pub fn run(app: crate::App, mode: Mode) -> io::Result<()> {
             crate::theme::apply_to_components(&theme, cx);
         }
         cx.set_global(theme);
-        cx.set_global(Registry { id, panels, preview, open_failed });
+        cx.set_global(Registry { id, panels, preview, open_failed, ownership });
+        cx.set_global(files);
         cx.set_global(Popovers::<AnyWindowHandle>::new(preview));
         cx.spawn(async move |cx| {
             while let Ok(command) = rx.recv().await {
@@ -117,7 +120,10 @@ fn apply(effects: Vec<Effect<AnyWindowHandle>>, cx: &mut App) {
                 }
             },
             Effect::RemoveSocket => {
-                let _ = std::fs::remove_file(ipc::socket_path(&cx.global::<Registry>().id));
+                // Before the event loop stops: clients find no daemon at once.
+                if let Some(ownership) = cx.global_mut::<Registry>().ownership.take() {
+                    ownership.give_up();
+                }
             }
             Effect::Quit { failed } => {
                 if failed {
@@ -141,7 +147,7 @@ fn open(target: &Target, cx: &mut App) -> Result<AnyWindowHandle, Box<dyn Error>
         .ok_or_else(|| format!("unknown panel {:?}", target.panel))?;
 
     // A preview also closes its own program's daemon popover: one popover at a time.
-    ipc::close_others(&id, preview);
+    ipc::close_others(cx.global::<ProgramFiles>(), preview);
 
     let cursor: hypr::CursorPos = hypr::request("cursorpos")?;
     let monitors: Vec<hypr::Monitor> = hypr::request("monitors")?;

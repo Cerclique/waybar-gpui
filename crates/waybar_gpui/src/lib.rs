@@ -46,6 +46,7 @@
 #![deny(missing_docs)]
 
 mod cli;
+mod files;
 mod ipc;
 mod placement;
 mod popovers;
