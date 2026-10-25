@@ -13,7 +13,7 @@ recorded as ADRs in `docs/adr/`
 |---|---|
 | `lib.rs` | Public API: `Panel`, `App`, re-exports. |
 | `cli.rs` | argv parsing, usage text, the click client (`toggle`, `close`, `quit`), spawning the daemon, the log file. |
-| `ipc.rs` | Socket directory, line protocol, daemon identity, closing other programs' popovers. |
+| `ipc.rs` | Socket directory, line protocol, `Target` (a panel name and its arguments), daemon identity, closing other programs' popovers. |
 | `runtime.rs` | The GPUI side: `daemon` and `preview`, the popover surface, focus, dismissal. |
 | `placement.rs` | Monitor and bar-edge detection, the anchor point and margins. |
 | `theme.rs` | `Theme`, `card()`, copying `Theme` into gpui-component's theme. |
@@ -101,8 +101,8 @@ sequenceDiagram
   with the same ID replace each other's daemon, so each click shows its own
   binary's panels. `quit` remains as the escape hatch.
 - **Toggle semantics** (`runtime::handle`): if the open popover has the same
-  panel and the same panel arguments, close it; otherwise close whatever is
-  open and open the new one, built fresh.
+  panel and the same panel arguments (an equal `ipc::Target`), close it;
+  otherwise close whatever is open and open the new one, built fresh.
 
 ## Log file
 

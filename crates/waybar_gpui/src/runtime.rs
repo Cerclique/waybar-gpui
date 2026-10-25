@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::{
     Build,
-    ipc::{self, Command},
+    ipc::{self, Command, Target},
     placement::{self, Placement},
 };
 
@@ -28,16 +28,16 @@ struct Registry {
 /// What the process runs as.
 pub enum Mode {
     /// Listens on the program's socket until `quit`, optionally opening a
-    /// panel (name + arguments) at once.
-    Daemon(Option<Vec<String>>),
+    /// panel at once.
+    Daemon(Option<Target>),
     /// Opens one panel without the socket and exits when it closes.
-    Preview(Vec<String>),
+    Preview(Target),
 }
 
 impl Global for Registry {}
 
 #[derive(Default)]
-struct OpenPopover(Option<(Vec<String>, AnyWindowHandle)>);
+struct OpenPopover(Option<(Target, AnyWindowHandle)>);
 
 impl Global for OpenPopover {}
 
@@ -104,7 +104,7 @@ fn handle(command: Command, cx: &mut App) {
             }
             if let Err(e) = open(target.clone(), cx) {
                 let registry = cx.global::<Registry>();
-                eprintln!("{}: cannot open {target:?}: {e}", registry.id);
+                eprintln!("{}: cannot open {target}: {e}", registry.id);
                 if let Some(failed) = &registry.preview_failed {
                     failed.set(true);
                     cx.quit();
@@ -122,27 +122,27 @@ fn handle(command: Command, cx: &mut App) {
     }
 }
 
-fn close_now(reason: &str, cx: &mut App) -> Option<Vec<String>> {
+fn close_now(reason: &str, cx: &mut App) -> Option<Target> {
     let (target, handle) = cx.global_mut::<OpenPopover>().0.take()?;
     let _ = handle.update(cx, |_, window, _| window.remove_window());
     let registry = cx.global::<Registry>();
-    eprintln!("{}: closed {target:?} ({reason})", registry.id);
+    eprintln!("{}: closed {target} ({reason})", registry.id);
     if registry.preview_failed.is_some() {
         cx.quit();
     }
     Some(target)
 }
 
-fn open(target: Vec<String>, cx: &mut App) -> Result<(), Box<dyn Error>> {
+fn open(target: Target, cx: &mut App) -> Result<(), Box<dyn Error>> {
     let registry = cx.global::<Registry>();
     let id = registry.id.clone();
     let preview = registry.preview_failed.is_some();
     let build = registry
         .panels
         .iter()
-        .find(|(name, _)| *name == target[0])
+        .find(|(name, _)| *name == target.panel)
         .map(|(_, build)| *build)
-        .ok_or_else(|| format!("unknown panel {:?}", target[0]))?;
+        .ok_or_else(|| format!("unknown panel {:?}", target.panel))?;
 
     // A preview also closes its own program's daemon popover: one popover at a time.
     ipc::close_others(&id, preview);
@@ -173,9 +173,8 @@ fn open(target: Vec<String>, cx: &mut App) -> Result<(), Box<dyn Error>> {
         ..Default::default()
     };
 
-    let args = target[1..].to_vec();
     let handle = cx.open_window(options, |window, cx| {
-        let content = build(&args, window, cx);
+        let content = build(&target.args, window, cx);
         // No gpui-component `Root`, even with `components`: on Linux it always
         // wraps the window in `window_border()` (layer surfaces are forced to
         // client-side decorations), which grows the surface by 20 px per side
@@ -184,8 +183,8 @@ fn open(target: Vec<String>, cx: &mut App) -> Result<(), Box<dyn Error>> {
         cx.new(|cx| Popover::new(content, placement.clone(), window, cx))
     })?;
 
-    cx.global_mut::<OpenPopover>().0 = Some((target.clone(), handle.into()));
-    eprintln!("{id}: opened {target:?} on {} ({:?} bar)", placement.monitor, placement.edge);
+    eprintln!("{id}: opened {target} on {} ({:?} bar)", placement.monitor, placement.edge);
+    cx.global_mut::<OpenPopover>().0 = Some((target, handle.into()));
     Ok(())
 }
 
