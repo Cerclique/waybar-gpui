@@ -26,7 +26,7 @@ vulnerability, do **not** open a public issue; follow
 
 ## Setup
 
-- Rust 1.97.1, the version CI tests with, with clippy.
+- Rust 1.97.1, the version CI tests with, with clippy and rustfmt.
 - The system libraries GPUI's Wayland platform links against. On Debian or
   Ubuntu, as CI installs them:
 
@@ -38,13 +38,37 @@ vulnerability, do **not** open a public issue; follow
   Other distributions: the same libraries under their own package names.
 - [cargo-generate](https://github.com/cargo-generate/cargo-generate)
   (`cargo install cargo-generate`), for `make check-template`.
+- [prek](https://github.com/j178/prek), for the [Git hooks](#git-hooks).
+
+## Git hooks
+
+The repository ships Git hooks in
+[`.pre-commit-config.yaml`](../.pre-commit-config.yaml), run by prek. Install
+it (e.g. `cargo install --locked prek`; see its README for other methods), then
+enable the hooks once per clone:
+
+```sh
+prek install
+```
+
+- **pre-commit**: trailing whitespace, final newlines, line endings, YAML/TOML
+  syntax, merge-conflict markers, `cargo fmt --all`, and `cargo clippy` without
+  and with `--all-features`. Fixers rewrite the files and fail the commit;
+  review the changes, `git add` them and commit again.
+- **pre-push**: `make test`.
+
+`make check-template` and the link check aren't hooks (slow, and they need
+cargo-generate and lychee); CI runs them. Run every hook on the whole tree with
+`prek run --all-files`. Skip them for one commit with `git commit --no-verify`;
+CI runs the same checks anyway.
 
 ## Checks
 
 Before opening a pull request, run what CI runs:
 
 ```sh
-make lint             # clippy without and with --all-features, cargo doc -D warnings
+make lint             # cargo fmt --all --check, clippy without and with
+                      # --all-features, cargo doc -D warnings
 make test             # unit tests and doctests, without and with --all-features
 make check-template   # every versioned SDK reference matches the workspace version;
                       # both template variants generate and pass clippy

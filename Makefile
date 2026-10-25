@@ -12,6 +12,7 @@ test:
 
 # The Rust checks CI runs (.github/workflows/ci.yml); `test` covers doctests.
 lint:
+	cargo fmt --all --check
 	cargo clippy --all-targets -- -D warnings
 	cargo clippy --all-targets --all-features -- -D warnings
 	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
