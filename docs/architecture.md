@@ -2,8 +2,9 @@
 
 For contributors changing the runtime inside `crates/waybar_gpui`. It describes
 what the code does today and why. Terms follow [`GLOSSARY.md`](GLOSSARY.md);
-what is being built, and the tickets behind each decision, is in
-[`docs/spec.md`](spec.md); the three decisions that are hardest to reverse are
+the decisions behind it come from the tickets of the
+[map](https://github.com/Cerclique/waybar-gpui/issues/7), which keep the
+alternatives rejected and why; the three decisions that are hardest to reverse are
 recorded as ADRs in `docs/adr/`
 ([0001](adr/0001-full-monitor-surface-with-drawn-card.md),
 [0002](adr/0002-daemon-per-program.md),
@@ -360,7 +361,7 @@ before it became `waybar_gpui`); not re-measured since:
 - `hyprctl -j layers` showed the surface on the Overlay layer at the expected
   geometry.
 
-On `waybar_gpui`, the prototype ([`prototype/panel-api`][proto], never merged)
+On `waybar_gpui`, the API prototype (never merged)
 validated with real clicks on top and left bars: `anchored()` placement with no
 first-frame jump, Esc reaching a focused panel first, backdrop-only dismissal
 with menus overflowing the card, derive macros through `use waybar_gpui::gpui;`,
@@ -370,4 +371,3 @@ reader (Hyprland's socket) keeps its thread until the next event after close.
 
 [hypr-research]: research/hyprland-two-exclusive-layers.md
 [component-research]: research/gpui-component-compat.md
-[proto]: https://github.com/Cerclique/waybar-gpui/tree/prototype/panel-api

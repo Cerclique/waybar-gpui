@@ -18,8 +18,6 @@ vulnerability, do **not** open a public issue; follow
 - [`architecture.md`](architecture.md): how the runtime works and why, what
   was verified, and the designs that were rejected. Read it before changing
   `crates/waybar_gpui`.
-- [`spec.md`](spec.md): what is being built, with the tickets behind each
-  decision.
 - [`adr/`](adr/): the decisions that are hard to reverse.
 - [The guide](guide/index.md): what authors are told. The README's
   [repository table](../README.md#this-repository) says what each crate is.
@@ -129,8 +127,8 @@ More in the guide's [Dev loop](guide/dev-loop.md#logs).
   before merging.
 - One pull request per issue; say which one in the description with
   `Closes #<n>`.
-- A behaviour change updates the one doc that owns the fact (guide, rustdoc,
-  architecture or spec), in the same pull request.
+- A behaviour change updates the one doc that owns the fact (guide, rustdoc
+  or architecture), in the same pull request.
 - Pull requests are **squash-merged**: the PR title becomes the commit title on
   `main`, and the changelog is generated from those titles. The PR title must
   follow [Conventional Commits](https://www.conventionalcommits.org/), which
@@ -153,6 +151,13 @@ More in the guide's [Dev loop](guide/dev-loop.md#logs).
 
 Releases are cut by the maintainer, through a pull request. You need
 [git-cliff](https://git-cliff.org) (e.g. `cargo install --locked git-cliff`).
+
+Tags are plain `vX.Y.Z` and always equal the single `version` in
+`[workspace.package]`, which every crate inherits. 0.x semver: a breaking
+change to the SDK bumps the minor, a fix the patch. Any change to the
+`gpui-pre`, `gpui-pre-platform` or `gpui-component` pins is a breaking release
+whose changelog names the new versions. The internal `hypr` crate isn't
+covered by the tags.
 
 1. On a `release/vX.Y.Z` branch from `main`, bump `version` in
    `[workspace.package]` of the top-level `Cargo.toml` (`cargo build` updates
@@ -183,7 +188,7 @@ Releases are cut by the maintainer, through a pull request. You need
 
 v0.1.0 differs: the version is already 0.1.0 and its entry is hand-written,
 so its release pull request only replaces `Unreleased` in the entry's heading
-with the date. Its gate and order are in [spec §13](spec.md#13-release-v010).
+with the date.
 
 ## License
 

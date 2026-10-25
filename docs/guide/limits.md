@@ -21,6 +21,8 @@
 - **Other exclusive surfaces** (rofi, fuzzel, wlogout) opened over a popover
   interact awkwardly: moving the pointer can hand the keyboard back to the
   popover, and a full-screen one blocks it until it closes.
+- **The theme is set in code** (`App::theme`): people who install a program
+  can't restyle it with a theme file.
 - **The SDK covers the popover, not the bar.** What the bar module shows is
   ordinary Waybar `custom/*` configuration.
 

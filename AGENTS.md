@@ -4,7 +4,6 @@
 bar modules on Hyprland. Read before working:
 
 - `docs/GLOSSARY.md`: the domain terms; use them (a panel is never a "module").
-- `docs/spec.md`: what is being built, with the tickets behind each decision.
 - `docs/architecture.md`: how the runtime works and why; verified behaviour;
   rejected designs. Read before changing `crates/waybar_gpui`.
 - `docs/adr/`: decisions that are hard to reverse.

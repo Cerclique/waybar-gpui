@@ -59,7 +59,7 @@ replace the `{{…}}` placeholders by hand.
 | `crates/hypr` | Minimal Hyprland IPC used by the runtime and the examples; internal. |
 | `template/` | The cargo-generate starter. |
 | `scripts/` | `check-template.sh`, shared by CI and `make check-template`. |
-| `docs/` | The guide, the [spec](docs/spec.md), the [architecture](docs/architecture.md) and ADRs. |
+| `docs/` | The guide, the [architecture](docs/architecture.md) and ADRs. |
 
 ```sh
 make dev              # a second Waybar (top + left bars) wired to example-panels; Ctrl-C stops it
