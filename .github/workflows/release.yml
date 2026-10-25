@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      # The notes are the tag's section of CHANGELOG.md, as the release PR wrote
+      # it (git-cliff after 0.1.0, by hand for 0.1.0), without its heading: the
+      # release title already names the version. Re-rendering with
+      # `git cliff --latest` would give nothing for v0.1.0, whose history isn't
+      # conventional.
+      - name: Extract the release notes
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          heading=$(grep -F -m1 "## [$version]" CHANGELOG.md || true)
+          if ! [[ $heading =~ \ -\ [0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "::error::CHANGELOG.md has no dated '## [$version]' section: '$heading'"
+            exit 1
+          fi
+          awk -v h="## [$version]" 'index($0, "## [") == 1 { p = index($0, h) == 1; next } p' \
+            CHANGELOG.md | sed '/./,$!d' > "$RUNNER_TEMP/notes.md"
+      - run: gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"
+        env:
+          GH_TOKEN: ${{ github.token }}
