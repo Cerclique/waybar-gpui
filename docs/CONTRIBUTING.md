@@ -156,8 +156,7 @@ Tags are plain `vX.Y.Z` and always equal the single `version` in
 `[workspace.package]`, which every crate inherits. 0.x semver: a breaking
 change to the SDK bumps the minor, a fix the patch. Any change to the
 `gpui-pre`, `gpui-pre-platform` or `gpui-component` pins is a breaking release
-whose changelog names the new versions. The internal `hypr` crate isn't
-covered by the tags.
+whose changelog names the new versions.
 
 1. On a `release/vX.Y.Z` branch from `main`, bump `version` in
    `[workspace.package]` of the top-level `Cargo.toml` (`cargo build` updates

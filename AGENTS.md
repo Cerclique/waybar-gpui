@@ -11,8 +11,8 @@ bar modules on Hyprland. Read before working:
 - `docs/guide/`: the author-facing guide (README quickstart → guide → rustdoc).
   A behaviour change updates the one doc that owns the fact.
 
-Crates: `waybar_gpui` (SDK + runtime), `example-panels` (a program built on
-it), `hypr` (internal IPC).
+Crates: `waybar_gpui` (SDK + runtime, with its private Hyprland IPC in
+`hypr.rs`) and `example-panels` (a program built on it).
 
 - Build/test: `cargo build`, `cargo test`, `make lint` (clippy without and with
   `--all-features`, plus `cargo doc` with `-D warnings`).

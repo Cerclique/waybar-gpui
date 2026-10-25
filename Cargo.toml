@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/hypr", "crates/waybar_gpui", "crates/example-panels"]
+members = ["crates/waybar_gpui", "crates/example-panels"]
 # The starter template is a cargo-generate template, not a crate.
 exclude = ["template"]
 
@@ -16,7 +16,6 @@ rust-version = "1.95"
 publish = false
 
 [workspace.dependencies]
-hypr = { path = "crates/hypr" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

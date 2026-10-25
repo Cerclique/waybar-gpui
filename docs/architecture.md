@@ -21,10 +21,8 @@ recorded as ADRs in `docs/adr/`
 | `popovers.rs` | The popover rules without GPUI: what a toggle, `close`, `quit` or a dismissal does, and when the process quits. Returns effects; unit-tested. |
 | `runtime.rs` | The GPUI side: `daemon` and `preview` (a `Session` holds what each needs: the daemon's `Ownership`, the preview's failure for its exit status), carrying out `popovers.rs`'s effects, the popover surface, focus, dismissal. |
 | `placement.rs` | Monitor and bar-edge detection, the anchor point and margins. |
+| `hypr.rs` | Hyprland IPC: the `j/cursorpos` and `j/monitors` requests `placement.rs` reads. Private, not re-exported. |
 | `theme.rs` | `Theme`, `card()`, copying `Theme` into gpui-component's theme. |
-
-`crates/hypr` is the Hyprland IPC the runtime uses (`j/cursorpos`,
-`j/monitors`); it is internal, not re-exported.
 
 ## Process model
 
@@ -285,8 +283,9 @@ real clicks):
 
 ## Elsewhere in the repo
 
-- **Hyprland IPC** (`crates/hypr`) is hand-rolled (~150 lines) instead of the
-  `hyprland` crate, whose 0.4 line has been in beta since 2024. The request
+- **Hyprland IPC** (`hypr.rs`, and `example-panels`' own copy for the
+  workspace panel's events) is hand-rolled instead of the `hyprland` crate,
+  whose 0.4 line has been in beta since 2024. The request
   socket (`.socket.sock`) is opened and closed per request: Hyprland serves it
   synchronously and freezes on held connections.
 - **Waybar config:** Nerd Font glyphs in

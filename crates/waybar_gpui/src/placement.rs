@@ -2,7 +2,7 @@
 //! bar, clamped to the usable area. GPUI's `anchored()` measures the card and
 //! applies this in the same frame, so the runtime only computes the anchor.
 
-use hypr::{CursorPos, Monitor};
+use crate::hypr::{CursorPos, Monitor};
 
 pub const GAP: f32 = 6.0;
 

@@ -13,6 +13,7 @@ use uuid::Uuid;
 
 use crate::{
     files::{Ownership, ProgramFiles},
+    hypr,
     ipc::{Command, Target},
     panels::Panels,
     placement::{self, Placement},

@@ -17,7 +17,8 @@ components = ["waybar_gpui/components"]
 # In an author's repository:
 # waybar_gpui = { git = "https://github.com/Cerclique/waybar-gpui", tag = "v0.1.0" }
 waybar_gpui = { path = "../waybar_gpui" }
-hypr.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true
