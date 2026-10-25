@@ -1,2 +1,5 @@
 /target
-__pycache__/
+# Claude Code: agent worktrees and personal settings (a shared
+# .claude/settings.json can still be committed).
+/.claude/worktrees/
+/.claude/settings.local.json
