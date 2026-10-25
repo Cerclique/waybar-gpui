@@ -64,7 +64,15 @@ pub fn run(app: crate::App, mode: Mode) -> io::Result<()> {
     let crate::App { id, theme, panels } = app;
     let failed = preview_failed.clone();
 
-    gpui_platform::application().with_quit_mode(QuitMode::Explicit).run(move |cx: &mut App| {
+    let application = gpui_platform::application().with_quit_mode(QuitMode::Explicit);
+    #[cfg(feature = "components")]
+    let application = application.with_assets(gpui_kit_assets::Assets);
+    application.run(move |cx: &mut App| {
+        #[cfg(feature = "components")]
+        {
+            gpui_component::init(cx);
+            crate::theme::apply_to_components(&theme, cx);
+        }
         cx.set_global(theme);
         cx.set_global(Registry { id, panels, preview_failed });
         cx.set_global(OpenPopover::default());
@@ -162,6 +170,11 @@ fn open(target: Vec<String>, cx: &mut App) -> Result<(), Box<dyn Error>> {
     let args = target[1..].to_vec();
     let handle = cx.open_window(options, |window, cx| {
         let content = build(&args, window, cx);
+        // No gpui-component `Root`, even with `components`: on Linux it always
+        // wraps the window in `window_border()` (layer surfaces are forced to
+        // client-side decorations), which grows the surface by 20 px per side
+        // and paints a shadow over the whole output. Menus and popovers work
+        // without it; dialogs and notifications don't.
         cx.new(|cx| Overlay::new(content, placement.clone(), window, cx))
     })?;
 
