@@ -171,7 +171,7 @@ removes the window during its own event dispatch, and logs a reason:
 
 | Path | Reason logged |
 |---|---|
-| Left or right mouse button down on the backdrop. The card and any overlay a widget draws (a menu overflowing the card) `.occlude()` it, so those clicks never reach it. The panel can't veto. | `click outside` |
+| Any mouse button down on the backdrop (left, right, middle, side). The card and any overlay a widget draws (a menu overflowing the card) `.occlude()` it, so those clicks never reach it. The panel can't veto. | `click outside` |
 | Mouse down outside the surface's own bounds: a click on another monitor, which Hyprland delivers to this surface with outside coordinates. Tested geometrically in the card's `on_mouse_down_out`, because nothing is hovered for such a click. | `click on another monitor` |
 | Esc the panel didn't stop. | `escape` |
 | `close(cx)` from the panel. | `panel` |

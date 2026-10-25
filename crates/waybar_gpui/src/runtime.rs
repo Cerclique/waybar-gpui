@@ -242,8 +242,7 @@ impl Render for Popover {
             .size_full()
             // Only clicks nothing else handles reach the backdrop: the card
             // and widget overlays (menus that overflow the card) occlude it.
-            .on_mouse_down(gpui::MouseButton::Left, |_, _, cx| defer_close("click outside", cx))
-            .on_mouse_down(gpui::MouseButton::Right, |_, _, cx| defer_close("click outside", cx))
+            .on_any_mouse_down(|_, _, cx| defer_close("click outside", cx))
             .track_focus(&self.focus)
             .on_key_down(|event, _, cx| {
                 if event.keystroke.key == "escape" {

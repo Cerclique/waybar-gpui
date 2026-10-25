@@ -133,7 +133,7 @@ Sources: [Popover sizing and placement][t10], [Panel actions][t9],
 - **Focus and Esc:** a panel that focuses one of its own elements in `new` gets
   Esc first; if it calls `cx.stop_propagation()` the popover stays open. The
   runtime focuses its root only when nothing is focused. Unhandled Esc dismisses.
-- **Dismissal:** a left or right click that reaches the backdrop dismisses; the card and any
+- **Dismissal:** a click with any mouse button that reaches the backdrop dismisses; the card and any
   overlay a widget draws (menus overflowing the card) occlude it. A click on
   another monitor dismisses geometrically (`on_mouse_down_out`). Clicks outside
   the card can't be vetoed by the panel.
