@@ -1,7 +1,7 @@
 # Architecture
 
 For contributors changing the runtime inside `crates/waybar_gpui`. It describes
-what the code does today and why. Terms follow [`GLOSSARY.md`](../GLOSSARY.md);
+what the code does today and why. Terms follow [`GLOSSARY.md`](GLOSSARY.md);
 what is being built, and the tickets behind each decision, is in
 [`docs/spec.md`](spec.md); the three decisions that are hardest to reverse are
 recorded as ADRs in `docs/adr/`
