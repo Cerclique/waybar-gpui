@@ -170,7 +170,9 @@ Sources: [Click → runtime contract][t16], [Author dev loop][t19],
 1. **Socket:** `$XDG_RUNTIME_DIR/waybar-gpui/<id>.sock` (the system temp
    directory if `XDG_RUNTIME_DIR` is unset), directory created on demand. A
    daemon starting up refuses to run if another daemon answers on its socket,
-   and otherwise removes the stale socket file. The same ID names
+   and otherwise removes the stale socket file and binds, holding a lock on
+   `<id>.lock` for those steps only, so of daemons started at once exactly one
+   survives. The same ID names
    the layer namespace and prefixes log lines (`<id>: …`).
 2. **Spawn:** `toggle` finding no daemon (socket missing or refusing) spawns
    `current_exe() daemon <panel> [args…]` in its own process group, stdin and

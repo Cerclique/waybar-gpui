@@ -43,8 +43,18 @@ argv in `cli.rs`:
   daemon, but before opening it sends `close` to every socket, its own
   program's included, so the one-popover rule holds.
 
-A daemon refuses to start if another daemon already answers on its socket;
-otherwise it removes the stale socket file and binds. A panicking panel takes
+A daemon refuses to start (`daemon already running`) if another daemon already
+answers on its socket; otherwise it removes the stale socket file and binds.
+`ipc::listen` does those three steps holding an advisory lock (`flock`, through
+`File::lock`) on `<id>.lock` next to the socket, and releases it once bound.
+Daemons started at the same moment (two `toggle`s finding no daemon) take
+turns: the first binds, the others then find it answering. Without the lock
+they could all pass the check, each removing the socket the previous one
+bound, which left orphaned daemons no command reached. The lock covers startup
+only: a lifetime lock was tried and broke replacing a daemon from another
+build, because the old daemon still held it while it exited. The kernel drops
+the lock if the process dies, and the lock file is never removed (removing it
+would let two daemons lock different files). A panicking panel takes
 the daemon down; the next click spawns a fresh one (no `catch_unwind`).
 
 ```mermaid

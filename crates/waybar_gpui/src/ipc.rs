@@ -220,18 +220,31 @@ pub fn close_others(id: &str, include_own: bool) {
     }
 }
 
+/// Binds `id`'s socket unless another daemon answers on it, then serves it.
 pub fn listen(id: &str, tx: async_channel::Sender<Command>) -> io::Result<()> {
-    let path = socket_path(id);
     fs::create_dir_all(dir())?;
-    if UnixStream::connect(&path).is_ok() {
-        return Err(io::Error::new(io::ErrorKind::AddrInUse, "daemon already running"));
-    }
-    let _ = fs::remove_file(&path);
-    let listener = UnixListener::bind(&path)?;
+    let listener = bind_unless_running(&socket_path(id), &dir().join(format!("{id}.lock")))?;
     // This daemon owns the program now, and with it the log.
     crate::cli::claim_log(id);
     serve(id.to_owned(), listener, ExeId::running()?, tx);
     Ok(())
+}
+
+/// Checks for a daemon on `socket`, removes a stale file and binds, holding an
+/// advisory lock on `lock` for those three steps only, so daemons starting at
+/// the same moment take turns: the first binds, the others find it answering.
+/// The lock is released once bound, so a daemon being replaced holds nothing
+/// its successor waits for, and the kernel releases it if the process dies.
+fn bind_unless_running(socket: &Path, lock: &Path) -> io::Result<UnixListener> {
+    let already_running = || io::Error::new(io::ErrorKind::AddrInUse, "daemon already running");
+    let lock = fs::File::options().create(true).truncate(false).write(true).open(lock)?;
+    lock.lock()?;
+    if UnixStream::connect(socket).is_ok() {
+        return Err(already_running());
+    }
+    let _ = fs::remove_file(socket);
+    // Only a daemon that skips the lock (one from before it) can win here.
+    UnixListener::bind(socket).map_err(|e| if e.kind() == io::ErrorKind::AddrInUse { already_running() } else { e })
 }
 
 /// Answers each connection with `identity`, then forwards its command.
@@ -351,6 +364,40 @@ mod tests {
 
         Connection(UnixStream::connect(&path).unwrap()).send(&Command::Close).unwrap();
         assert_eq!(rx.recv_blocking(), Ok(Command::Close));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Daemons starting at the same moment: exactly one binds, every other one
+    /// finds it answering. A stale socket file nobody answers on doesn't count.
+    #[test]
+    fn only_one_of_simultaneous_daemons_binds() {
+        let dir = env::temp_dir().join(format!("waybar-gpui-race-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let (socket, lock) = (dir.join("race.sock"), dir.join("race.lock"));
+        for _ in 0..50 {
+            // Left by a crashed daemon: a file with no listener behind it.
+            drop(UnixListener::bind(&socket).unwrap());
+            let start = std::sync::Barrier::new(4);
+            let results: Vec<_> = thread::scope(|s| {
+                let handles: Vec<_> = (0..4)
+                    .map(|_| {
+                        s.spawn(|| {
+                            start.wait();
+                            bind_unless_running(&socket, &lock)
+                        })
+                    })
+                    .collect();
+                handles.into_iter().map(|h| h.join().unwrap()).collect()
+            });
+            let (bound, lost): (Vec<_>, Vec<_>) = results.into_iter().partition(Result::is_ok);
+            assert_eq!(bound.len(), 1);
+            for e in lost.into_iter().map(Result::unwrap_err) {
+                assert_eq!(e.to_string(), "daemon already running");
+            }
+            assert!(UnixStream::connect(&socket).is_ok());
+            drop(bound);
+            fs::remove_file(&socket).unwrap();
+        }
         fs::remove_dir_all(&dir).unwrap();
     }
 }
