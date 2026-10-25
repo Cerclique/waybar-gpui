@@ -54,7 +54,7 @@ replace the `{{…}}` placeholders by hand.
 - [Using a waybar-gpui program](docs/guide/using-a-program.md): for people
   who install a program built with it.
 - [API reference](https://docs.rs/waybar_gpui) on docs.rs.
-- [Example panels](crates/example-panels/src/main.rs): one runnable panel per
+- [Example panels](examples/example-panels/src/main.rs): one runnable panel per
   pattern.
 
 ## This repository
@@ -62,7 +62,7 @@ replace the `{{…}}` placeholders by hand.
 | Path | What |
 |---|---|
 | `crates/waybar_gpui` | The SDK (and the runtime, private inside it). |
-| `crates/example-panels` | A program built on the SDK the way yours would be; `waybar/` holds the test bars `make dev` runs. |
+| `examples/example-panels` | A program built on the SDK the way yours would be; `waybar/` holds the test bars `make dev` runs. |
 | `template/` | The cargo-generate starter. |
 | `scripts/` | `check-template.sh`, shared by CI and `make check-template`. |
 | `docs/` | The guide, the [architecture](docs/architecture.md) and ADRs. |

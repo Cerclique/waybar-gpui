@@ -65,7 +65,7 @@ card(cx)
     }))
 ```
 
-[`clock.rs`](../../crates/example-panels/src/clock.rs) does this with an edit
+[`clock.rs`](../../examples/example-panels/src/clock.rs) does this with an edit
 mode (`e` enters it, the first Esc leaves it, the second closes).
 
 Your panel can't stop a backdrop click: with Waybar unclickable while a

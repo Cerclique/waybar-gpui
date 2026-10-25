@@ -20,7 +20,7 @@ impl Panel for ClockPanel {
 }
 ```
 
-Full example: [`clock.rs`](../../crates/example-panels/src/clock.rs).
+Full example: [`clock.rs`](../../examples/example-panels/src/clock.rs).
 
 - **You parse them.** The SDK passes plain strings; decide your own defaults
   and what to do with bad input (fall back, or show an error in the card).

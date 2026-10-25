@@ -276,7 +276,7 @@ real clicks):
 - **Derive macros:** GPUI's derive macros (`gpui-pre-macros 0.3.9`) emit
   hard-coded `gpui::…` paths, rewritten only when `gpui-kit` is a dependency.
   The SDK re-exports `gpui`, so authors write `use waybar_gpui::gpui;` in
-  modules using them (shown in `crates/example-panels/src/workspace.rs`).
+  modules using them (shown in `examples/example-panels/src/workspace.rs`).
 - **Imports:** `layer_shell::*` and `gpui::*` both export an `Anchor`;
   globbing both is a deny-by-default `ambiguous_glob_imports` error on 1.97.
   `runtime.rs` globs `layer_shell::*` with an explicit `gpui::{…}` list, and
@@ -290,7 +290,7 @@ real clicks):
   socket (`.socket.sock`) is opened and closed per request: Hyprland serves it
   synchronously and freezes on held connections.
 - **Waybar config:** Nerd Font glyphs in
-  `crates/example-panels/waybar/config.jsonc` are written as `\uXXXX`
+  `examples/example-panels/waybar/config.jsonc` are written as `\uXXXX`
   escapes; pasted glyphs came out as blank icons.
 
 ## Rejected designs

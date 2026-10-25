@@ -17,7 +17,7 @@ version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Carg
 stale=$( (grep -rnoE '(blob/|--tag )v[0-9]+\.[0-9]+\.[0-9]+' \
   template README.md docs/guide crates/waybar_gpui/src | grep -v "v$version\$"
   grep -rnoE 'waybar_gpui = (\{ version = )?"[0-9]+\.[0-9]+\.[0-9]+"' \
-  template docs/guide crates/example-panels/Cargo.toml | grep -v "\"$version\"\$") || true)
+  template docs/guide examples/example-panels/Cargo.toml | grep -v "\"$version\"\$") || true)
 if [[ -n "$stale" ]]; then
   echo "references to another version than v$version (the workspace version):" >&2
   echo "$stale" >&2
