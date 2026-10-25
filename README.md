@@ -1,5 +1,12 @@
 # waybar-gpui
 
+> [!NOTE]
+> This project is vibe coded: it was built largely with an AI coding
+> assistant. It began as a tool for my own desktop. While refining it, I came
+> to think it could be useful to others as well, and gave it a more deliberate
+> architecture, documentation and tests. I maintain it primarily for my own
+> use, but I will do my best to take reported issues into account.
+
 Write a [GPUI](https://www.gpui.rs) panel in Rust; click a Waybar bar module on
 Hyprland and it opens as a popover next to the bar.
 
