@@ -9,6 +9,9 @@ cargo run -- preview hello            # or: preview clock Tokyo 9
 `preview` opens the panel at your cursor, logs to the terminal, and **exits
 when the popover closes** (Esc, a click outside, or `close(cx)`). It doesn't
 touch your program's running daemon, but it does close any open popover first.
+It has no socket, so the reverse doesn't hold: a `toggle` from a keybind or
+script, or another program opening its popover, can't close a preview, and you
+get two popovers. (Clicks still close it, like any popover.)
 Exit status: 0 after a normal close, 1 if the panel couldn't open, 2 for a bad
 command line.
 

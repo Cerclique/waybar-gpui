@@ -7,7 +7,7 @@
 //!
 //! Clients that don't care who answers (`close`, `quit`, other programs closing
 //! this one's popover) write their command without reading the identity.
-//! `toggle` reads it first and, when it isn't its own binary's, writes `quit`
+//! `toggle` reads it first and, when it isn't its own executable's, writes `quit`
 //! instead (see [`Decision`]).
 //!
 //! Every program's socket lives in one shared directory so runtimes can close
@@ -97,9 +97,9 @@ impl ExeId {
 /// What `toggle` does with the daemon it reached.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Decision {
-    /// Same binary: send it the command.
+    /// Same executable: send it the command.
     Send,
-    /// Another binary, or one too old to say: `quit` it and spawn ourselves.
+    /// Another executable, or one too old to say: `quit` it and spawn ourselves.
     Replace,
 }
 

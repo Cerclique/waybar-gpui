@@ -34,6 +34,9 @@
 //!   stored in the panel, and [`gpui::Global`]s.
 //! - [`card`] and [`Theme`] are the optional standard look; [`close`] closes
 //!   the popover from the panel's own handlers.
+//! - GPUI is re-exported as [`gpui`]; don't depend on it yourself. Its derive
+//!   macros expand to `gpui::…` paths, so modules using them need
+//!   `use waybar_gpui::gpui;`.
 //! - With the `components` feature, gpui-component's widgets are available as
 //!   `waybar_gpui::components`, themed from [`Theme`].
 //!

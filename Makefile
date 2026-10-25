@@ -8,6 +8,7 @@ build:
 
 test:
 	cargo test
+	cargo test --all-features
 
 # The Rust checks CI runs (.github/workflows/ci.yml); `test` covers doctests.
 lint:
@@ -27,7 +28,7 @@ install: build
 	$(MAKE) reload
 
 # Restart the panel daemon (next click respawns it) and make Waybar re-spawn
-# custom modules, picking up new binaries.
+# bar modules, picking up the new programs.
 reload:
 	-example-panels quit
 	-pkill -SIGUSR2 -x waybar

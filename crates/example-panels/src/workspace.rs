@@ -21,7 +21,7 @@ pub struct WorkspacePanel {
     _events: Task<()>,
 }
 
-fn read() -> (Result<hypr::Workspace, String>, Vec<hypr::Client>) {
+fn active_workspace_clients() -> (Result<hypr::Workspace, String>, Vec<hypr::Client>) {
     let workspace = hypr::request::<hypr::Workspace>("activeworkspace").map_err(|e| e.to_string());
     let mut clients: Vec<hypr::Client> = match &workspace {
         Ok(ws) => hypr::request::<Vec<hypr::Client>>("clients")
@@ -39,7 +39,7 @@ impl Panel for WorkspacePanel {
     const NAME: &str = "workspace";
 
     fn new(_args: &[String], _: &mut Window, cx: &mut Context<Self>) -> Self {
-        let (workspace, clients) = read();
+        let (workspace, clients) = active_workspace_clients();
         // The documented live-data pattern: block on a background thread,
         // update the panel on the foreground one.
         let _events = cx.spawn(async move |this, cx| {
@@ -58,7 +58,7 @@ impl Panel for WorkspacePanel {
                     continue;
                 }
                 let alive = this.update(cx, |panel, cx| {
-                    (panel.workspace, panel.clients) = read();
+                    (panel.workspace, panel.clients) = active_workspace_clients();
                     panel.updates += 1;
                     cx.notify();
                 });
@@ -106,10 +106,10 @@ impl Render for WorkspacePanel {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = Theme::get(cx);
         // The card fits its content: no size declared. Width capped, list scrolls.
-        let frame = card(cx).w(gpui::px(340.)).max_h(gpui::px(420.));
+        let card = card(cx).w(gpui::px(340.)).max_h(gpui::px(420.));
         let ws = match &self.workspace {
             Ok(ws) => ws,
-            Err(e) => return frame.child(format!("Hyprland unavailable: {e}")),
+            Err(e) => return card.child(format!("Hyprland unavailable: {e}")),
         };
 
         let header = div()
@@ -123,9 +123,9 @@ impl Render for WorkspacePanel {
 
         let rows = self.clients.iter().map(|client| Row { client: client.clone(), theme });
 
-        frame
+        card
             .child(header)
             .child(div().id("rows").flex().flex_col().gap_1().overflow_y_scroll().children(rows))
-            .when(self.clients.is_empty(), |frame| frame.child(div().text_color(theme.subtext).child("No windows")))
+            .when(self.clients.is_empty(), |card| card.child(div().text_color(theme.subtext).child("No windows")))
     }
 }

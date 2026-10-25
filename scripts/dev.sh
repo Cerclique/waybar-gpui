@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build, then run a second, throwaway Waybar using examples/waybar/ with the
-# freshly built binaries first on PATH. Ctrl-C to stop; your own bar is untouched.
+# freshly built programs first on PATH. Ctrl-C to stop; your own bar is untouched.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

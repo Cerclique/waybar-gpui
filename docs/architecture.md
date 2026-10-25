@@ -140,7 +140,7 @@ Each popover is one GPUI window of kind `WindowKind::LayerShell`:
   `Uuid::new_v5(NAMESPACE_DNS, wl_output name)`, so `display_for_monitor`
   computes that UUID from the Hyprland monitor name and picks the matching
   display.
-- **Backdrop and card:** the root view (`Overlay`) is a full-size `div`, the
+- **Backdrop and card:** the root view (`Popover`) is a full-size `div`, the
   backdrop. The panel is drawn inside a card `div` placed with GPUI's
   `anchored()`. The runtime paints no chrome; `card()` is the panel's choice.
   The card is capped to the usable area (`max_w`/`max_h`); scrolling past that
@@ -158,8 +158,8 @@ Each popover is one GPUI window of kind `WindowKind::LayerShell`:
 
 ### Focus and Esc
 
-The panel is built inside `open_window` before the `Overlay` exists. If its
-`new` focused one of its own elements, `Overlay::new` leaves that focus alone,
+The panel is built inside `open_window` before the `Popover` view exists. If its
+`new` focused one of its own elements, `Popover::new` leaves that focus alone,
 so the panel's key handlers see Esc first and can keep the popover open with
 `cx.stop_propagation()`. Only when nothing is focused does the runtime focus
 the backdrop. Esc that bubbles up to the backdrop's `on_key_down` dismisses.
