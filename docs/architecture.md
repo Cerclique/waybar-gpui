@@ -107,8 +107,16 @@ sequenceDiagram
 ## Log file
 
 A spawned daemon's stderr goes to `$XDG_STATE_HOME/waybar-gpui/<id>.log`
-(`~/.local/state/…` by default). `toggle` creates the directory and truncates
-the file just before spawning, so the log covers the current daemon only.
+(`~/.local/state/…` by default). `toggle` creates the directory and opens the
+file for appending; it doesn't truncate it, because two `toggle`s finding no
+daemon at the same moment both spawn one, and the loser's truncation would
+wipe the winner's log. Instead `ipc::listen` calls `cli::claim_log` right after
+binding the socket: the daemon that owns the socket truncates its stderr if
+stderr is the log file (same device and inode), so the log covers the running
+daemon only. Its descriptor is in append mode, so its next line lands at the
+start. A daemon that lost the race never binds and only appends its `daemon
+already running` line; a `daemon` run by hand has its stderr elsewhere and
+truncates nothing.
 stderr *is* the log: runtime lines (`opened … on DP-1 (Top bar)`,
 `closed … (escape)`, replacements, stale sockets), the author's `eprintln!` or
 any logger they install, and panic messages. The SDK has no logging
