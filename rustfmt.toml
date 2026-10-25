@@ -1,0 +1,10 @@
+# Pins the edition that `cargo fmt` reads from Cargo.toml, so a bare `rustfmt`
+# (editors, scripts) formats the same way, and keeps personal ~/.config/rustfmt
+# settings out of the project.
+edition = "2024"
+style_edition = "2024"
+# The code is written with long lines: chains, struct literals and calls stay
+# on one line up to 120 columns, instead of the default 100 with narrower
+# per-kind limits (60 for a chain, 70 for a call's arguments, ...).
+max_width = 120
+use_small_heuristics = "Max"

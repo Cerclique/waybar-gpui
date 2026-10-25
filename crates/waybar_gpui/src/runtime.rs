@@ -5,9 +5,9 @@
 use std::{cell::Cell, error::Error, io, os::fd::AsFd, rc::Rc};
 
 use gpui::{
-    AnyView, AnyWindowHandle, App, AppContext as _, Bounds, Context, DisplayId, FocusHandle,
-    Global, IntoElement, QuitMode, Render, Size, Window, WindowBackgroundAppearance, WindowBounds,
-    WindowKind, WindowOptions, Edges, anchored, div, layer_shell::*, point, prelude::*, px,
+    AnyView, AnyWindowHandle, App, AppContext as _, Bounds, Context, DisplayId, Edges, FocusHandle, Global,
+    IntoElement, QuitMode, Render, Size, Window, WindowBackgroundAppearance, WindowBounds, WindowKind, WindowOptions,
+    anchored, div, layer_shell::*, point, prelude::*, px,
 };
 use uuid::Uuid;
 
@@ -231,8 +231,10 @@ impl Render for Popover {
             // surface (Hyprland forces them to the exclusive layer); nothing
             // here is "hovered" for those, so test geometrically.
             .on_mouse_down_out(move |event, _, cx| {
-                let inside_surface =
-                    event.position.x >= px(0.) && event.position.y >= px(0.) && event.position.x < px(w) && event.position.y < px(h);
+                let inside_surface = event.position.x >= px(0.)
+                    && event.position.y >= px(0.)
+                    && event.position.x < px(w)
+                    && event.position.y < px(h);
                 if !inside_surface {
                     defer_close("click on another monitor", cx);
                 }
@@ -254,7 +256,12 @@ impl Render for Popover {
                 anchored()
                     .position(point(px(p.anchor.0), px(p.anchor.1)))
                     .anchor(p.corner)
-                    .snap_to_window_with_margin(Edges { top: px(top), right: px(right), bottom: px(bottom), left: px(left) })
+                    .snap_to_window_with_margin(Edges {
+                        top: px(top),
+                        right: px(right),
+                        bottom: px(bottom),
+                        left: px(left),
+                    })
                     .child(card),
             )
     }

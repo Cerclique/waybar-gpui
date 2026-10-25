@@ -15,14 +15,8 @@ use output::Output;
 
 /// Events after which the module re-queries Hyprland. Treat events as
 /// "something changed" rather than tracking state from their payloads.
-const RELEVANT_EVENTS: &[&str] = &[
-    "workspacev2",
-    "focusedmonv2",
-    "openwindow",
-    "closewindow",
-    "movewindowv2",
-    "fullscreen",
-];
+const RELEVANT_EVENTS: &[&str] =
+    &["workspacev2", "focusedmonv2", "openwindow", "closewindow", "movewindowv2", "fullscreen"];
 
 fn render() -> io::Result<Output> {
     let ws: hypr::Workspace = hypr::request("activeworkspace")?;

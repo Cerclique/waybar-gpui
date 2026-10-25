@@ -25,9 +25,7 @@ mod controls;
 mod workspace;
 
 fn main() -> std::process::ExitCode {
-    let app = waybar_gpui::App::new("example-panels")
-        .panel::<workspace::WorkspacePanel>()
-        .panel::<clock::ClockPanel>();
+    let app = waybar_gpui::App::new("example-panels").panel::<workspace::WorkspacePanel>().panel::<clock::ClockPanel>();
     #[cfg(feature = "components")]
     let app = app.panel::<controls::ControlsPanel>();
     app.run()

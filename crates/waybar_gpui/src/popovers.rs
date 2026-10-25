@@ -129,7 +129,10 @@ mod tests {
                 [close("clock", &["Paris"], 1, "toggle"), Effect::Open(other.clone())]
             );
             popovers.opened(other.clone(), 2);
-            assert_eq!(popovers.on(Command::Close), [Effect::Close { target: other, window: 2, reason: "close command" }]);
+            assert_eq!(
+                popovers.on(Command::Close),
+                [Effect::Close { target: other, window: 2, reason: "close command" }]
+            );
         }
     }
 

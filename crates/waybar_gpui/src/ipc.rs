@@ -114,8 +114,7 @@ impl ExeId {
 
     fn parse(line: &str) -> Option<Self> {
         let mut words = line.trim_end_matches('\n').split('\t');
-        let (Some("exe"), Some(dev), Some(ino), None) = (words.next(), words.next(), words.next(), words.next())
-        else {
+        let (Some("exe"), Some(dev), Some(ino), None) = (words.next(), words.next(), words.next(), words.next()) else {
             return None;
         };
         Some(Self { dev: dev.parse().ok()?, ino: ino.parse().ok()? })

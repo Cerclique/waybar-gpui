@@ -28,17 +28,16 @@ pub struct Placement {
 }
 
 pub fn place(cursor: CursorPos, monitors: &[Monitor]) -> Option<Placement> {
-    let monitor = monitors
-        .iter()
-        .find(|m| m.contains(cursor.x, cursor.y))
-        .or_else(|| monitors.iter().find(|m| m.focused))?;
+    let monitor =
+        monitors.iter().find(|m| m.contains(cursor.x, cursor.y)).or_else(|| monitors.iter().find(|m| m.focused))?;
     let (w, h) = monitor.logical_size();
     let [left, top, right, bottom] = monitor.reserved.map(|r| r as f32);
     let (x, y) = (cursor.x - monitor.x as f32, cursor.y - monitor.y as f32);
 
     // The click happened on the bar: the reserved edge closest to the cursor.
     // With nothing reserved (bar not exclusive), fall back to the nearest edge.
-    let candidates = [(Edge::Top, top, y), (Edge::Bottom, bottom, h - y), (Edge::Left, left, x), (Edge::Right, right, w - x)];
+    let candidates =
+        [(Edge::Top, top, y), (Edge::Bottom, bottom, h - y), (Edge::Left, left, x), (Edge::Right, right, w - x)];
     let nearest = |reserved_only: bool| {
         candidates
             .iter()
@@ -69,7 +68,17 @@ mod tests {
     use super::*;
 
     fn monitor(name: &str, x: i32, reserved: [i32; 4]) -> Monitor {
-        Monitor { name: name.into(), x, y: 0, width: 1920, height: 1080, scale: 1.0, transform: 0, focused: false, reserved }
+        Monitor {
+            name: name.into(),
+            x,
+            y: 0,
+            width: 1920,
+            height: 1080,
+            scale: 1.0,
+            transform: 0,
+            focused: false,
+            reserved,
+        }
     }
 
     #[test]
