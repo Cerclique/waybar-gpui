@@ -218,7 +218,7 @@ In `preview`, any close quits the process.
 
 The popover's design rests on how Hyprland 0.56.2 routes input to
 exclusive-keyboard layer surfaces. Conclusions of
-[research/hyprland-two-exclusive-layers][hypr-research] (read from the
+[`docs/research/hyprland-two-exclusive-layers.md`][hypr-research] (read from the
 Hyprland source at `v0.56.2`; the click-routing part was then confirmed with
 real clicks):
 
@@ -266,7 +266,7 @@ real clicks):
   `gpui_component::init`, registers `gpui-kit-assets` (`with_assets`) for
   widget icons, and copies `Theme`'s colours into gpui-component's theme
   (`ThemeConfig`; gpui-component derives the rest through its fallbacks).
-  Conclusions of [research/gpui-component-compat][component-research].
+  Conclusions of [`docs/research/gpui-component-compat.md`][component-research].
 - **No gpui-component `Root`:** on Linux `Root` always wraps the window in
   `window_border()`, because layer surfaces get client-side decorations. That
   adds a 20 px inset per side plus a shadow, which grew a 1920×1080 surface to
@@ -368,6 +368,6 @@ live data stopping on close, a `Global` surviving a close, and
 gpui-component widgets themed from `Theme` without `Root`. A blocking event
 reader (Hyprland's socket) keeps its thread until the next event after close.
 
-[hypr-research]: https://github.com/Cerclique/waybar_gpui_plugin_template/blob/research/hyprland-two-exclusive-layers/docs/research/hyprland-two-exclusive-layers.md
-[component-research]: https://github.com/Cerclique/waybar_gpui_plugin_template/blob/research/gpui-component-compat/docs/research/gpui-component-compat.md
+[hypr-research]: research/hyprland-two-exclusive-layers.md
+[component-research]: research/gpui-component-compat.md
 [proto]: https://github.com/Cerclique/waybar_gpui_plugin_template/tree/prototype/panel-api
