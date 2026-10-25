@@ -1,95 +1,79 @@
-# waybar_gpui_plugin_template
+# waybar-gpui
 
-Template for custom Waybar modules on Hyprland, with a GPUI popover opened by
-clicking the module.
+Write a [GPUI](https://www.gpui.rs) panel in Rust; click a Waybar bar module on
+Hyprland and it opens as a popover next to the bar.
 
+![A popover open under the top bar](docs/guide/img/popover.png)
+
+`waybar_gpui` is an SDK: your own program depends on it, registers its panels
+and hands over the command line. The SDK's runtime does the rest: the
+background daemon, placing the popover next to the clicked bar module, closing
+it on Esc or a click outside, and keeping one popover open at a time across
+every program that uses it.
+
+## Quickstart
+
+Requirements: Hyprland (tested with 0.56), Waybar, Rust 1.97+, a Vulkan driver,
+and [cargo-generate](https://github.com/cargo-generate/cargo-generate)
+(`cargo install cargo-generate`).
+
+```sh
+cargo generate --git https://github.com/Cerclique/waybar-gpui template --tag v0.1.0
+cd my-panels                         # the project name you gave
+cargo run -- preview hello           # the Hello panel at your cursor; Esc closes it
+cargo install --path . --locked      # into ~/.cargo/bin
+my-panels                            # prints the on-click line for each panel
 ```
- Waybar ── exec ──────▶ waybar-hypr-ws  ◀── Hyprland .socket2.sock (events)
-   │                    prints one JSON line per change
-   └── on-click ──────▶ example-panels toggle workspace
-                            │ Unix socket ($XDG_RUNTIME_DIR/waybar-gpui/example-panels.sock)
-                            ▼
-                        example-panels daemon (GPUI, stays running)
-                        opens/closes a layer-shell popover under the cursor
+
+Add a bar module to `~/.config/waybar/config.jsonc` with that line, then
+reload Waybar (`pkill -SIGUSR2 waybar`):
+
+```jsonc
+"custom/hello": {
+  "exec": "echo hello",
+  "interval": "once",
+  "exec-on-event": false,
+  "on-click": "~/.cargo/bin/my-panels toggle hello",
+},
 ```
+
+Click it. No cargo-generate? Copy the [`template/`](template) folder and
+replace the `{{…}}` placeholders by hand.
+
+## Documentation
+
+- [The guide](docs/guide/index.md): writing panels, live data, theming,
+  widgets, the dev loop, installing, limits, troubleshooting.
+- [Using a waybar-gpui program](docs/guide/using-a-program.md): for people
+  who install a program built with it.
+- Rustdoc: `cargo doc --open` in your project.
+- [Example panels](crates/example-panels/src/main.rs): one runnable panel per
+  pattern.
+
+## This repository
 
 | Path | What |
 |---|---|
-| `crates/hypr` | Minimal Hyprland IPC: `request::<T>("activeworkspace")`, `Events` iterator. No dependencies besides serde. |
-| `crates/module` | `waybar-hypr-ws`, a continuous `custom/*` module (active workspace). Event-driven, no polling. |
-| `crates/waybar_gpui` | The SDK: `Panel`, `App`, `card`, `Theme`, `close`; the runtime (daemon, placement, dismissal) is private inside it. |
-| `crates/example-panels` | `example-panels`, a program built on the SDK the way an author's would be. |
-| `examples/waybar/` | Waybar config + CSS (also used by `scripts/dev.sh`): a top bar and a left bar. |
-| `examples/hypr/waybar-gpui.lua` | Optional Hyprland layer rule (blur/animation) for every program's popovers. |
-| `docs/spec.md` | What is being built: the runtime + SDK spec. |
-| `docs/research/` | Background research: Waybar extension mechanisms, GPUI on Wayland. |
-
-## Requirements
-
-Hyprland, Waybar ≥ 0.10, Rust stable (tested with 1.97.1), a working Vulkan
-driver (GPUI renders with wgpu/Vulkan).
-
-## Try it
+| `crates/waybar_gpui` | The SDK (and the runtime, private inside it). |
+| `crates/example-panels` | A program built on the SDK the way yours would be. |
+| `crates/module` | `waybar-hypr-ws`, an example `custom/*` bar module (active Hyprland workspace). |
+| `crates/hypr` | Minimal Hyprland IPC used by the runtime and the examples; internal. |
+| `template/` | The cargo-generate starter. |
+| `examples/` | Waybar and Hyprland config used by `make dev`. |
+| `docs/` | The guide, the [spec](docs/spec.md), the [architecture](docs/architecture.md) and ADRs. |
 
 ```sh
-make dev          # builds, runs a second Waybar with examples/waybar/, Ctrl-C to stop
+make dev              # a second Waybar (top + left bars) wired to example-panels; Ctrl-C stops it
+make test             # unit tests and doctests
+make lint             # clippy without and with --all-features, cargo doc -D warnings
+make check-template   # the starter template, as CI checks it (needs cargo-generate)
 ```
 
-Click the workspace label on the test bar to open the popover. Esc or a click
-anywhere outside it (including the label again) closes it.
+Contributors: start with [`docs/architecture.md`](docs/architecture.md) and
+the [glossary](GLOSSARY.md).
 
-## Install into your own bar
+## Versions
 
-```sh
-make install      # release build into ~/.local/bin, then reloads Waybar
-```
-
-Copy the `"custom/hypr-ws"` block from `examples/waybar/config.jsonc` into
-`~/.config/waybar/config.jsonc`, add it to a `modules-*` list, and copy the CSS
-rules into your `style.css`. Waybar runs commands with its own `PATH`; if
-`~/.local/bin` isn't on it, use absolute paths in `exec` and `on-click`
-(`~` works: Waybar runs them through `/bin/sh -c`).
-
-## How the popover works
-
-Wayland only lets a real popover (`xdg_popup`) attach to a surface owned by the
-same process, so a separate program can't attach one to Waybar. Instead the
-daemon opens a **layer-shell surface** on the overlay layer and draws the panel
-under the clicked icon, positioned from `hyprctl cursorpos` and the monitor's
-reserved area (`crates/waybar_gpui/src/placement.rs`).
-It has no border or title bar and shows on the monitor you clicked.
-
-The surface actually covers the **whole output**, bar included, and is
-transparent except for the panel card drawn at the computed position. It has
-exclusive keyboard focus, so Esc always works, and a click anywhere outside the
-card (including on the module again) lands on the same surface and closes it.
-This avoids two dead ends found while testing: closing on focus loss (Hyprland's
-`follow_mouse` moves focus as soon as the pointer moves) and a separate
-backdrop surface (it never received clicks while an exclusive-keyboard layer
-was open). Open/close events are logged to stderr, which ends up in Waybar's
-log.
-
-The first `toggle` starts the daemon in the background (~100 ms to show the
-first popover). Later ones only create a small surface (<20 ms), because the
-GPU device and fonts stay loaded. `example-panels quit` stops it.
-
-## Adding things
-
-- **New module output:** edit `render()` in `crates/module/src/main.rs` and
-  `RELEVANT_EVENTS`. The JSON fields are in `output.rs` (`man 5 waybar-custom`).
-- **New popover panel:** implement `waybar_gpui::Panel` (a `NAME` and a
-  `new`) plus GPUI `Render` like `crates/example-panels/src/workspace.rs`,
-  wrap the content in `card(cx)`, and register it with `.panel::<YourPanel>()`
-  in `main.rs`. Point an `on-click` at `example-panels toggle <name>`.
-- **More Hyprland data:** add a struct to `crates/hypr` for any `hyprctl -j`
-  command.
-
-## Caveats
-
-- GPUI comes from the community `gpui-pre` snapshot crates, pinned to
-  `=0.3.9`. The official `gpui` crate on crates.io is outdated and lacks
-  layer-shell support. The API changes between snapshots, so upgrade
-  deliberately and keep `Cargo.lock`.
-- While the popover is open, the first click outside it only closes it; it
-  doesn't reach the window below.
-- Waybar runs one module process per monitor. That's expected.
+A git dependency with `vX.Y.Z` tags, not on crates.io: GPUI is pre-1.0, pinned
+exactly (`gpui-pre =0.3.9`). 0.x semver; every GPUI pin change is a breaking
+release. Details: [Limits](docs/guide/limits.md#versions).

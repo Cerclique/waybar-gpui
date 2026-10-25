@@ -8,7 +8,8 @@ bar modules on Hyprland. Read before working:
 - `docs/architecture.md`: how the runtime works and why; verified behaviour;
   rejected designs. Read before changing `crates/waybar_gpui`.
 - `docs/adr/`: decisions that are hard to reverse.
-- `docs/guide/` (coming, issue #32): the author-facing guide.
+- `docs/guide/`: the author-facing guide (README quickstart → guide → rustdoc).
+  A behaviour change updates the one doc that owns the fact.
 
 Crates: `waybar_gpui` (SDK + runtime), `example-panels` (a program built on
 it), `waybar-hypr-ws` in `crates/module` (bar module), `hypr` (internal IPC).
