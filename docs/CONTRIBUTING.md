@@ -93,13 +93,17 @@ The workflows live in [`.github/workflows/`](../.github/workflows/):
 
 | Workflow | Runs on | What it does |
 | --- | --- | --- |
-| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on Rust 1.97.1, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`; `template`: `make check-template`; `links`: the lychee link check |
+| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on Rust 1.97.1, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`; `template`: `make check-template`; `links`: the lychee link check; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
 | `pr-title.yml` | PRs (opened, edited, pushed to) | `conventional`: the PR title is a conventional commit |
-| `release.yml` | `v*` tag push | Creates the GitHub Release from the tag's `CHANGELOG.md` section |
+| `release.yml` | `v*` tag push | Creates the GitHub Release from the tag's `CHANGELOG.md` section, then publishes `waybar_gpui` on crates.io |
+| `scheduled.yml` | Mondays, or by hand | `advisories`: `cargo deny check advisories` on the locked dependencies; `beta`: tests and clippy on Rust beta |
 
-A new push to a PR cancels its running `ci.yml` run. Jobs time out after 45
-minutes (build jobs, which build all of GPUI on a cold cache) or less.
-Actions are pinned to a commit, with the release in a comment.
+Every job in `ci.yml` and `pr-title.yml` is required to merge, except
+`semver`: a red `semver` means the PR breaks the SDK's API, so the next
+release bumps the minor (0.x semver). A new push to a PR cancels its running
+`ci.yml` run. Jobs time out after 45 minutes (build jobs, which build all of
+GPUI on a cold cache) or less. Actions are pinned to a commit, with the
+release in a comment.
 
 [Dependabot](../.github/dependabot.yml) opens one grouped PR a week for Cargo
 dependencies (`build(deps): …`, listed in the changelog) and one for actions
@@ -185,12 +189,11 @@ whose changelog names the new versions.
    Pushing the tag runs the `Release` workflow: it creates the GitHub Release
    with the tag's section of `CHANGELOG.md` as notes, and fails if that
    section is missing or undated.
-5. Publish the SDK on crates.io from the tagged commit (once, `cargo login`
-   with a crates.io API token):
-
-   ```sh
-   cargo publish -p waybar_gpui
-   ```
+5. The same workflow then publishes the SDK on crates.io from the tagged
+   commit (`cargo publish -p waybar_gpui`), with
+   [trusted publishing](https://crates.io/docs/trusted-publishing): crates.io
+   trusts this repository's `release.yml`, so no token is stored. Check the
+   new version appears on crates.io.
 
    It can't be undone: a published version can be yanked, never replaced
    ([ADR 0004](adr/0004-published-on-crates-io.md)). If it fails, fix the
