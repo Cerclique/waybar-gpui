@@ -11,7 +11,7 @@ the commit history; 0.1.0 is written by hand.
 
 The first release: write a GPUI panel in Rust, click a Waybar bar module on
 Hyprland (0.56) and it opens as a popover next to the bar. Built on
-`gpui-pre =0.3.9`; a git dependency at a `vX.Y.Z` tag, not on crates.io.
+`gpui-pre =0.3.9`; on crates.io as `waybar_gpui`.
 
 ### Added
 

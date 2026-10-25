@@ -28,8 +28,9 @@
 
 ## Versions
 
-- The SDK is a **git dependency** with version tags (`tag = "vX.Y.Z"`), not a
-  crates.io crate: GPUI isn't stable enough to publish against.
+- The SDK is on **crates.io**: `waybar_gpui = "X.Y.Z"` in your `Cargo.toml`.
+  Each release is also tagged `vX.Y.Z` in the repository; the starter
+  template and the guide links use the tag.
 - **0.x semver:** a breaking change bumps the minor version (`v0.1.x` →
   `v0.2.0`); fixes bump the patch.
 - GPUI (`gpui-pre`) and gpui-component are **pinned exactly**, and move

@@ -161,7 +161,8 @@ whose changelog names the new versions.
 1. On a `release/vX.Y.Z` branch from `main`, bump `version` in
    `[workspace.package]` of the top-level `Cargo.toml` (`cargo build` updates
    `Cargo.lock`) and every versioned SDK reference with it: the template's
-   `tag`, the README's `--tag`, tagged guide links. `make check-template` lists
+   and the guide's `waybar_gpui` version, the README's `--tag`, tagged guide
+   links. `make check-template` lists
    any left behind.
 2. Add the release's section to the changelog:
 
