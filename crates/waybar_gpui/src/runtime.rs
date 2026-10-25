@@ -15,12 +15,13 @@ use crate::{
     Build,
     ipc::{self, Command, Target},
     placement::{self, Placement},
+    popovers::{Effect, Popovers},
 };
 
 struct Registry {
     id: String,
     panels: Vec<(&'static str, Build)>,
-    /// Running as `preview`: closing the popover quits.
+    /// Running as `preview`: it also closes its own daemon's popover.
     preview: bool,
     /// Set when a preview can't open its panel, for the exit status.
     open_failed: Rc<Cell<bool>>,
@@ -37,10 +38,7 @@ pub enum Mode {
 
 impl Global for Registry {}
 
-#[derive(Default)]
-struct OpenPopover(Option<(Target, AnyWindowHandle)>);
-
-impl Global for OpenPopover {}
+impl Global for Popovers<AnyWindowHandle> {}
 
 /// Closes this program's popover once the current update finishes. Call it
 /// from the panel's own event handlers.
@@ -52,7 +50,8 @@ pub fn close(cx: &mut App) {
 /// during its own dispatch.
 fn defer_close(reason: &'static str, cx: &mut App) {
     cx.defer(move |cx| {
-        close_now(reason, cx);
+        let effects = cx.global_mut::<Popovers<AnyWindowHandle>>().close(reason);
+        apply(effects, cx);
     });
 }
 
@@ -83,10 +82,13 @@ pub fn run(app: crate::App, mode: Mode) -> io::Result<()> {
         }
         cx.set_global(theme);
         cx.set_global(Registry { id, panels, preview, open_failed });
-        cx.set_global(OpenPopover::default());
+        cx.set_global(Popovers::<AnyWindowHandle>::new(preview));
         cx.spawn(async move |cx| {
             while let Ok(command) = rx.recv().await {
-                cx.update(|cx| handle(command, cx));
+                cx.update(|cx| {
+                    let effects = cx.global_mut::<Popovers<AnyWindowHandle>>().on(command);
+                    apply(effects, cx);
+                });
             }
         })
         .detach();
@@ -97,45 +99,37 @@ pub fn run(app: crate::App, mode: Mode) -> io::Result<()> {
     Ok(())
 }
 
-fn handle(command: Command, cx: &mut App) {
-    match command {
-        Command::Toggle(target) => {
-            // Same panel with the same arguments: close. Anything else: switch.
-            if close_now("toggle", cx).as_ref() == Some(&target) {
-                return;
+/// Carries out the popover rules' effects, reporting each open's outcome back.
+/// No decisions here: those are in `Popovers`.
+fn apply(effects: Vec<Effect<AnyWindowHandle>>, cx: &mut App) {
+    for effect in effects {
+        match effect {
+            Effect::Close { target, window, reason } => {
+                let _ = window.update(cx, |_, window, _| window.remove_window());
+                eprintln!("{}: closed {target} ({reason})", cx.global::<Registry>().id);
             }
-            if let Err(e) = open(target.clone(), cx) {
-                let registry = cx.global::<Registry>();
-                eprintln!("{}: cannot open {target}: {e}", registry.id);
-                if registry.preview {
-                    registry.open_failed.set(true);
-                    cx.quit();
+            Effect::Open(target) => match open(&target, cx) {
+                Ok(window) => cx.global_mut::<Popovers<AnyWindowHandle>>().opened(target, window),
+                Err(e) => {
+                    eprintln!("{}: cannot open {target}: {e}", cx.global::<Registry>().id);
+                    let effects = cx.global_mut::<Popovers<AnyWindowHandle>>().open_failed();
+                    apply(effects, cx);
                 }
+            },
+            Effect::RemoveSocket => {
+                let _ = std::fs::remove_file(ipc::socket_path(&cx.global::<Registry>().id));
+            }
+            Effect::Quit { failed } => {
+                if failed {
+                    cx.global::<Registry>().open_failed.set(true);
+                }
+                cx.quit();
             }
         }
-        Command::Close => {
-            close_now("close command", cx);
-        }
-        Command::Quit => {
-            close_now("quit", cx);
-            let _ = std::fs::remove_file(ipc::socket_path(&cx.global::<Registry>().id));
-            cx.quit();
-        }
     }
 }
 
-fn close_now(reason: &str, cx: &mut App) -> Option<Target> {
-    let (target, handle) = cx.global_mut::<OpenPopover>().0.take()?;
-    let _ = handle.update(cx, |_, window, _| window.remove_window());
-    let registry = cx.global::<Registry>();
-    eprintln!("{}: closed {target} ({reason})", registry.id);
-    if registry.preview {
-        cx.quit();
-    }
-    Some(target)
-}
-
-fn open(target: Target, cx: &mut App) -> Result<(), Box<dyn Error>> {
+fn open(target: &Target, cx: &mut App) -> Result<AnyWindowHandle, Box<dyn Error>> {
     let registry = cx.global::<Registry>();
     let id = registry.id.clone();
     let preview = registry.preview;
@@ -186,8 +180,7 @@ fn open(target: Target, cx: &mut App) -> Result<(), Box<dyn Error>> {
     })?;
 
     eprintln!("{id}: opened {target} on {} ({:?} bar)", placement.monitor, placement.edge);
-    cx.global_mut::<OpenPopover>().0 = Some((target, handle.into()));
-    Ok(())
+    Ok(handle.into())
 }
 
 /// The popover's root view: the full-monitor backdrop, with the panel's card

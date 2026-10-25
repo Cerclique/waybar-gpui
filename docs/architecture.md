@@ -14,7 +14,8 @@ recorded as ADRs in `docs/adr/`
 | `lib.rs` | Public API: `Panel`, `App`, re-exports. |
 | `cli.rs` | argv parsing, usage text, the click client (`toggle`, `close`, `quit`), spawning the daemon, the log file. |
 | `ipc.rs` | Socket directory, line protocol, `Target` (a panel name and its arguments), daemon identity, closing other programs' popovers. |
-| `runtime.rs` | The GPUI side: `daemon` and `preview`, the popover surface, focus, dismissal. |
+| `popovers.rs` | The popover rules without GPUI: what a toggle, `close`, `quit` or a dismissal does, and when the process quits. Returns effects; unit-tested. |
+| `runtime.rs` | The GPUI side: `daemon` and `preview`, carrying out `popovers.rs`'s effects, the popover surface, focus, dismissal. |
 | `placement.rs` | Monitor and bar-edge detection, the anchor point and margins. |
 | `theme.rs` | `Theme`, `card()`, copying `Theme` into gpui-component's theme. |
 
@@ -110,7 +111,7 @@ sequenceDiagram
   anyway. Consequence, intended: a `target/debug` build and an installed copy
   with the same ID replace each other's daemon, so each click shows its own
   binary's panels. `quit` remains as the escape hatch.
-- **Toggle semantics** (`runtime::handle`): if the open popover has the same
+- **Toggle semantics** (`Popovers::on` in `popovers.rs`): if the open popover has the same
   panel and the same panel arguments (an equal `ipc::Target`), close it;
   otherwise close whatever is open and open the new one, built fresh.
 
@@ -187,8 +188,10 @@ the backdrop. Esc that bubbles up to the backdrop's `on_key_down` dismisses.
 
 ### Dismissal paths
 
-Every close goes through `close_now`, deferred with `cx.defer` so nothing
-removes the window during its own event dispatch, and logs a reason:
+Every close is a `Close` effect from `Popovers` (`popovers.rs`) and logs a
+reason. Closes from the popover's own events (the first four rows) are
+deferred with `cx.defer`, so nothing removes the window during its own event
+dispatch; commands from the socket close at once:
 
 | Path | Reason logged |
 |---|---|

@@ -48,6 +48,7 @@
 mod cli;
 mod ipc;
 mod placement;
+mod popovers;
 mod runtime;
 mod theme;
 
