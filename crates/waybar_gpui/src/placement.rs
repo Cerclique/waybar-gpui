@@ -21,6 +21,8 @@ pub struct Placement {
     pub edge: Edge,
     /// Anchor point, output-local: the middle of the card's bar-side edge.
     pub anchor: (f32, f32),
+    /// The card's point that sits on `anchor`.
+    pub corner: gpui::Anchor,
     /// Space to keep free on each side: reserved area + gap. [left, top, right, bottom].
     pub margins: [f32; 4],
 }
@@ -46,17 +48,18 @@ pub fn place(cursor: CursorPos, monitors: &[Monitor]) -> Option<Placement> {
     };
     let edge = nearest(true).or_else(|| nearest(false))?;
 
-    let anchor = match edge {
-        Edge::Top => (x, top + GAP),
-        Edge::Bottom => (x, h - bottom - GAP),
-        Edge::Left => (left + GAP, y),
-        Edge::Right => (w - right - GAP, y),
+    let (anchor, corner) = match edge {
+        Edge::Top => ((x, top + GAP), gpui::Anchor::TopCenter),
+        Edge::Bottom => ((x, h - bottom - GAP), gpui::Anchor::BottomCenter),
+        Edge::Left => ((left + GAP, y), gpui::Anchor::LeftCenter),
+        Edge::Right => ((w - right - GAP, y), gpui::Anchor::RightCenter),
     };
     Some(Placement {
         monitor: monitor.name.clone(),
         monitor_size: (w, h),
         edge,
         anchor,
+        corner,
         margins: [left + GAP, top + GAP, right + GAP, bottom + GAP],
     })
 }
@@ -77,6 +80,7 @@ mod tests {
         assert_eq!(p.monitor_size, (1920.0, 1080.0));
         assert_eq!(p.edge, Edge::Top);
         assert_eq!(p.anchor, (807.0, 42.0));
+        assert_eq!(p.corner, gpui::Anchor::TopCenter);
         assert_eq!(p.margins, [6.0, 42.0, 6.0, 6.0]);
     }
 
@@ -85,6 +89,7 @@ mod tests {
         let p = place(CursorPos { x: 1910.0, y: 1070.0 }, &[monitor("DP-1", 0, [0, 0, 0, 30])]).unwrap();
         assert_eq!(p.edge, Edge::Bottom);
         assert_eq!(p.anchor, (1910.0, 1044.0));
+        assert_eq!(p.corner, gpui::Anchor::BottomCenter);
     }
 
     #[test]
@@ -93,9 +98,11 @@ mod tests {
         let left = place(CursorPos { x: 20.0, y: 500.0 }, &monitors).unwrap();
         assert_eq!(left.edge, Edge::Left);
         assert_eq!(left.anchor, (46.0, 500.0));
+        assert_eq!(left.corner, gpui::Anchor::LeftCenter);
         let right = place(CursorPos { x: 1900.0, y: 700.0 }, &monitors).unwrap();
         assert_eq!(right.edge, Edge::Right);
         assert_eq!(right.anchor, (1874.0, 700.0));
+        assert_eq!(right.corner, gpui::Anchor::RightCenter);
     }
 
     #[test]
@@ -103,5 +110,6 @@ mod tests {
         let p = place(CursorPos { x: 300.0, y: 1075.0 }, &[monitor("DP-1", 0, [0, 0, 0, 0])]).unwrap();
         assert_eq!(p.edge, Edge::Bottom);
         assert_eq!(p.anchor, (300.0, 1074.0));
+        assert_eq!(p.corner, gpui::Anchor::BottomCenter);
     }
 }

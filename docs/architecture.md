@@ -246,8 +246,8 @@ real clicks):
   modules using them (shown in `crates/example-panels/src/workspace.rs`).
 - **Imports:** `layer_shell::*` and `gpui::*` both export an `Anchor`;
   globbing both is a deny-by-default `ambiguous_glob_imports` error on 1.97.
-  `runtime.rs` globs `layer_shell::*` with an explicit `gpui::{…}` list and
-  names `gpui::Anchor` in full.
+  `runtime.rs` globs `layer_shell::*` with an explicit `gpui::{…}` list, and
+  `placement.rs` names `gpui::Anchor` in full.
 
 ## Elsewhere in the repo
 

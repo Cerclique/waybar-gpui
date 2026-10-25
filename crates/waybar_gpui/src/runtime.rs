@@ -14,7 +14,7 @@ use uuid::Uuid;
 use crate::{
     Build,
     ipc::{self, Command},
-    placement::{self, Edge, Placement},
+    placement::{self, Placement},
 };
 
 struct Registry {
@@ -213,12 +213,6 @@ impl Render for Popover {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         let p = &self.placement;
         let [left, top, right, bottom] = p.margins;
-        let corner = match p.edge {
-            Edge::Top => gpui::Anchor::TopCenter,
-            Edge::Bottom => gpui::Anchor::BottomCenter,
-            Edge::Left => gpui::Anchor::LeftCenter,
-            Edge::Right => gpui::Anchor::RightCenter,
-        };
         let (w, h) = p.monitor_size;
 
         let card = div()
@@ -252,7 +246,7 @@ impl Render for Popover {
             .child(
                 anchored()
                     .position(point(px(p.anchor.0), px(p.anchor.1)))
-                    .anchor(corner)
+                    .anchor(p.corner)
                     .snap_to_window_with_margin(Edges { top: px(top), right: px(right), bottom: px(bottom), left: px(left) })
                     .child(card),
             )
