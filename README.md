@@ -69,11 +69,14 @@ make lint             # clippy without and with --all-features, cargo doc -D war
 make check-template   # the starter template, as CI checks it (needs cargo-generate)
 ```
 
-Contributors: start with [`docs/architecture.md`](docs/architecture.md) and
-the [glossary](GLOSSARY.md).
-
 ## Versions
 
 A git dependency with `vX.Y.Z` tags, not on crates.io: GPUI is pre-1.0, pinned
 exactly (`gpui-pre =0.3.9`). 0.x semver; every GPUI pin change is a breaking
 release. Details: [Limits](docs/guide/limits.md#versions).
+
+## Contributing
+
+Start with [CONTRIBUTING](docs/CONTRIBUTING.md) and the
+[Code of Conduct](docs/CODE_OF_CONDUCT.md). Report vulnerabilities privately:
+[SECURITY](docs/SECURITY.md). MIT licensed: [LICENSE](LICENSE).

@@ -8,6 +8,7 @@ bar modules on Hyprland. Read before working:
 - `docs/architecture.md`: how the runtime works and why; verified behaviour;
   rejected designs. Read before changing `crates/waybar_gpui`.
 - `docs/adr/`: decisions that are hard to reverse.
+- `docs/CONTRIBUTING.md`: setup, checks and pull-request rules; read before opening a PR.
 - `docs/guide/`: the author-facing guide (README quickstart → guide → rustdoc).
   A behaviour change updates the one doc that owns the fact.
 
