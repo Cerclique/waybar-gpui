@@ -2,6 +2,7 @@
 name = "{{project-name}}"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.95"
 
 [dependencies]
 waybar_gpui = { git = "https://github.com/Cerclique/waybar-gpui", tag = "v0.1.0"{% if components %}, features = ["components"]{% endif %} }

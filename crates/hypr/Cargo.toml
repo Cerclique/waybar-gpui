@@ -4,7 +4,12 @@ description = "Minimal Hyprland IPC client (request socket + event socket)"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
+rust-version.workspace = true
+publish.workspace = true
 
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+
+[lints]
+workspace = true

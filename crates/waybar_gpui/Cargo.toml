@@ -4,6 +4,8 @@ description = "Write a GPUI panel, get a Waybar popover on Hyprland"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
+rust-version.workspace = true
+publish.workspace = true
 
 [features]
 # gpui-component widgets, themed from `Theme`. Costs ~110 crates and ~10 MB.
@@ -20,3 +22,6 @@ uuid = { version = "1", features = ["v5"] }
 gpui-component = { version = "=0.8.0", optional = true }
 # Icon SVGs for gpui-component widgets (dropdown arrows, checkmarks…).
 gpui-kit-assets = { version = "=0.8.0", optional = true }
+
+[lints]
+workspace = true
