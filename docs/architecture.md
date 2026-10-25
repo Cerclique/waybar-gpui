@@ -14,11 +14,11 @@ recorded as ADRs in `docs/adr/`
 | `lib.rs` | Public API: `Panel`, `App`, re-exports. |
 | `cli.rs` | argv parsing, usage text, dispatching each command to `client.rs` or `runtime.rs`. |
 | `client.rs` | The click client: making sure a daemon of *this* program receives `toggle`, `close` or `quit`. Behind `toggle`: comparing the daemon's identity with its own, replacing a daemon of another executable (`quit`, wait for it to go, start ours) and starting one when none runs. The seam is `Executable` (its identity, starting its daemon): `CurrentExe` re-runs `current_exe() daemon <panel> [args…]` detached with stderr appended to the log; tests start fake daemons in a temp directory. |
-| `files.rs` | What a program owns on disk: `ProgramFiles` (socket directory, socket, lock and log paths, resolved once from `XDG_RUNTIME_DIR`, `XDG_STATE_HOME` and `HOME`, the only place reading them), and the daemon taking ownership (`claim`: lock, check, remove a stale socket, bind, claim the log, serve) and giving it up (`Ownership::give_up` removes the socket on `quit`). |
+| `files.rs` | What a program owns on disk: `ProgramFiles` (socket directory, socket, lock and log paths, resolved once from `XDG_RUNTIME_DIR`, `XDG_STATE_HOME` and `HOME`, the only place reading them), and the daemon taking ownership (`claim`: lock, check, remove a stale socket, bind, claim the log, serve) and giving it up (`Ownership::give_up` removes the socket on `quit`); closing other programs' popovers (`close_others`: scanning the socket directory, deleting stale sockets). Everything that touches the shared directory is here. |
 | `panels.rs` | `Panels`: the registered panels, the one place a panel is looked up by name (`cli.rs` to check a command line and print the usage, `runtime.rs` to build it) and a duplicate name is rejected. |
-| `ipc.rs` | Line protocol, `Target` (a panel name and its arguments), daemon identity (`ExeId`), and its two ends: `Connection` (the client's) and `serve` (the daemon's, on a bound socket); closing other programs' popovers. |
+| `ipc.rs` | Line protocol, `Target` (a panel name and its arguments), daemon identity (`ExeId`), and its two ends: `Connection` (the client's, to a socket path) and `serve` (the daemon's, on a bound socket). It knows no paths or directories; `files.rs` depends on it, not the reverse. |
 | `popovers.rs` | The popover rules without GPUI: what a toggle, `close`, `quit` or a dismissal does, and when the process quits. Returns effects; unit-tested. |
-| `runtime.rs` | The GPUI side: `daemon` and `preview`, carrying out `popovers.rs`'s effects, the popover surface, focus, dismissal. |
+| `runtime.rs` | The GPUI side: `daemon` and `preview` (a `Session` holds what each needs: the daemon's `Ownership`, the preview's failure for its exit status), carrying out `popovers.rs`'s effects, the popover surface, focus, dismissal. |
 | `placement.rs` | Monitor and bar-edge detection, the anchor point and margins. |
 | `theme.rs` | `Theme`, `card()`, copying `Theme` into gpui-component's theme. |
 
@@ -145,8 +145,9 @@ dependency. `toggle`'s own errors stay on its stderr, which Waybar logs;
 ## Coordination between programs
 
 At most one popover is open across all programs. Before opening, a runtime
-(`ipc::close_others`) connects to every other `*.sock` in the directory and
-writes `close`. Best effort: no lock, no central process, no waiting for
+(`ProgramFiles::close_others`, `files.rs`) connects to every other `*.sock` in
+the directory and writes `close`; a preview, which has no socket, includes its
+own program's. Best effort: no lock, no central process, no waiting for
 replies. A socket that refuses the connection was left by a crashed program and
 is deleted. It takes no lock, not even another program's `<id>.lock`: a daemon
 caught between `bind` and `listen` also refuses, and losing its socket file

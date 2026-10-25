@@ -13,21 +13,29 @@ use uuid::Uuid;
 
 use crate::{
     files::{Ownership, ProgramFiles},
-    ipc::{self, Command, Target},
+    ipc::{Command, Target},
     panels::Panels,
     placement::{self, Placement},
     popovers::{Effect, Popovers},
 };
 
 struct Registry {
-    id: String,
     panels: Panels,
-    /// Running as `preview`: it also closes its own daemon's popover.
-    preview: bool,
-    /// Set when a preview can't open its panel, for the exit status.
-    open_failed: Rc<Cell<bool>>,
-    /// The daemon's socket, given up on `quit`; `None` in a preview.
-    ownership: Option<Ownership>,
+    session: Session,
+}
+
+/// What the running process holds for its [`Mode`].
+enum Session {
+    /// The daemon's socket, given up on `quit` (`None` once given up).
+    Daemon { ownership: Option<Ownership> },
+    /// Set when the preview's panel can't open, for the exit status.
+    Preview { failed: Rc<Cell<bool>> },
+}
+
+impl Session {
+    fn is_preview(&self) -> bool {
+        matches!(self, Self::Preview { .. })
+    }
 }
 
 /// What the process runs as.
@@ -62,16 +70,18 @@ impl Global for ProgramFiles {}
 
 pub fn run(app: crate::App, files: ProgramFiles, mode: Mode) -> io::Result<()> {
     let (tx, rx) = async_channel::unbounded();
-    let (initial, preview, ownership) = match mode {
-        Mode::Daemon(initial) => (initial, false, Some(files.claim(io::stderr().as_fd(), tx.clone())?)),
-        Mode::Preview(target) => (Some(target), true, None),
+    let failed = Rc::new(Cell::new(false));
+    let (initial, session) = match mode {
+        Mode::Daemon(initial) => {
+            (initial, Session::Daemon { ownership: Some(files.claim(io::stderr().as_fd(), tx.clone())?) })
+        }
+        Mode::Preview(target) => (Some(target), Session::Preview { failed: failed.clone() }),
     };
     if let Some(target) = initial {
         let _ = tx.try_send(Command::Toggle(target));
     }
-    let crate::App { id, theme, panels } = app;
-    let open_failed = Rc::new(Cell::new(false));
-    let failed = open_failed.clone();
+    // The program ID is `files`' from here on.
+    let crate::App { theme, panels, .. } = app;
 
     let application = gpui_platform::application().with_quit_mode(QuitMode::Explicit);
     #[cfg(feature = "components")]
@@ -83,9 +93,9 @@ pub fn run(app: crate::App, files: ProgramFiles, mode: Mode) -> io::Result<()> {
             crate::theme::apply_to_components(&theme, cx);
         }
         cx.set_global(theme);
-        cx.set_global(Registry { id, panels, preview, open_failed, ownership });
+        cx.set_global(Popovers::<AnyWindowHandle>::new(session.is_preview()));
+        cx.set_global(Registry { panels, session });
         cx.set_global(files);
-        cx.set_global(Popovers::<AnyWindowHandle>::new(preview));
         cx.spawn(async move |cx| {
             while let Ok(command) = rx.recv().await {
                 cx.update(|cx| {
@@ -109,25 +119,27 @@ fn apply(effects: Vec<Effect<AnyWindowHandle>>, cx: &mut App) {
         match effect {
             Effect::Close { target, window, reason } => {
                 let _ = window.update(cx, |_, window, _| window.remove_window());
-                eprintln!("{}: closed {target} ({reason})", cx.global::<Registry>().id);
+                eprintln!("{}: closed {target} ({reason})", cx.global::<ProgramFiles>().id());
             }
             Effect::Open(target) => match open(&target, cx) {
                 Ok(window) => cx.global_mut::<Popovers<AnyWindowHandle>>().opened(target, window),
                 Err(e) => {
-                    eprintln!("{}: cannot open {target}: {e}", cx.global::<Registry>().id);
+                    eprintln!("{}: cannot open {target}: {e}", cx.global::<ProgramFiles>().id());
                     let effects = cx.global_mut::<Popovers<AnyWindowHandle>>().open_failed();
                     apply(effects, cx);
                 }
             },
             Effect::RemoveSocket => {
                 // Before the event loop stops: clients find no daemon at once.
-                if let Some(ownership) = cx.global_mut::<Registry>().ownership.take() {
+                if let Session::Daemon { ownership } = &mut cx.global_mut::<Registry>().session
+                    && let Some(ownership) = ownership.take()
+                {
                     ownership.give_up();
                 }
             }
             Effect::Quit { failed } => {
-                if failed {
-                    cx.global::<Registry>().open_failed.set(true);
+                if failed && let Session::Preview { failed } = &cx.global::<Registry>().session {
+                    failed.set(true);
                 }
                 cx.quit();
             }
@@ -137,12 +149,12 @@ fn apply(effects: Vec<Effect<AnyWindowHandle>>, cx: &mut App) {
 
 fn open(target: &Target, cx: &mut App) -> Result<AnyWindowHandle, Box<dyn Error>> {
     let registry = cx.global::<Registry>();
-    let id = registry.id.clone();
-    let preview = registry.preview;
     let build = registry.panels.get(&target.panel).ok_or_else(|| format!("unknown panel {:?}", target.panel))?;
 
     // A preview also closes its own program's daemon popover: one popover at a time.
-    ipc::close_others(cx.global::<ProgramFiles>(), preview);
+    let files = cx.global::<ProgramFiles>();
+    files.close_others(registry.session.is_preview());
+    let id = files.id().to_owned();
 
     let cursor: hypr::CursorPos = hypr::request("cursorpos")?;
     let monitors: Vec<hypr::Monitor> = hypr::request("monitors")?;
