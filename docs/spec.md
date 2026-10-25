@@ -189,9 +189,12 @@ Sources: [Click → runtime contract][t16], [Author dev loop][t19],
    `target/debug` build and an installed copy with the same ID replace each
    other's daemon, so each click shows its own binary's panels.
 6. **Logs:** a spawned daemon's stderr goes to
-   `$XDG_STATE_HOME/waybar-gpui/<id>.log` (default `~/.local/state/…`),
-   truncated by `toggle` just before it spawns a daemon (a `daemon` run by hand
-   logs to its terminal and leaves the file alone). stderr *is* the log: runtime lines, the
+   `$XDG_STATE_HOME/waybar-gpui/<id>.log` (default `~/.local/state/…`).
+   `toggle` opens it for appending; the daemon truncates it once it has bound
+   the socket, so the log covers the running daemon only, and a daemon that
+   lost a race to another one only appends its error. A daemon truncates the
+   file only if its stderr is that file (a `daemon` run by hand logs to its
+   terminal and leaves the file alone). stderr *is* the log: runtime lines, the
    author's `eprintln!` or any logger they install, and panic messages all land
    there. `toggle`'s own errors stay on its stderr; `preview` logs to the
    terminal. No logging dependency in the SDK.

@@ -228,6 +228,8 @@ pub fn listen(id: &str, tx: async_channel::Sender<Command>) -> io::Result<()> {
     }
     let _ = fs::remove_file(&path);
     let listener = UnixListener::bind(&path)?;
+    // This daemon owns the program now, and with it the log.
+    crate::cli::claim_log(id);
     serve(id.to_owned(), listener, ExeId::running()?, tx);
     Ok(())
 }

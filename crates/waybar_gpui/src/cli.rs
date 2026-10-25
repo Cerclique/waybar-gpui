@@ -3,9 +3,12 @@
 use std::{
     env,
     ffi::OsString,
-    fs::{self, File},
+    fs::{self, File, OpenOptions},
     io,
-    os::unix::process::CommandExt,
+    os::{
+        fd::{AsFd, BorrowedFd},
+        unix::{fs::MetadataExt, process::CommandExt},
+    },
     path::{Path, PathBuf},
     process::{self, ExitCode, Stdio},
     time::Duration,
@@ -92,12 +95,41 @@ fn log_path(id: &str, state_home: Option<OsString>, home: Option<OsString>) -> O
     Some(state_home.join("waybar-gpui").join(format!("{id}.log")))
 }
 
-/// Creates the log's directory and truncates the log.
+/// Creates the log's directory and opens the log for appending. `toggle`
+/// doesn't truncate it: a second `toggle` racing this one would wipe the log
+/// of the daemon that wins. The winner empties it in [`claim_log`].
 fn open_log(path: &Path) -> io::Result<File> {
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir)?;
     }
-    File::create(path)
+    OpenOptions::new().create(true).append(true).open(path)
+}
+
+/// Called by the daemon once it owns the program's socket: empties the log
+/// if stderr is that file, so the log covers this daemon only. A daemon run
+/// by hand logs elsewhere and truncates nothing; one that lost the race to
+/// another daemon never gets here and only appends its error.
+pub(crate) fn claim_log(id: &str) {
+    let Some(path) = log_path(id, env::var_os("XDG_STATE_HOME"), env::var_os("HOME")) else { return };
+    if let Err(e) = truncate_if_same(io::stderr().as_fd(), &path) {
+        eprintln!("{id}: cannot truncate log {}: {e}", path.display());
+    }
+}
+
+/// Truncates the file open on `fd` if it is the file at `path`; says whether
+/// it did. Writes through an append-mode `fd` then start at the beginning.
+fn truncate_if_same(fd: BorrowedFd, path: &Path) -> io::Result<bool> {
+    let at_path = match fs::metadata(path) {
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(false),
+        result => result?,
+    };
+    let file = File::from(fd.try_clone_to_owned()?);
+    let open = file.metadata()?;
+    if (open.dev(), open.ino()) != (at_path.dev(), at_path.ino()) {
+        return Ok(false);
+    }
+    file.set_len(0)?;
+    Ok(true)
 }
 
 /// Starts `exe args…` detached, stderr into `log` (or discarded).
@@ -187,6 +219,8 @@ pub fn main(app: App) -> ExitCode {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Write as _;
+
     use super::*;
 
     const PANELS: &[&str] = &["workspace", "clock"];
@@ -249,9 +283,9 @@ mod tests {
     }
 
     /// The spawn path with a stand-in program: the log directory is created,
-    /// stderr lands in the log, and each spawn truncates it.
+    /// stderr lands in the log, and spawning appends instead of truncating.
     #[test]
-    fn spawned_stderr_goes_to_a_truncated_log() {
+    fn spawned_stderr_is_appended_to_the_log() {
         let state = env::temp_dir().join(format!("waybar-gpui-log-test-{}", process::id()));
         let path = log_path("test", Some(state.clone().into()), None).unwrap();
         let spawn_and_wait = |message: &str| {
@@ -259,10 +293,33 @@ mod tests {
             let status = spawn_detached(Path::new("/bin/sh"), &args, Some(open_log(&path).unwrap())).unwrap().wait();
             assert!(status.unwrap().success());
         };
-        spawn_and_wait("first run, longer line");
-        assert_eq!(fs::read_to_string(&path).unwrap(), "first run, longer line\n");
+        spawn_and_wait("first run");
+        assert_eq!(fs::read_to_string(&path).unwrap(), "first run\n");
         spawn_and_wait("second");
-        assert_eq!(fs::read_to_string(&path).unwrap(), "second\n");
+        assert_eq!(fs::read_to_string(&path).unwrap(), "first run\nsecond\n");
+        fs::remove_dir_all(&state).unwrap();
+    }
+
+    /// The daemon's side: the log is emptied only through a descriptor open on
+    /// that very file, and later appends start from the beginning.
+    #[test]
+    fn claiming_truncates_only_the_log_itself() {
+        let state = env::temp_dir().join(format!("waybar-gpui-claim-test-{}", process::id()));
+        let path = log_path("test", Some(state.clone().into()), None).unwrap();
+        let other = state.join("other.log");
+        let mut log = open_log(&path).unwrap();
+        let mut elsewhere = open_log(&other).unwrap();
+        writeln!(log, "previous daemon, longer line").unwrap();
+        writeln!(elsewhere, "a terminal").unwrap();
+
+        assert!(!truncate_if_same(elsewhere.as_fd(), &path).unwrap());
+        assert!(!truncate_if_same(log.as_fd(), &state.join("missing.log")).unwrap());
+        assert_eq!(fs::read_to_string(&path).unwrap(), "previous daemon, longer line\n");
+
+        assert!(truncate_if_same(log.as_fd(), &path).unwrap());
+        writeln!(log, "this daemon").unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), "this daemon\n");
+        assert_eq!(fs::read_to_string(&other).unwrap(), "a terminal\n");
         fs::remove_dir_all(&state).unwrap();
     }
 }
