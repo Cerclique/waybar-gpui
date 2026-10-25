@@ -107,7 +107,8 @@ Behaviour the API implies:
 - **Actions:** the SDK offers only runtime actions (`close`). Commands and
   Hyprland dispatches are the author's own code.
 - **Size:** panels declare no size. They cap themselves (`w(..)`, `max_h(..)`)
-  and scroll their own overflow (`overflow_y_scroll`).
+  and scroll their own overflow (`overflow_y_scroll`). The runtime also caps the
+  card to the monitor's usable area.
 
 ## 4. Popover behaviour
 
@@ -119,9 +120,11 @@ Sources: [Popover sizing and placement][t10], [Panel actions][t9],
   transparent, layer namespace `waybar-gpui:<id>`. The card is drawn inside it;
   the rest is the backdrop. The runtime paints no chrome of its own.
 - **Monitor:** the one under the cursor (Hyprland `j/cursorpos` + `monitors`),
+  falling back to the focused monitor,
   matched to GPUI's display by `Uuid::new_v5(NAMESPACE_DNS, wl_output name)`.
 - **Placement:** GPUI `anchored()` measures and places the card in the same
-  frame. The bar edge is the reserved edge of the monitor nearest the click.
+  frame. The bar edge is the reserved edge of the monitor nearest the click;
+  with nothing reserved (a non-exclusive bar), the nearest edge.
   Horizontal bar: centred on the cursor's x (`TopCenter`/`BottomCenter`);
   vertical bar: centred on the cursor's y (`LeftCenter`/`RightCenter`); 6 px
   from the bar; snapped into the usable area (`snap_to_window_with_margin`).
@@ -130,7 +133,7 @@ Sources: [Popover sizing and placement][t10], [Panel actions][t9],
 - **Focus and Esc:** a panel that focuses one of its own elements in `new` gets
   Esc first; if it calls `cx.stop_propagation()` the popover stays open. The
   runtime focuses its root only when nothing is focused. Unhandled Esc dismisses.
-- **Dismissal:** a click that reaches the backdrop dismisses; the card and any
+- **Dismissal:** a left or right click that reaches the backdrop dismisses; the card and any
   overlay a widget draws (menus overflowing the card) occlude it. A click on
   another monitor dismisses geometrically (`on_mouse_down_out`). Clicks outside
   the card can't be vetoed by the panel.
@@ -152,7 +155,7 @@ of their own handle them before calling `run`.
 | `close` | Closes the program's popover, if any. Succeeds silently when no daemon runs. |
 | `quit` | Stops the program's daemon. Succeeds silently when no daemon runs. |
 | `daemon [<panel> [args…]]` | Runs the daemon in the foreground, optionally opening a panel at once. This is what `toggle` spawns. |
-| `preview <panel> [args…]` | Foreground, logs to the terminal, opens the panel at once and **exits when the popover closes**. Does not bind the program's socket, so it never displaces the daemon; still sends `close` to the other sockets before opening (§7). |
+| `preview <panel> [args…]` | Foreground, logs to the terminal, opens the panel at once and **exits when the popover closes**. Does not bind the program's socket, so it never displaces the daemon; still sends `close` to every socket before opening, its own program's daemon included (§7). |
 | no arguments, or `help` | Usage text: the commands, the registered panels, and one ready-to-paste `on-click` line per panel using the real absolute path from `current_exe()`, e.g. `"on-click": "/home/me/.cargo/bin/my-panels toggle hello"`. Printed to stdout, exit 0. |
 
 An unknown command or panel name, a missing panel name, or arguments to
@@ -164,11 +167,14 @@ with status 2. Panel names are checked before anything is sent to the daemon.
 Sources: [Click → runtime contract][t16], [Author dev loop][t19],
 [Panel lifecycle][t8].
 
-1. **Socket:** `$XDG_RUNTIME_DIR/waybar-gpui/<id>.sock`, directory created on
-   demand. A daemon starting up removes its own stale socket. The same ID names
+1. **Socket:** `$XDG_RUNTIME_DIR/waybar-gpui/<id>.sock` (the system temp
+   directory if `XDG_RUNTIME_DIR` is unset), directory created on demand. A
+   daemon starting up refuses to run if another daemon answers on its socket,
+   and otherwise removes the stale socket file. The same ID names
    the layer namespace and prefixes log lines (`<id>: …`).
 2. **Spawn:** `toggle` finding no daemon (socket missing or refusing) spawns
-   `current_exe() daemon <panel> [args…]` in its own process group, stdin null,
+   `current_exe() daemon <panel> [args…]` in its own process group, stdin and
+   stdout null,
    so it survives Waybar reloads.
 3. **Lifetime:** until `quit` or logout. GPUI runs with `QuitMode::Explicit`.
 4. **Protocol:** a line protocol carrying the command and the panel arguments.
@@ -184,7 +190,8 @@ Sources: [Click → runtime contract][t16], [Author dev loop][t19],
    other's daemon, so each click shows its own binary's panels.
 6. **Logs:** a spawned daemon's stderr goes to
    `$XDG_STATE_HOME/waybar-gpui/<id>.log` (default `~/.local/state/…`),
-   truncated at each daemon start. stderr *is* the log: runtime lines, the
+   truncated by `toggle` just before it spawns a daemon (a `daemon` run by hand
+   logs to its terminal and leaves the file alone). stderr *is* the log: runtime lines, the
    author's `eprintln!` or any logger they install, and panic messages all land
    there. `toggle`'s own errors stay on its stderr; `preview` logs to the
    terminal. No logging dependency in the SDK.
@@ -279,8 +286,8 @@ Each fact lives in exactly one layer; the others link to it.
 | `docs/architecture.md` | Contributors: socket protocol, Hyprland exclusive-layer routing, GPUI constraints, rejected designs and why; restates the research conclusions it relies on and links the `research/*` branch files. |
 | `docs/adr/` | Initial ADRs: one surface with a drawn card instead of `xdg_popup`; a daemon per program; no gpui-component `Root`. |
 
-- `docs/session-notes.md` is retired: its decisions and verified behaviour move
-  to `docs/architecture.md`, TODOs stay in issues. `CLAUDE.md` then points to
+- `docs/session-notes.md` is retired (done): its decisions and verified
+  behaviour moved to `docs/architecture.md`, TODOs stay in issues. `CLAUDE.md` then points to
   `GLOSSARY.md`, `docs/architecture.md` and the guide.
 - The checklist of facts each layer must carry is in the [Documentation][t22]
   resolution.
@@ -292,9 +299,12 @@ Sources: [Starter template][t21], [Documentation][t22].
 - `cargo build`, `cargo test`, `cargo clippy --all-targets -- -D warnings` (`make lint`).
 - `#![deny(missing_docs)]` on `waybar_gpui`; `RUSTDOCFLAGS="-D warnings" cargo doc`
   and doctests, also in `make lint`.
-- Template: generate both `components` variants and build them with a `[patch]`
-  pointing the git dependency at the checkout; fail if the template's `tag`
-  differs from `v` + `[workspace.package] version`.
+- Template (`scripts/check-template.sh`, `make check-template`): generate both
+  `components` variants and run clippy on them with the git dependency
+  rewritten to a path one (Cargo fetches a git source even when `[patch]`ed);
+  fail if any versioned SDK reference (the template's `tag`, tagged guide
+  links, the README's `--tag`, `tag = "…"` in the guide, rustdoc links) differs
+  from `v` + `[workspace.package] version`.
 - `lychee --offline` on Markdown relative links.
 - Rule: a PR that changes behaviour updates the layer owning the fact.
 

@@ -25,7 +25,20 @@
 //! }
 //! ```
 //!
-//! Waybar's `on-click` then runs `my-panels toggle hello [args…]`.
+//! Waybar's `on-click` then runs `my-panels toggle hello [args…]`; run the
+//! program with no arguments for the full command line and an `on-click` line
+//! per panel.
+//!
+//! - A [`Panel`] is built fresh each time its popover opens and dropped when it
+//!   closes. Live data and state that survives a close are plain GPUI: tasks
+//!   stored in the panel, and [`gpui::Global`]s.
+//! - [`card`] and [`Theme`] are the optional standard look; [`close`] closes
+//!   the popover from the panel's own handlers.
+//! - With the `components` feature, gpui-component's widgets are available as
+//!   `waybar_gpui::components`, themed from [`Theme`].
+//!
+//! The guide covers each of these with examples:
+//! <https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/index.md>.
 
 #![deny(missing_docs)]
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Checks the starter template: its waybar_gpui tag matches the workspace
-# version, and both variants (with and without `components`) generate and pass
+# Checks the starter template: every versioned reference to the SDK (the
+# template's dependency, tagged guide links, the README quickstart) matches the
+# workspace version, and both variants (with and without `components`) generate and pass
 # clippy against this checkout. The generated git dependency is rewritten to a
 # path one: Cargo fetches a git source even when it's patched, and the tag only
 # exists once released.
@@ -10,12 +11,16 @@ cd "$(dirname "$0")/.."
 repo=$PWD
 
 version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)
-tag=$(sed -n 's/.*tag = "\([^"]*\)".*/\1/p' template/Cargo.toml)
-if [[ "$tag" != "v$version" ]]; then
-  echo "template/Cargo.toml has tag \"$tag\", workspace version is $version: expected \"v$version\"" >&2
+# Every versioned reference to the SDK: the template's dependency, tagged guide
+# links, `--tag` in the quickstart, `tag = "…"` in examples.
+stale=$(grep -rnoE '(blob/|--tag |tag = ")v[0-9]+\.[0-9]+\.[0-9]+' \
+  template README.md docs/guide crates/waybar_gpui/src | grep -v "v$version\$" || true)
+if [[ -n "$stale" ]]; then
+  echo "references to another version than v$version (the workspace version):" >&2
+  echo "$stale" >&2
   exit 1
 fi
-echo "template tag $tag matches the workspace version"
+echo "every SDK version reference is v$version"
 
 out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
