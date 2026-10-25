@@ -258,8 +258,9 @@ real clicks):
   `hyprland` crate, whose 0.4 line has been in beta since 2024. The request
   socket (`.socket.sock`) is opened and closed per request: Hyprland serves it
   synchronously and freezes on held connections.
-- **Waybar config:** Nerd Font glyphs in `examples/waybar/config.jsonc` are
-  written as `\uXXXX` escapes; pasted glyphs came out as blank icons.
+- **Waybar config:** Nerd Font glyphs in
+  `crates/example-panels/waybar/config.jsonc` are written as `\uXXXX`
+  escapes; pasted glyphs came out as blank icons.
 
 ## Rejected designs
 

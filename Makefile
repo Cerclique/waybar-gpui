@@ -20,8 +20,17 @@ lint:
 check-template:
 	./scripts/check-template.sh
 
+# A second, throwaway Waybar (top + left bars) wired to the freshly built
+# programs, first on PATH; your own bar is untouched. Built with the
+# `components` feature, so the controls panel is there too. A daemon left by
+# another build (or the installed copy) replaces itself with this one on the
+# first click; its log is ~/.local/state/waybar-gpui/example-panels.log.
+# Ctrl-C stops it; extra Waybar flags go in ARGS.
 dev:
-	./scripts/dev.sh
+	cargo build --features example-panels/components
+	PATH="$(CURDIR)/target/debug:$$PATH" waybar \
+		-c crates/example-panels/waybar/config.jsonc \
+		-s crates/example-panels/waybar/style.css -l debug $(ARGS)
 
 install: build
 	install -Dm755 $(addprefix target/release/,$(BINS)) -t $(PREFIX)/bin

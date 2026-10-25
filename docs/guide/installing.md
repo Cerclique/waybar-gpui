@@ -60,8 +60,7 @@ hl.layer_rule({
 })
 ```
 
-For one program only, match `^waybar-gpui:<id>$`. The same rule is in
-[`examples/hypr/waybar-gpui.lua`](../../examples/hypr/waybar-gpui.lua).
+For one program only, match `^waybar-gpui:<id>$`.
 
 ## Uninstalling
 
