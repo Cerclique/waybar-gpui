@@ -2,20 +2,17 @@
 
 use std::{
     env,
-    ffi::OsString,
     fs::{self, File, OpenOptions},
     io,
-    os::{
-        fd::{AsFd, BorrowedFd},
-        unix::{fs::MetadataExt, process::CommandExt},
-    },
-    path::{Path, PathBuf},
+    os::unix::process::CommandExt,
+    path::Path,
     process::{self, ExitCode, Stdio},
     time::Duration,
 };
 
 use crate::{
     App,
+    files::ProgramFiles,
     ipc::{self, Command, Decision, ExeId, Target},
     runtime::{self, Mode},
 };
@@ -85,51 +82,14 @@ fn usage(exe: &Path, panels: &[&str]) -> String {
 /// How long `toggle` waits for a daemon from another executable to quit.
 const REPLACE_TIMEOUT: Duration = Duration::from_secs(2);
 
-/// Where a spawned daemon's stderr goes: `$XDG_STATE_HOME/waybar-gpui/<id>.log`,
-/// `$XDG_STATE_HOME` defaulting to `~/.local/state`.
-fn log_path(id: &str, state_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
-    let state_home = match state_home.filter(|dir| !dir.is_empty()) {
-        Some(dir) => PathBuf::from(dir),
-        None => PathBuf::from(home.filter(|dir| !dir.is_empty())?).join(".local/state"),
-    };
-    Some(state_home.join("waybar-gpui").join(format!("{id}.log")))
-}
-
 /// Creates the log's directory and opens the log for appending. `toggle`
 /// doesn't truncate it: a second `toggle` racing this one would wipe the log
-/// of the daemon that wins. The winner empties it in [`claim_log`].
+/// of the daemon that wins. The winner empties it in [`ProgramFiles::claim`].
 fn open_log(path: &Path) -> io::Result<File> {
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir)?;
     }
     OpenOptions::new().create(true).append(true).open(path)
-}
-
-/// Called by the daemon once it owns the program's socket: empties the log
-/// if stderr is that file, so the log covers this daemon only. A daemon run
-/// by hand logs elsewhere and truncates nothing; one that lost the race to
-/// another daemon never gets here and only appends its error.
-pub(crate) fn claim_log(id: &str) {
-    let Some(path) = log_path(id, env::var_os("XDG_STATE_HOME"), env::var_os("HOME")) else { return };
-    if let Err(e) = truncate_if_same(io::stderr().as_fd(), &path) {
-        eprintln!("{id}: cannot truncate log {}: {e}", path.display());
-    }
-}
-
-/// Truncates the file open on `fd` if it is the file at `path`; says whether
-/// it did. Writes through an append-mode `fd` then start at the beginning.
-fn truncate_if_same(fd: BorrowedFd, path: &Path) -> io::Result<bool> {
-    let at_path = match fs::metadata(path) {
-        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(false),
-        result => result?,
-    };
-    let file = File::from(fd.try_clone_to_owned()?);
-    let open = file.metadata()?;
-    if (open.dev(), open.ino()) != (at_path.dev(), at_path.ino()) {
-        return Ok(false);
-    }
-    file.set_len(0)?;
-    Ok(true)
 }
 
 /// Starts `exe args…` detached, stderr into `log` (or discarded).
@@ -144,9 +104,9 @@ fn spawn_detached(exe: &Path, args: &[String], log: Option<File>) -> io::Result<
         .spawn()
 }
 
-fn spawn_daemon(id: &str, target: &Target) -> io::Result<()> {
-    let log = log_path(id, env::var_os("XDG_STATE_HOME"), env::var_os("HOME")).and_then(|path| {
-        open_log(&path).map_err(|e| eprintln!("{id}: cannot open log {}: {e}", path.display())).ok()
+fn spawn_daemon(files: &ProgramFiles, target: &Target) -> io::Result<()> {
+    let log = files.log().and_then(|path| {
+        open_log(path).map_err(|e| eprintln!("{}: cannot open log {}: {e}", files.id(), path.display())).ok()
     });
     let args: Vec<String> = ["daemon"].into_iter().chain(target.words()).map(str::to_owned).collect();
     spawn_detached(&env::current_exe()?, &args, log).map(drop)
@@ -155,39 +115,39 @@ fn spawn_daemon(id: &str, target: &Target) -> io::Result<()> {
 /// Sends the toggle to the running daemon if it runs this very executable;
 /// otherwise replaces it, so a rebuilt or reinstalled program shows its own
 /// panels.
-fn toggle(id: &str, target: Target) -> io::Result<()> {
-    let mut daemon = match ipc::Connection::open(id) {
-        Err(e) if ipc::no_daemon(&e) => return spawn_daemon(id, &target),
+fn toggle(files: &ProgramFiles, target: Target) -> io::Result<()> {
+    let mut daemon = match ipc::Connection::open(files) {
+        Err(e) if ipc::no_daemon(&e) => return spawn_daemon(files, &target),
         result => result?,
     };
     let own = env::current_exe().and_then(|exe| ExeId::of(&exe)).ok();
     match Decision::new(daemon.identity(), own) {
         Decision::Send => daemon.send(&Command::Toggle(target)),
         Decision::Replace => {
-            eprintln!("{id}: replacing the daemon of another executable");
+            eprintln!("{}: replacing the daemon of another executable", files.id());
             daemon.send(&Command::Quit)?;
-            ipc::wait_gone(id, REPLACE_TIMEOUT)?;
-            spawn_daemon(id, &target)
+            ipc::wait_gone(files, REPLACE_TIMEOUT)?;
+            spawn_daemon(files, &target)
         }
     }
 }
 
 /// `close` and `quit` have nothing to do without a daemon.
-fn send_if_running(id: &str, command: &Command) -> io::Result<()> {
-    match ipc::send(id, command) {
+fn send_if_running(files: &ProgramFiles, command: &Command) -> io::Result<()> {
+    match ipc::send(files, command) {
         Err(e) if ipc::no_daemon(&e) => Ok(()),
         result => result,
     }
 }
 
 fn run(app: App, invocation: Invocation, usage_text: String) -> io::Result<()> {
-    let id = app.id.clone();
+    let files = ProgramFiles::from_env(&app.id);
     match invocation {
-        Invocation::Toggle(target) => toggle(&id, target),
-        Invocation::Close => send_if_running(&id, &Command::Close),
-        Invocation::Quit => send_if_running(&id, &Command::Quit),
-        Invocation::Daemon(initial) => runtime::run(app, Mode::Daemon(initial)),
-        Invocation::Preview(target) => runtime::run(app, Mode::Preview(target)),
+        Invocation::Toggle(target) => toggle(&files, target),
+        Invocation::Close => send_if_running(&files, &Command::Close),
+        Invocation::Quit => send_if_running(&files, &Command::Quit),
+        Invocation::Daemon(initial) => runtime::run(app, files, Mode::Daemon(initial)),
+        Invocation::Preview(target) => runtime::run(app, files, Mode::Preview(target)),
         Invocation::Help => {
             print!("{usage_text}");
             Ok(())
@@ -219,8 +179,6 @@ pub fn main(app: App) -> ExitCode {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Write as _;
-
     use super::*;
 
     const PANELS: &[&str] = &["workspace", "clock"];
@@ -264,62 +222,22 @@ mod tests {
         assert!(text.contains("  clock        \"on-click\": \"/home/me/.cargo/bin/my-panels toggle clock\"\n"));
     }
 
-    #[test]
-    fn log_path_follows_xdg_state_home() {
-        let some = |s: &str| Some(OsString::from(s));
-        assert_eq!(
-            log_path("my-panels", some("/state"), some("/home/me")),
-            Some(PathBuf::from("/state/waybar-gpui/my-panels.log"))
-        );
-        assert_eq!(
-            log_path("my-panels", None, some("/home/me")),
-            Some(PathBuf::from("/home/me/.local/state/waybar-gpui/my-panels.log"))
-        );
-        assert_eq!(
-            log_path("my-panels", some(""), some("/home/me")),
-            Some(PathBuf::from("/home/me/.local/state/waybar-gpui/my-panels.log"))
-        );
-        assert_eq!(log_path("my-panels", None, None), None);
-    }
-
     /// The spawn path with a stand-in program: the log directory is created,
     /// stderr lands in the log, and spawning appends instead of truncating.
     #[test]
     fn spawned_stderr_is_appended_to_the_log() {
         let state = env::temp_dir().join(format!("waybar-gpui-log-test-{}", process::id()));
-        let path = log_path("test", Some(state.clone().into()), None).unwrap();
+        let files = ProgramFiles::under(&state, "test");
+        let path = files.log().unwrap();
         let spawn_and_wait = |message: &str| {
             let args = ["-c".to_owned(), format!("echo {message} >&2; echo stdout")];
-            let status = spawn_detached(Path::new("/bin/sh"), &args, Some(open_log(&path).unwrap())).unwrap().wait();
+            let status = spawn_detached(Path::new("/bin/sh"), &args, Some(open_log(path).unwrap())).unwrap().wait();
             assert!(status.unwrap().success());
         };
         spawn_and_wait("first run");
-        assert_eq!(fs::read_to_string(&path).unwrap(), "first run\n");
+        assert_eq!(fs::read_to_string(path).unwrap(), "first run\n");
         spawn_and_wait("second");
-        assert_eq!(fs::read_to_string(&path).unwrap(), "first run\nsecond\n");
-        fs::remove_dir_all(&state).unwrap();
-    }
-
-    /// The daemon's side: the log is emptied only through a descriptor open on
-    /// that very file, and later appends start from the beginning.
-    #[test]
-    fn claiming_truncates_only_the_log_itself() {
-        let state = env::temp_dir().join(format!("waybar-gpui-claim-test-{}", process::id()));
-        let path = log_path("test", Some(state.clone().into()), None).unwrap();
-        let other = state.join("other.log");
-        let mut log = open_log(&path).unwrap();
-        let mut elsewhere = open_log(&other).unwrap();
-        writeln!(log, "previous daemon, longer line").unwrap();
-        writeln!(elsewhere, "a terminal").unwrap();
-
-        assert!(!truncate_if_same(elsewhere.as_fd(), &path).unwrap());
-        assert!(!truncate_if_same(log.as_fd(), &state.join("missing.log")).unwrap());
-        assert_eq!(fs::read_to_string(&path).unwrap(), "previous daemon, longer line\n");
-
-        assert!(truncate_if_same(log.as_fd(), &path).unwrap());
-        writeln!(log, "this daemon").unwrap();
-        assert_eq!(fs::read_to_string(&path).unwrap(), "this daemon\n");
-        assert_eq!(fs::read_to_string(&other).unwrap(), "a terminal\n");
+        assert_eq!(fs::read_to_string(path).unwrap(), "first run\nsecond\n");
         fs::remove_dir_all(&state).unwrap();
     }
 }

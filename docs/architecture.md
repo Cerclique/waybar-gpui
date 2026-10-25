@@ -12,8 +12,9 @@ recorded as ADRs in `docs/adr/`
 | File | What it owns |
 |---|---|
 | `lib.rs` | Public API: `Panel`, `App`, re-exports. |
-| `cli.rs` | argv parsing, usage text, the click client (`toggle`, `close`, `quit`), spawning the daemon, the log file. |
-| `ipc.rs` | Socket directory, line protocol, `Target` (a panel name and its arguments), daemon identity, closing other programs' popovers. |
+| `cli.rs` | argv parsing, usage text, the click client (`toggle`, `close`, `quit`), spawning the daemon with stderr appended to the log. |
+| `files.rs` | What a program owns on disk: `ProgramFiles` (socket directory, socket, lock and log paths, resolved once from `XDG_RUNTIME_DIR`, `XDG_STATE_HOME` and `HOME`, the only place reading them), and the daemon taking ownership (`claim`: lock, check, remove a stale socket, bind, claim the log, serve) and giving it up (`Ownership::give_up` removes the socket on `quit`). |
+| `ipc.rs` | Line protocol, `Target` (a panel name and its arguments), daemon identity, serving a bound socket, closing other programs' popovers. |
 | `popovers.rs` | The popover rules without GPUI: what a toggle, `close`, `quit` or a dismissal does, and when the process quits. Returns effects; unit-tested. |
 | `runtime.rs` | The GPUI side: `daemon` and `preview`, carrying out `popovers.rs`'s effects, the popover surface, focus, dismissal. |
 | `placement.rs` | Monitor and bar-edge detection, the anchor point and margins. |
@@ -44,9 +45,10 @@ argv in `cli.rs`:
   daemon, but before opening it sends `close` to every socket, its own
   program's included, so the one-popover rule holds.
 
-A daemon refuses to start (`daemon already running`) if another daemon already
-answers on its socket; otherwise it removes the stale socket file and binds.
-`ipc::listen` does those three steps holding an advisory lock (`flock`, through
+A daemon takes ownership of its program's files through `ProgramFiles::claim`
+(`files.rs`). It refuses to start (`daemon already running`) if another daemon
+already answers on its socket; otherwise it removes the stale socket file and
+binds, doing those three steps holding an advisory lock (`flock`, through
 `File::lock`) on `<id>.lock` next to the socket, and releases it once bound.
 Daemons started at the same moment (two `toggle`s finding no daemon) take
 turns: the first binds, the others then find it answering. Without the lock
@@ -55,8 +57,10 @@ bound, which left orphaned daemons no command reached. The lock covers startup
 only: a lifetime lock was tried and broke replacing a daemon from another
 build, because the old daemon still held it while it exited. The kernel drops
 the lock if the process dies, and the lock file is never removed (removing it
-would let two daemons lock different files). A panicking panel takes
-the daemon down; the next click spawns a fresh one (no `catch_unwind`).
+would let two daemons lock different files). On `quit` the daemon gives
+ownership up (`Ownership::give_up`): once its popover is closed it removes the
+socket, before the event loop stops, so a `toggle` waiting for it to go finds
+no daemon at once. A panicking panel takes the daemon down; the next click spawns a fresh one (no `catch_unwind`).
 
 ```mermaid
 sequenceDiagram
@@ -82,7 +86,8 @@ sequenceDiagram
 ## Socket directory and line protocol
 
 - **Directory:** `$XDG_RUNTIME_DIR/waybar-gpui/` (the system temp directory if
-  `XDG_RUNTIME_DIR` is unset), created on demand. One socket per program,
+  `XDG_RUNTIME_DIR` is unset), created on demand. `ProgramFiles` resolves it
+  once per process, with the socket, lock and log paths. One socket per program,
   `<id>.sock`, named by the program ID. The same ID names the layer namespace
   (`waybar-gpui:<id>`), the log file and the prefix of every log line
   (`<id>: …`). `App::new` rejects IDs outside `^[a-z0-9][a-z0-9-]*$`, so the ID
@@ -121,8 +126,8 @@ A spawned daemon's stderr goes to `$XDG_STATE_HOME/waybar-gpui/<id>.log`
 (`~/.local/state/…` by default). `toggle` creates the directory and opens the
 file for appending; it doesn't truncate it, because two `toggle`s finding no
 daemon at the same moment both spawn one, and the loser's truncation would
-wipe the winner's log. Instead `ipc::listen` calls `cli::claim_log` right after
-binding the socket: the daemon that owns the socket truncates its stderr if
+wipe the winner's log. Instead `ProgramFiles::claim` claims the log right
+after binding the socket: the daemon that owns the socket truncates its stderr if
 stderr is the log file (same device and inode), so the log covers the running
 daemon only. Its descriptor is in append mode, so its next line lands at the
 start. A daemon that lost the race never binds and only appends its `daemon
