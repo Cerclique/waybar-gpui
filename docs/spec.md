@@ -324,7 +324,10 @@ Gate, all required:
   placed. Later, not gating: mdBook/Pages, extra media, more examples.
 - §12 green.
 
-Order: rename the repo to `waybar-gpui`, tag `v0.1.0`, make the repo public.
+Order: rename the repo to `waybar-gpui`, release `v0.1.0` as
+[CONTRIBUTING](CONTRIBUTING.md#releases) describes (date the hand-written
+`CHANGELOG.md` entry, tag; the release workflow creates the GitHub Release),
+make the repo public.
 
 ## 14. Left to the builder
 
