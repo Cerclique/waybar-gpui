@@ -1,5 +1,12 @@
 # waybar-gpui
 
+[![crates.io](https://img.shields.io/crates/v/waybar_gpui)](https://crates.io/crates/waybar_gpui)
+[![docs.rs](https://img.shields.io/docsrs/waybar_gpui)](https://docs.rs/waybar_gpui)
+[![gpui-pre =0.3.9](https://img.shields.io/badge/gpui--pre-%3D0.3.9-blue)](https://docs.rs/gpui-pre/0.3.9)
+[![compositor: Hyprland](https://img.shields.io/badge/compositor-Hyprland-58e1ff)](docs/guide/limits.md)
+[![CI](https://github.com/Cerclique/waybar-gpui/actions/workflows/ci.yml/badge.svg)](https://github.com/Cerclique/waybar-gpui/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/crates/l/waybar_gpui)](LICENSE)
+
 > [!NOTE]
 > This project is vibe coded: it was built largely with an AI coding
 > assistant. It began as a tool for my own desktop. While refining it, I came
