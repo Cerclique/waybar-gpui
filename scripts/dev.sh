@@ -6,8 +6,6 @@ cd "$(dirname "$0")/.."
 
 cargo build
 export PATH="$PWD/target/debug:$PATH"
-# Make sure the daemon is the one just built.
-example-panels quit 2>/dev/null || true
-
-trap 'example-panels quit 2>/dev/null || true' EXIT
+# A daemon left by another build (or the installed copy) replaces itself with
+# this one on the first click; its log is ~/.local/state/waybar-gpui/example-panels.log.
 waybar -c examples/waybar/config.jsonc -s examples/waybar/style.css -l debug "$@"

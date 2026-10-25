@@ -172,9 +172,9 @@ Sources: [Click → runtime contract][t16], [Author dev loop][t19],
    so it survives Waybar reloads.
 3. **Lifetime:** until `quit` or logout. GPUI runs with `QuitMode::Explicit`.
 4. **Protocol:** a line protocol carrying the command and the panel arguments.
-   Encoding left to the builder (the prototype uses tab-separated words), with
-   one requirement from 6.5: the daemon answers each connection with its
-   executable identity.
+   The daemon answers each connection with its executable identity (6.5)
+   before reading the command. Encoding: tab-separated words, documented in
+   `crates/waybar_gpui/src/ipc.rs`.
 5. **Stale binary:** at startup the daemon records its executable's identity
    (device + inode of `/proc/self/exe`) and reports it on the socket. `toggle`
    compares it with the file at its own `current_exe()`; on mismatch it sends
@@ -313,7 +313,8 @@ Order: rename the repo to `waybar-gpui`, tag `v0.1.0`, make the repo public.
 
 ## 14. Left to the builder
 
-- The socket line encoding and the shape of the daemon's identity reply (§6.4).
+- ~~The socket line encoding and the shape of the daemon's identity reply
+  (§6.4).~~ Settled: see the module doc of `crates/waybar_gpui/src/ipc.rs`.
 - Exact `card()` styling values and any `Theme` fields beyond the prototype's.
 - Wording of the usage text and log lines.
 

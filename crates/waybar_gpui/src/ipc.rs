@@ -1,14 +1,33 @@
-//! One line per connection: `toggle<TAB>panel<TAB>arg…`, `close` or `quit`.
+//! One exchange per connection, in `\n`-terminated lines of tab-separated words:
+//!
+//! 1. On accept the daemon writes its executable identity, `exe<TAB>dev<TAB>ino`
+//!    (device and inode of `/proc/self/exe` recorded at startup, in decimal).
+//! 2. The client writes one command, `toggle<TAB>panel<TAB>arg…`, `close` or
+//!    `quit`, and hangs up.
+//!
+//! Clients that don't care who answers (`close`, `quit`, other programs closing
+//! this one's popover) write their command without reading the identity.
+//! `toggle` reads it first and, when it isn't its own binary's, writes `quit`
+//! instead (see [`Decision`]).
+//!
 //! Every program's socket lives in one shared directory so runtimes can close
 //! each other's popover.
 
 use std::{
     env, fs,
     io::{self, BufRead, BufReader, Write},
-    os::unix::net::{UnixListener, UnixStream},
-    path::PathBuf,
+    os::unix::{
+        fs::MetadataExt,
+        net::{UnixListener, UnixStream},
+    },
+    path::{Path, PathBuf},
     thread,
+    time::Duration,
 };
+
+/// How long a client waits for the daemon's identity line. A daemon from before
+/// the identity reply never sends one.
+const REPLY_TIMEOUT: Duration = Duration::from_secs(1);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
@@ -41,6 +60,62 @@ impl Command {
     }
 }
 
+/// An executable file's identity. Replacing the file (a rebuild, `cargo
+/// install`) gives it a new inode; another copy is another file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExeId {
+    dev: u64,
+    ino: u64,
+}
+
+impl ExeId {
+    /// The identity of the file at `path`, symlinks followed.
+    pub fn of(path: &Path) -> io::Result<Self> {
+        let meta = fs::metadata(path)?;
+        Ok(Self { dev: meta.dev(), ino: meta.ino() })
+    }
+
+    /// The file this process started from, even once it is replaced on disk.
+    fn running() -> io::Result<Self> {
+        Self::of(Path::new("/proc/self/exe"))
+    }
+
+    fn parse(line: &str) -> Option<Self> {
+        let mut words = line.trim_end_matches('\n').split('\t');
+        let (Some("exe"), Some(dev), Some(ino), None) = (words.next(), words.next(), words.next(), words.next())
+        else {
+            return None;
+        };
+        Some(Self { dev: dev.parse().ok()?, ino: ino.parse().ok()? })
+    }
+
+    fn to_line(self) -> String {
+        format!("exe\t{}\t{}\n", self.dev, self.ino)
+    }
+}
+
+/// What `toggle` does with the daemon it reached.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Decision {
+    /// Same binary: send it the command.
+    Send,
+    /// Another binary, or one too old to say: `quit` it and spawn ourselves.
+    Replace,
+}
+
+impl Decision {
+    /// `daemon` is the identity the daemon replied with, `own` the file at the
+    /// client's `current_exe()`. Without our own identity there is nothing to
+    /// compare, so the daemon stays.
+    pub fn new(daemon: Option<ExeId>, own: Option<ExeId>) -> Self {
+        match (daemon, own) {
+            (_, None) => Self::Send,
+            (Some(daemon), Some(own)) if daemon == own => Self::Send,
+            _ => Self::Replace,
+        }
+    }
+}
+
 fn dir() -> PathBuf {
     env::var_os("XDG_RUNTIME_DIR").map_or_else(env::temp_dir, PathBuf::from).join("waybar-gpui")
 }
@@ -49,8 +124,50 @@ pub fn socket_path(id: &str) -> PathBuf {
     dir().join(format!("{id}.sock"))
 }
 
+/// A client's connection to a running daemon.
+pub struct Connection(UnixStream);
+
+impl Connection {
+    /// Fails as [`no_daemon`] recognises when nothing listens.
+    pub fn open(id: &str) -> io::Result<Self> {
+        UnixStream::connect(socket_path(id)).map(Self)
+    }
+
+    /// The daemon's identity; `None` if its line is malformed or doesn't
+    /// arrive within [`REPLY_TIMEOUT`].
+    pub fn identity(&mut self) -> Option<ExeId> {
+        self.0.set_read_timeout(Some(REPLY_TIMEOUT)).ok()?;
+        let mut line = String::new();
+        BufReader::new(&self.0).read_line(&mut line).ok()?;
+        ExeId::parse(&line)
+    }
+
+    pub fn send(mut self, command: &Command) -> io::Result<()> {
+        self.0.write_all(command.to_line().as_bytes())
+    }
+}
+
 pub fn send(id: &str, command: &Command) -> io::Result<()> {
-    UnixStream::connect(socket_path(id))?.write_all(command.to_line().as_bytes())
+    Connection::open(id)?.send(command)
+}
+
+/// A connect error meaning no daemon listens: nothing is open and nothing runs.
+pub fn no_daemon(e: &io::Error) -> bool {
+    matches!(e.kind(), io::ErrorKind::NotFound | io::ErrorKind::ConnectionRefused)
+}
+
+/// Polls until no daemon answers on `id`'s socket, for at most `timeout`.
+pub fn wait_gone(id: &str, timeout: Duration) -> io::Result<()> {
+    const STEP: Duration = Duration::from_millis(20);
+    let mut waited = Duration::ZERO;
+    while UnixStream::connect(socket_path(id)).is_ok() {
+        if waited >= timeout {
+            return Err(io::Error::new(io::ErrorKind::TimedOut, "the old daemon did not quit"));
+        }
+        thread::sleep(STEP);
+        waited += STEP;
+    }
+    Ok(())
 }
 
 /// Best effort: asks every other program's runtime to close its popover, and
@@ -84,12 +201,20 @@ pub fn listen(id: &str, tx: async_channel::Sender<Command>) -> io::Result<()> {
     }
     let _ = fs::remove_file(&path);
     let listener = UnixListener::bind(&path)?;
+    serve(id.to_owned(), listener, ExeId::running()?, tx);
+    Ok(())
+}
 
-    let id = id.to_owned();
+/// Answers each connection with `identity`, then forwards its command.
+fn serve(id: String, listener: UnixListener, identity: ExeId, tx: async_channel::Sender<Command>) {
+    let identity = identity.to_line();
     thread::spawn(move || {
-        for stream in listener.incoming().flatten() {
+        for mut stream in listener.incoming().flatten() {
+            // Fails if the client already hung up; its command is still readable.
+            let _ = stream.write_all(identity.as_bytes());
             let mut line = String::new();
-            if BufReader::new(stream).read_line(&mut line).is_err() {
+            // Nothing read: a client that only probed (`wait_gone`) or gave up.
+            if BufReader::new(stream).read_line(&mut line).is_err() || line.is_empty() {
                 continue;
             }
             match Command::parse(&line) {
@@ -102,7 +227,6 @@ pub fn listen(id: &str, tx: async_channel::Sender<Command>) -> io::Result<()> {
             }
         }
     });
-    Ok(())
 }
 
 #[cfg(test)]
@@ -125,5 +249,59 @@ mod tests {
     fn rejects_unknown_and_empty_toggle() {
         assert_eq!(Command::parse("bogus\n"), None);
         assert_eq!(Command::parse("toggle\n"), None);
+    }
+
+    #[test]
+    fn round_trips_identity() {
+        let id = ExeId { dev: 66306, ino: u64::MAX };
+        assert_eq!(id.to_line(), "exe\t66306\t18446744073709551615\n");
+        assert_eq!(ExeId::parse(&id.to_line()), Some(id));
+    }
+
+    #[test]
+    fn rejects_malformed_identity() {
+        for line in ["", "\n", "exe\t1\n", "exe\t1\t2\t3\n", "exe\t1\tx\n", "dev\t1\t2\n", "toggle\tclock\n"] {
+            assert_eq!(ExeId::parse(line), None, "{line:?}");
+        }
+    }
+
+    #[test]
+    fn replaces_only_a_different_or_silent_daemon() {
+        let own = Some(ExeId { dev: 1, ino: 10 });
+        let rebuilt = Some(ExeId { dev: 1, ino: 11 });
+        let elsewhere = Some(ExeId { dev: 2, ino: 10 });
+        assert_eq!(Decision::new(own, own), Decision::Send);
+        assert_eq!(Decision::new(rebuilt, own), Decision::Replace);
+        assert_eq!(Decision::new(elsewhere, own), Decision::Replace);
+        assert_eq!(Decision::new(None, own), Decision::Replace);
+        assert_eq!(Decision::new(own, None), Decision::Send);
+    }
+
+    #[test]
+    fn running_identity_is_the_current_exe() {
+        let own = ExeId::of(&env::current_exe().unwrap()).unwrap();
+        assert_eq!(ExeId::running().unwrap(), own);
+    }
+
+    /// The daemon side of the exchange over a real socket in a temp directory:
+    /// a client reading the identity, then one writing without reading.
+    #[test]
+    fn serves_identity_then_reads_command() {
+        let dir = env::temp_dir().join(format!("waybar-gpui-test-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("test.sock");
+        let _ = fs::remove_file(&path);
+        let identity = ExeId { dev: 7, ino: 42 };
+        let (tx, rx) = async_channel::unbounded();
+        serve("test".into(), UnixListener::bind(&path).unwrap(), identity, tx);
+
+        let mut client = Connection(UnixStream::connect(&path).unwrap());
+        assert_eq!(client.identity(), Some(identity));
+        client.send(&Command::Toggle(vec!["clock".into(), "Paris".into()])).unwrap();
+        assert_eq!(rx.recv_blocking(), Ok(Command::Toggle(vec!["clock".into(), "Paris".into()])));
+
+        Connection(UnixStream::connect(&path).unwrap()).send(&Command::Close).unwrap();
+        assert_eq!(rx.recv_blocking(), Ok(Command::Close));
+        fs::remove_dir_all(&dir).unwrap();
     }
 }

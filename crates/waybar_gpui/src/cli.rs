@@ -1,15 +1,19 @@
 //! The author's command line, owned entirely by the SDK.
 
 use std::{
-    env, io,
+    env,
+    ffi::OsString,
+    fs::{self, File},
+    io,
     os::unix::process::CommandExt,
-    path::Path,
+    path::{Path, PathBuf},
     process::{self, ExitCode, Stdio},
+    time::Duration,
 };
 
 use crate::{
     App,
-    ipc::{self, Command},
+    ipc::{self, Command, Decision, ExeId},
     runtime::{self, Mode},
 };
 
@@ -76,27 +80,71 @@ fn usage(exe: &Path, panels: &[&str]) -> String {
     text
 }
 
-fn spawn_daemon(target: &[String]) -> io::Result<()> {
-    process::Command::new(env::current_exe()?)
-        .arg("daemon")
-        .args(target)
+/// How long `toggle` waits for a daemon from another binary to quit.
+const REPLACE_TIMEOUT: Duration = Duration::from_secs(2);
+
+/// Where a spawned daemon's stderr goes: `$XDG_STATE_HOME/waybar-gpui/<id>.log`,
+/// `$XDG_STATE_HOME` defaulting to `~/.local/state`.
+fn log_path(id: &str, state_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
+    let state_home = match state_home.filter(|dir| !dir.is_empty()) {
+        Some(dir) => PathBuf::from(dir),
+        None => PathBuf::from(home.filter(|dir| !dir.is_empty())?).join(".local/state"),
+    };
+    Some(state_home.join("waybar-gpui").join(format!("{id}.log")))
+}
+
+/// Creates the log's directory and truncates the log.
+fn open_log(path: &Path) -> io::Result<File> {
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir)?;
+    }
+    File::create(path)
+}
+
+/// Starts `exe args…` detached, stderr into `log` (or discarded).
+fn spawn_detached(exe: &Path, args: &[String], log: Option<File>) -> io::Result<process::Child> {
+    process::Command::new(exe)
+        .args(args)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
+        .stderr(log.map_or_else(Stdio::null, Stdio::from))
         // Own process group, so it outlives Waybar reloads killing on-click children.
         .process_group(0)
         .spawn()
-        .map(drop)
 }
 
-/// No daemon listening: nothing is open and nothing runs.
-fn no_daemon(e: &io::Error) -> bool {
-    matches!(e.kind(), io::ErrorKind::NotFound | io::ErrorKind::ConnectionRefused)
+fn spawn_daemon(id: &str, target: &[String]) -> io::Result<()> {
+    let log = log_path(id, env::var_os("XDG_STATE_HOME"), env::var_os("HOME")).and_then(|path| {
+        open_log(&path).map_err(|e| eprintln!("{id}: cannot open log {}: {e}", path.display())).ok()
+    });
+    let args: Vec<String> = ["daemon".to_owned()].into_iter().chain(target.iter().cloned()).collect();
+    spawn_detached(&env::current_exe()?, &args, log).map(drop)
+}
+
+/// Sends the toggle to the running daemon if it runs this very binary;
+/// otherwise replaces it, so a rebuilt or reinstalled program shows its own
+/// panels.
+fn toggle(id: &str, target: Vec<String>) -> io::Result<()> {
+    let mut daemon = match ipc::Connection::open(id) {
+        Err(e) if ipc::no_daemon(&e) => return spawn_daemon(id, &target),
+        result => result?,
+    };
+    let own = env::current_exe().and_then(|exe| ExeId::of(&exe)).ok();
+    match Decision::new(daemon.identity(), own) {
+        Decision::Send => daemon.send(&Command::Toggle(target)),
+        Decision::Replace => {
+            eprintln!("{id}: replacing the daemon of another binary");
+            daemon.send(&Command::Quit)?;
+            ipc::wait_gone(id, REPLACE_TIMEOUT)?;
+            spawn_daemon(id, &target)
+        }
+    }
 }
 
 /// `close` and `quit` have nothing to do without a daemon.
 fn send_if_running(id: &str, command: &Command) -> io::Result<()> {
     match ipc::send(id, command) {
-        Err(e) if no_daemon(&e) => Ok(()),
+        Err(e) if ipc::no_daemon(&e) => Ok(()),
         result => result,
     }
 }
@@ -104,10 +152,7 @@ fn send_if_running(id: &str, command: &Command) -> io::Result<()> {
 fn run(app: App, invocation: Invocation, usage_text: String) -> io::Result<()> {
     let id = app.id.clone();
     match invocation {
-        Invocation::Toggle(target) => match ipc::send(&id, &Command::Toggle(target.clone())) {
-            Err(e) if no_daemon(&e) => spawn_daemon(&target),
-            result => result,
-        },
+        Invocation::Toggle(target) => toggle(&id, target),
         Invocation::Close => send_if_running(&id, &Command::Close),
         Invocation::Quit => send_if_running(&id, &Command::Quit),
         Invocation::Daemon(initial) => runtime::run(app, Mode::Daemon(initial)),
@@ -184,5 +229,41 @@ mod tests {
         assert!(text.starts_with("usage: /home/me/.cargo/bin/my-panels <command>\n"));
         assert!(text.contains("  workspace    \"on-click\": \"/home/me/.cargo/bin/my-panels toggle workspace\"\n"));
         assert!(text.contains("  clock        \"on-click\": \"/home/me/.cargo/bin/my-panels toggle clock\"\n"));
+    }
+
+    #[test]
+    fn log_path_follows_xdg_state_home() {
+        let some = |s: &str| Some(OsString::from(s));
+        assert_eq!(
+            log_path("my-panels", some("/state"), some("/home/me")),
+            Some(PathBuf::from("/state/waybar-gpui/my-panels.log"))
+        );
+        assert_eq!(
+            log_path("my-panels", None, some("/home/me")),
+            Some(PathBuf::from("/home/me/.local/state/waybar-gpui/my-panels.log"))
+        );
+        assert_eq!(
+            log_path("my-panels", some(""), some("/home/me")),
+            Some(PathBuf::from("/home/me/.local/state/waybar-gpui/my-panels.log"))
+        );
+        assert_eq!(log_path("my-panels", None, None), None);
+    }
+
+    /// The spawn path with a stand-in program: the log directory is created,
+    /// stderr lands in the log, and each spawn truncates it.
+    #[test]
+    fn spawned_stderr_goes_to_a_truncated_log() {
+        let state = env::temp_dir().join(format!("waybar-gpui-log-test-{}", process::id()));
+        let path = log_path("test", Some(state.clone().into()), None).unwrap();
+        let spawn_and_wait = |message: &str| {
+            let args = ["-c".to_owned(), format!("echo {message} >&2; echo stdout")];
+            let status = spawn_detached(Path::new("/bin/sh"), &args, Some(open_log(&path).unwrap())).unwrap().wait();
+            assert!(status.unwrap().success());
+        };
+        spawn_and_wait("first run, longer line");
+        assert_eq!(fs::read_to_string(&path).unwrap(), "first run, longer line\n");
+        spawn_and_wait("second");
+        assert_eq!(fs::read_to_string(&path).unwrap(), "second\n");
+        fs::remove_dir_all(&state).unwrap();
     }
 }
