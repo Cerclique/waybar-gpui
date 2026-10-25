@@ -12,7 +12,8 @@ version = "0.1.0"
 # oldest toolchain that builds the workspace: gpui-pre 0.3.9 calls
 # `std::hint::cold_path`, stable since 1.95.
 rust-version = "1.95"
-# Authors depend on the SDK by git tag; nothing goes to crates.io (docs/guide/limits.md).
+repository = "https://github.com/Cerclique/waybar-gpui"
+# Only `waybar_gpui` goes to crates.io; it overrides this.
 publish = false
 
 [workspace.dependencies]
