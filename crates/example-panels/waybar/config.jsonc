@@ -1,0 +1,86 @@
+// Standalone test bars: `make dev` runs a second Waybar with this config.
+// To use in your own bar, copy a "custom/*" block into
+// ~/.config/waybar/config.jsonc and add it to a modules-* list.
+[
+  {
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "reload_style_on_change": true,
+    "modules-left": ["custom/workspace", "custom/clock-paris", "custom/clock-tokyo"],
+    "modules-right": ["custom/controls", "clock"],
+
+    "custom/workspace": {
+      "exec": "echo Workspace",
+      "interval": "once",
+      // Waybar doesn't need to re-run the module after a click.
+      "exec-on-event": false,
+      "on-click": "example-panels toggle workspace",
+    },
+
+    // Panel arguments: a label and a UTC offset in hours.
+    "custom/clock-paris": {
+      "exec": "echo Paris",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle clock Paris 1",
+    },
+    "custom/clock-tokyo": {
+      "exec": "echo Tokyo",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle clock Tokyo 9",
+    },
+
+    // Needs example-panels built with its `components` feature (`make dev` does).
+    "custom/controls": {
+      "exec": "echo controls",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle controls",
+    },
+  },
+  {
+    // A vertical bar, to check placement beside a side bar.
+    "layer": "top",
+    "position": "left",
+    "width": 40,
+    "modules-center": ["custom/side-ws", "custom/side-controls"],
+
+    "custom/side-ws": {
+      "exec": "echo WS",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle workspace",
+    },
+
+    "custom/side-controls": {
+      "exec": "echo CTL",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle controls",
+    },
+
+    // Panel arguments: a label and a UTC offset in hours.
+    "custom/clock-paris": {
+      "exec": "echo Paris",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle clock Paris 1",
+    },
+    "custom/clock-tokyo": {
+      "exec": "echo Tokyo",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle clock Tokyo 9",
+    },
+
+    // Needs example-panels built with its `components` feature (`make dev` does).
+    "custom/controls": {
+      "exec": "echo controls",
+      "interval": "once",
+      "exec-on-event": false,
+      "on-click": "example-panels toggle controls",
+    },
+  },
+]

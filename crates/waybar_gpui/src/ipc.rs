@@ -1,0 +1,237 @@
+//! One exchange per connection, in `\n`-terminated lines of tab-separated words:
+//!
+//! 1. On accept the daemon writes its executable identity, `exe<TAB>dev<TAB>ino`
+//!    (device and inode of `/proc/self/exe` recorded at startup, in decimal).
+//! 2. The client writes one command, `toggle<TAB>panel<TAB>arg…`, `close` or
+//!    `quit`, and hangs up.
+//!
+//! Clients that don't care who answers (`close`, `quit`, other programs closing
+//! this one's popover) write their command without reading the identity.
+//! `toggle` reads it first and, when it isn't its own executable's, writes `quit`
+//! instead (see [`crate::client`]).
+//!
+//! Where the sockets live, binding one and scanning their directory belong to
+//! [`crate::files`].
+
+use std::{
+    fmt, fs,
+    io::{self, BufRead, BufReader, Write},
+    os::unix::{
+        fs::MetadataExt,
+        net::{UnixListener, UnixStream},
+    },
+    path::Path,
+    thread,
+    time::Duration,
+};
+
+/// How long a client waits for the daemon's identity line. A daemon from before
+/// the identity reply never sends one.
+const REPLY_TIMEOUT: Duration = Duration::from_secs(1);
+
+/// A panel to open and the arguments its build function receives. Equal
+/// targets are the same popover: toggling the open one closes it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Target {
+    pub panel: String,
+    pub args: Vec<String>,
+}
+
+impl Target {
+    /// The panel name followed by its arguments; `None` without a name.
+    pub fn from_words(words: impl IntoIterator<Item = String>) -> Option<Self> {
+        let mut words = words.into_iter();
+        Some(Self { panel: words.next()?, args: words.collect() })
+    }
+
+    /// The inverse of [`Target::from_words`].
+    pub fn words(&self) -> impl Iterator<Item = &str> {
+        std::iter::once(&self.panel).chain(&self.args).map(String::as_str)
+    }
+}
+
+/// For logs: `clock ["Paris", "2"]`, or `workspace` without arguments.
+impl fmt::Display for Target {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.args.as_slice() {
+            [] => write!(f, "{}", self.panel),
+            args => write!(f, "{} {args:?}", self.panel),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Command {
+    Toggle(Target),
+    Close,
+    Quit,
+}
+
+impl Command {
+    fn parse(line: &str) -> Option<Self> {
+        let mut words = line.trim_end_matches('\n').split('\t');
+        match words.next()? {
+            "toggle" => Target::from_words(words.map(str::to_owned)).map(Self::Toggle),
+            "close" => Some(Self::Close),
+            "quit" => Some(Self::Quit),
+            _ => None,
+        }
+    }
+
+    fn to_line(&self) -> String {
+        match self {
+            Self::Toggle(target) => format!("toggle\t{}\n", target.words().collect::<Vec<_>>().join("\t")),
+            Self::Close => "close\n".into(),
+            Self::Quit => "quit\n".into(),
+        }
+    }
+}
+
+/// An executable file's identity. Replacing the file (a rebuild, `cargo
+/// install`) gives it a new inode; another copy is another file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExeId {
+    dev: u64,
+    ino: u64,
+}
+
+impl ExeId {
+    #[cfg(test)]
+    pub const fn new(dev: u64, ino: u64) -> Self {
+        Self { dev, ino }
+    }
+
+    /// The identity of the file at `path`, symlinks followed.
+    pub fn of(path: &Path) -> io::Result<Self> {
+        let meta = fs::metadata(path)?;
+        Ok(Self { dev: meta.dev(), ino: meta.ino() })
+    }
+
+    /// The file this process started from, even once it is replaced on disk.
+    pub(crate) fn running() -> io::Result<Self> {
+        Self::of(Path::new("/proc/self/exe"))
+    }
+
+    fn parse(line: &str) -> Option<Self> {
+        let mut words = line.trim_end_matches('\n').split('\t');
+        let (Some("exe"), Some(dev), Some(ino), None) = (words.next(), words.next(), words.next(), words.next()) else {
+            return None;
+        };
+        Some(Self { dev: dev.parse().ok()?, ino: ino.parse().ok()? })
+    }
+
+    fn to_line(self) -> String {
+        format!("exe\t{}\t{}\n", self.dev, self.ino)
+    }
+}
+
+/// A client's connection to a running daemon.
+pub struct Connection(UnixStream);
+
+impl Connection {
+    /// Connects to the daemon on `socket`. Fails with `NotFound` or
+    /// `ConnectionRefused` when nothing listens.
+    pub fn open(socket: &Path) -> io::Result<Self> {
+        UnixStream::connect(socket).map(Self)
+    }
+
+    /// The daemon's identity; `None` if its line is malformed or doesn't
+    /// arrive within [`REPLY_TIMEOUT`].
+    pub fn identity(&mut self) -> Option<ExeId> {
+        self.0.set_read_timeout(Some(REPLY_TIMEOUT)).ok()?;
+        let mut line = String::new();
+        BufReader::new(&self.0).read_line(&mut line).ok()?;
+        ExeId::parse(&line)
+    }
+
+    pub fn send(mut self, command: &Command) -> io::Result<()> {
+        self.0.write_all(command.to_line().as_bytes())
+    }
+}
+
+/// Answers each connection with `identity`, then forwards its command.
+pub(crate) fn serve(id: String, listener: UnixListener, identity: ExeId, tx: async_channel::Sender<Command>) {
+    let identity = identity.to_line();
+    thread::spawn(move || {
+        for mut stream in listener.incoming().flatten() {
+            // Fails if the client already hung up; its command is still readable.
+            let _ = stream.write_all(identity.as_bytes());
+            let mut line = String::new();
+            // Nothing read: a client that only probed (`wait_gone`) or gave up.
+            if BufReader::new(stream).read_line(&mut line).is_err() || line.is_empty() {
+                continue;
+            }
+            match Command::parse(&line) {
+                Some(command) => {
+                    if tx.send_blocking(command).is_err() {
+                        break;
+                    }
+                }
+                None => eprintln!("{id}: ignoring unknown command {line:?}"),
+            }
+        }
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn target(words: &[&str]) -> Target {
+        Target::from_words(words.iter().map(|w| w.to_string())).unwrap()
+    }
+
+    #[test]
+    fn splits_target_words_into_panel_and_args() {
+        assert_eq!(target(&["workspace"]), Target { panel: "workspace".into(), args: vec![] });
+        let clock = target(&["clock", "Paris", "2"]);
+        assert_eq!(clock, Target { panel: "clock".into(), args: vec!["Paris".into(), "2".into()] });
+        assert_eq!(clock.words().collect::<Vec<_>>(), ["clock", "Paris", "2"]);
+        assert_eq!(Target::from_words(Vec::new()), None);
+    }
+
+    #[test]
+    fn displays_target_for_logs() {
+        assert_eq!(target(&["workspace"]).to_string(), "workspace");
+        assert_eq!(target(&["clock", "New York", "2"]).to_string(), r#"clock ["New York", "2"]"#);
+    }
+
+    #[test]
+    fn round_trips_commands() {
+        assert_eq!(Command::Toggle(target(&["clock", "New York"])).to_line(), "toggle\tclock\tNew York\n");
+        for command in [
+            Command::Toggle(target(&["workspace"])),
+            Command::Toggle(target(&["clock", "Paris", "2"])),
+            Command::Close,
+            Command::Quit,
+        ] {
+            assert_eq!(Command::parse(&command.to_line()), Some(command));
+        }
+    }
+
+    #[test]
+    fn rejects_unknown_and_empty_toggle() {
+        assert_eq!(Command::parse("bogus\n"), None);
+        assert_eq!(Command::parse("toggle\n"), None);
+    }
+
+    #[test]
+    fn round_trips_identity() {
+        let id = ExeId { dev: 66306, ino: u64::MAX };
+        assert_eq!(id.to_line(), "exe\t66306\t18446744073709551615\n");
+        assert_eq!(ExeId::parse(&id.to_line()), Some(id));
+    }
+
+    #[test]
+    fn rejects_malformed_identity() {
+        for line in ["", "\n", "exe\t1\n", "exe\t1\t2\t3\n", "exe\t1\tx\n", "dev\t1\t2\n", "toggle\tclock\n"] {
+            assert_eq!(ExeId::parse(line), None, "{line:?}");
+        }
+    }
+
+    #[test]
+    fn running_identity_is_the_current_exe() {
+        let own = ExeId::of(&std::env::current_exe().unwrap()).unwrap();
+        assert_eq!(ExeId::running().unwrap(), own);
+    }
+}

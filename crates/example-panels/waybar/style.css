@@ -1,0 +1,5 @@
+/* Selectors: #custom-<name> for each "custom/<name>" block. */
+window#waybar {
+  background: rgba(30, 30, 46, 0.9);
+  color: #cdd6f4;
+}

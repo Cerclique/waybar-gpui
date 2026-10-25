@@ -1,0 +1,35 @@
+name: PR title
+
+# PRs are squash-merged with the PR title as the commit title, so the title must
+# be a conventional commit for git-cliff to place it in the changelog.
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  conventional:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Reads the PR title; checks out nothing.
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Keep in sync with the commit_parsers in cliff.toml.
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            docs
+            build
+            ci
+            test
+            chore
+            style
