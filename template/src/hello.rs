@@ -27,9 +27,11 @@ impl Panel for Hello {
 impl Render for Hello {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
 {%- if components %}
-        card(cx)
-            .child("Hello from {{project-name}}")
-            .child(Button::new("close").primary().label("Close").on_click(|_, _, cx| close(cx)))
+        let button = Button::new("close")
+            .primary()
+            .label("Close")
+            .on_click(|_, _, cx| close(cx));
+        card(cx).child("Hello from {{project-name}}").child(button)
 {%- else %}
         let theme = Theme::get(cx);
         let button = div()
