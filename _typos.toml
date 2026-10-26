@@ -1,0 +1,21 @@
+# typos' settings (https://github.com/crate-ci/typos), found by CI's `typos`
+# job and the prek hook alike. `locale` stays unset: the docs use British
+# spelling ("behaviour"), which `en-us` would flag.
+#
+# A flagged word that is a real term (a tool, a crate, an API name) goes in
+# `[default.extend-words]` as `word = "word"`, with a comment when the reason
+# isn't obvious; a typo gets fixed.
+
+[files]
+# Hidden files too: .github/ holds the workflows and the issue templates.
+ignore-hidden = false
+extend-exclude = [
+  ".git",
+  # Generated from commit titles.
+  "CHANGELOG.md",
+  # Quotes upstream text and names other projects (relm, AGS).
+  "docs/research/",
+  "Cargo.lock",
+  "*.png",
+  "*.svg",
+]

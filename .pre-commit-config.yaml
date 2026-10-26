@@ -43,6 +43,19 @@ repos:
         # Upstream also matches .pre-commit-config.yaml; CI audits .github/.
         files: ^\.github/(workflows/[^/]+|dependabot|actions/.+/action)\.ya?ml$
 
+  # Spell check, as CI's `typos` job; same version, bump them together.
+  # Installed from PyPI. It fixes an unambiguous typo in place.
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.51.1
+    hooks:
+      - id: typos
+        # Upstream's args, plus the root config only: given a file, typos
+        # also reads the nearest Cargo.toml, and the template's isn't TOML
+        # until generated.
+        args: [--write-changes, --force-exclude, --isolated, --config, _typos.toml]
+        # Its manifest also enables pre-push; once at commit time is enough.
+        stages: [pre-commit]
+
   # The Rust checks of `make lint` and CI. check-template and the link check
   # stay in CI: slow, and they need cargo-generate and lychee.
   - repo: local
