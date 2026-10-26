@@ -17,13 +17,16 @@ env:
   CARGO_TERM_COLOR: always
 
 # Actions are pinned to a commit, with the release in a comment; Dependabot
-# bumps both. Build jobs get 45 minutes: a cold cache builds all of GPUI.
+# bumps both. Checkouts don't keep the token in .git/config: no step pushes.
+# Build jobs get 45 minutes: a cold cache builds all of GPUI.
 jobs:
   rust:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/gpui-system-packages
       # The toolchain and components rust-toolchain.toml declares.
       - name: Install the Rust toolchain
@@ -48,6 +51,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/gpui-system-packages
       # Read from Cargo.toml, where it is declared once (Dependabot leaves
       # it alone there). RUSTUP_TOOLCHAIN makes the later steps use it:
@@ -71,6 +76,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
         with:
           arguments: --all-features
@@ -88,6 +95,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/gpui-system-packages
       # The toolchain and components rust-toolchain.toml declares.
       - name: Install the Rust toolchain
@@ -110,6 +119,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/gpui-system-packages
       # The toolchain and components rust-toolchain.toml declares.
       - name: Install the Rust toolchain
@@ -128,8 +139,45 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # Relative links only: --offline skips the web.
       - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
           args: --offline --no-progress --exclude-path target --exclude-path .claude './**/*.md'
           fail: true
+
+  # The workflows and the local action: actionlint (syntax, expressions, and
+  # shellcheck on `run:` scripts), then zizmor's security audit. Same versions
+  # as the prek hooks in .pre-commit-config.yaml; bump them together.
+  workflows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Not in install-action: the release binary, checked against its
+      # published SHA-256.
+      - name: Install actionlint
+        env:
+          VERSION: 1.7.12
+          SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          archive="$RUNNER_TEMP/actionlint.tar.gz"
+          curl -fsSL -o "$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v$VERSION/actionlint_${VERSION}_linux_amd64.tar.gz"
+          echo "$SHA256  $archive" | sha256sum -c -
+          tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: zizmor@1.31.1,shellcheck@0.11.0
+      - run: actionlint
+      # Also after an actionlint failure, to report both at once. The token
+      # (read-only) enables the online audits: impostor commits,
+      # known-vulnerable actions, ref confusion.
+      - if: ${{ !cancelled() }}
+        run: zizmor --no-progress --format plain .github
+        env:
+          GH_TOKEN: ${{ github.token }}

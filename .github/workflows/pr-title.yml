@@ -3,7 +3,9 @@ name: PR title
 # PRs are squash-merged with the PR title as the commit title, so the title must
 # be a conventional commit for git-cliff to place it in the changelog.
 on:
-  pull_request_target:
+  # pull_request_target so fork PRs get a token that can read the PR. Safe
+  # here: the job runs no code from the PR and checks out nothing.
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
     types: [opened, edited, reopened, synchronize]
 
 permissions:
