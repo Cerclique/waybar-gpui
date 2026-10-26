@@ -47,7 +47,8 @@ vulnerability, do **not** open a public issue; follow
   (`cargo install cargo-generate`), for `make check-template`.
 - [prek](https://github.com/j178/prek), for the [Git hooks](#git-hooks). It
   installs the [actionlint](https://github.com/rhysd/actionlint) (built with
-  Go) and [zizmor](https://docs.zizmor.sh) (from PyPI) hooks itself,
+  Go), [zizmor](https://docs.zizmor.sh) and
+  [typos](https://github.com/crate-ci/typos) (both from PyPI) hooks itself,
   downloading Go or Python if missing.
   [ShellCheck](https://www.shellcheck.net) (e.g. your distribution's
   `shellcheck` package) lets actionlint check `run:` scripts, as CI does.
@@ -66,7 +67,8 @@ prek install
 ```
 
 - **pre-commit**: trailing whitespace, final newlines, line endings, YAML/TOML
-  syntax, merge-conflict markers, `cargo fmt --all`, `cargo clippy` without
+  syntax, merge-conflict markers, typos (spell check; a real term it flags goes
+  in [`_typos.toml`](../_typos.toml)), `cargo fmt --all`, `cargo clippy` without
   and with `--all-features`, and, when `.github/` workflows or actions change,
   actionlint and zizmor (offline audits only, unless `GH_TOKEN` is set). Fixers rewrite the files and fail the commit;
   review the changes, `git add` them and commit again.
@@ -105,7 +107,7 @@ The workflows live in [`.github/workflows/`](../.github/workflows/):
 
 | Workflow | Runs on | What it does |
 | --- | --- | --- |
-| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on the toolchain in `rust-toolchain.toml`, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `workflows`: actionlint and zizmor over `.github/` (the workflows, the local action and Dependabot's config), failing on any finding; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
+| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on the toolchain in `rust-toolchain.toml`, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `typos`: the spell check (`_typos.toml`); `workflows`: actionlint and zizmor over `.github/` (the workflows, the local action and Dependabot's config), failing on any finding; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
 | `pr-title.yml` | PRs (opened, edited, pushed to) | `conventional`: the PR title is a conventional commit |
 | `release.yml` | `v*` tag push | Creates the GitHub Release from the tag's `CHANGELOG.md` section, then publishes `waybar_gpui` on crates.io |
 | `scheduled.yml` | Mondays, or by hand | `advisories`: `cargo deny check advisories` on the locked dependencies; `beta`: tests and clippy on Rust beta |

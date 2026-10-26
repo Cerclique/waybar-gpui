@@ -147,6 +147,17 @@ jobs:
           args: --offline --no-progress --exclude-path target --exclude-path .claude './**/*.md'
           fail: true
 
+  # Spell check, with the settings in _typos.toml. Same version as the prek
+  # hook in .pre-commit-config.yaml; bump them together.
+  typos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: crate-ci/typos@7f9d0819ca1c008ade73f4b41fa9d258d48f605b # v1.51.1
+
   # The workflows and the local action: actionlint (syntax, expressions, and
   # shellcheck on `run:` scripts), then zizmor's security audit. Same versions
   # as the prek hooks in .pre-commit-config.yaml; bump them together.
