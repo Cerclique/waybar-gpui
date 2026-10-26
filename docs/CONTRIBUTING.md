@@ -24,10 +24,15 @@ vulnerability, do **not** open a public issue; follow
 
 ## Setup
 
-- Rust 1.97.1, the version CI tests with, with clippy and rustfmt. The
-  minimum supported Rust version (MSRV) is the `rust-version` in
-  [`Cargo.toml`](../Cargo.toml), 1.95 (GPUI needs it); don't use language or
-  library features newer than it. CI checks it builds.
+- [rustup](https://rustup.rs). The Rust version the project is tested with,
+  and its clippy and rustfmt, are declared once, in
+  [`rust-toolchain.toml`](../rust-toolchain.toml): rustup uses it in the
+  repository whatever your default, and installs it on first use. CI builds
+  with the same file. To bump it, edit `channel` there, by hand: that one edit
+  moves CI and local builds together. The minimum supported Rust version
+  (MSRV) is the `rust-version` in [`Cargo.toml`](../Cargo.toml), 1.95 (GPUI
+  needs it); don't use language or library features newer than it. CI checks
+  it builds.
 - The system libraries GPUI's Wayland platform links against. On Debian or
   Ubuntu, as CI installs them
   ([`gpui-system-packages`](../.github/actions/gpui-system-packages/action.yml)):
@@ -94,7 +99,7 @@ The workflows live in [`.github/workflows/`](../.github/workflows/):
 
 | Workflow | Runs on | What it does |
 | --- | --- | --- |
-| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on Rust 1.97.1, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
+| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on the toolchain in `rust-toolchain.toml`, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
 | `pr-title.yml` | PRs (opened, edited, pushed to) | `conventional`: the PR title is a conventional commit |
 | `release.yml` | `v*` tag push | Creates the GitHub Release from the tag's `CHANGELOG.md` section, then publishes `waybar_gpui` on crates.io |
 | `scheduled.yml` | Mondays, or by hand | `advisories`: `cargo deny check advisories` on the locked dependencies; `beta`: tests and clippy on Rust beta |

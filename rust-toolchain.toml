@@ -1,0 +1,7 @@
+# The Rust toolchain the project is tested with. Local builds (through rustup)
+# and CI's rust, template, semver and publish jobs all use it; nothing else
+# names the version. Bump it here, by hand. The minimum supported Rust is the
+# separate `rust-version` in Cargo.toml.
+[toolchain]
+channel = "1.97.1"
+components = ["clippy", "rustfmt"]
