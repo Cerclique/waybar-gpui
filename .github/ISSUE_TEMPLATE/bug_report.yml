@@ -31,7 +31,16 @@ body:
     id: sdk-version
     attributes:
       label: waybar_gpui version
-      description: The SDK release tag or commit (the `tag` in your Cargo.toml), e.g. `v0.1.0`.
+      description: >-
+        Output of `cargo tree -i waybar_gpui --depth 0` in your project, e.g.
+        `waybar_gpui v0.1.0` (a git dependency also shows its commit).
+    validations:
+      required: true
+  - type: input
+    id: rust-version
+    attributes:
+      label: Rust version
+      description: Output of `rustc --version`.
     validations:
       required: true
   - type: dropdown
