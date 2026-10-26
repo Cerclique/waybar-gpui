@@ -29,7 +29,8 @@ vulnerability, do **not** open a public issue; follow
   [`Cargo.toml`](../Cargo.toml), 1.95 (GPUI needs it); don't use language or
   library features newer than it. CI checks it builds.
 - The system libraries GPUI's Wayland platform links against. On Debian or
-  Ubuntu, as CI installs them:
+  Ubuntu, as CI installs them
+  ([`gpui-system-packages`](../.github/actions/gpui-system-packages/action.yml)):
 
   ```sh
   sudo apt-get install pkg-config libxkbcommon-dev libwayland-dev \

@@ -1,0 +1,18 @@
+name: GPUI system packages
+description: Installs the system packages a GPUI build links against.
+
+# Declared once for every job that builds the crate; called after
+# actions/checkout, which a local action needs. Only `run:` steps, so there is
+# no third-party action here for Dependabot to bump.
+runs:
+  using: composite
+  steps:
+    # gpui-pre's Wayland platform links against these. Found by making the
+    # build pass on ubuntu-latest; recheck when bumping GPUI.
+    - name: Install system packages
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          pkg-config libxkbcommon-dev libwayland-dev libvulkan-dev \
+          libfontconfig-dev libfreetype-dev
