@@ -1,0 +1,8 @@
+# zizmor's settings, found by CI's `zizmor .github` and the prek hook alike.
+rules:
+  # It asks for `uses: $/.github/actions/...` instead of `./.github/...`, which
+  # actionlint (1.7.12) rejects. The `./` form only loads what actions/checkout
+  # put there, from this repository's own commit. Drop this once actionlint
+  # accepts `$/`.
+  self-repository:
+    disable: true

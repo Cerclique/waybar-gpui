@@ -16,6 +16,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # The notes are the tag's section of CHANGELOG.md, as the release PR wrote
       # it (git-cliff after 0.1.0, by hand for 0.1.0), without its heading: the
       # release title already names the version. Re-rendering with
@@ -48,6 +50,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # `cargo publish` builds the crate.
       - uses: ./.github/actions/gpui-system-packages
       # The toolchain and components rust-toolchain.toml declares.

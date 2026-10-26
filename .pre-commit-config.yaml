@@ -26,6 +26,23 @@ repos:
         exclude: ^template/Cargo\.toml$
       - id: check-merge-conflict
 
+  # The workflows and the local action, as CI's `workflows` job checks them;
+  # same versions, bump them together. Each runs only when its files change.
+  # actionlint is built with Go, and runs shellcheck on `run:` scripts when
+  # it is installed.
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+  # zizmor is installed from PyPI. Offline audits only, unless GH_TOKEN is
+  # set.
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.31.1
+    hooks:
+      - id: zizmor
+        # Upstream also matches .pre-commit-config.yaml; CI audits .github/.
+        files: ^\.github/(workflows/[^/]+|dependabot|actions/.+/action)\.ya?ml$
+
   # The Rust checks of `make lint` and CI. check-template and the link check
   # stay in CI: slow, and they need cargo-generate and lychee.
   - repo: local

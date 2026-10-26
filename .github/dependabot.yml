@@ -1,13 +1,16 @@
 # Weekly, one grouped PR per ecosystem. The prefixes make the PR titles
 # conventional commits: `build(deps): …` is listed in the changelog, `ci(deps): …`
 # is not. The starter template (template/) is left out: its Cargo.toml holds
-# Liquid tags and depends on the SDK by tag.
+# Liquid tags and depends on the SDK by tag. A release waits a week before
+# Dependabot proposes it: time for a broken or compromised one to be pulled.
 version: 2
 updates:
   - package-ecosystem: cargo
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: build
       include: scope
@@ -25,6 +28,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ci
       include: scope

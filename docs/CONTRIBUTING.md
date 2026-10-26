@@ -45,7 +45,12 @@ vulnerability, do **not** open a public issue; follow
   Other distributions: the same libraries under their own package names.
 - [cargo-generate](https://github.com/cargo-generate/cargo-generate)
   (`cargo install cargo-generate`), for `make check-template`.
-- [prek](https://github.com/j178/prek), for the [Git hooks](#git-hooks).
+- [prek](https://github.com/j178/prek), for the [Git hooks](#git-hooks). It
+  installs the [actionlint](https://github.com/rhysd/actionlint) (built with
+  Go) and [zizmor](https://docs.zizmor.sh) (from PyPI) hooks itself,
+  downloading Go or Python if missing.
+  [ShellCheck](https://www.shellcheck.net) (e.g. your distribution's
+  `shellcheck` package) lets actionlint check `run:` scripts, as CI does.
 - [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)
   (`cargo install --locked cargo-deny`), for `cargo deny check`.
 
@@ -61,8 +66,9 @@ prek install
 ```
 
 - **pre-commit**: trailing whitespace, final newlines, line endings, YAML/TOML
-  syntax, merge-conflict markers, `cargo fmt --all`, and `cargo clippy` without
-  and with `--all-features`. Fixers rewrite the files and fail the commit;
+  syntax, merge-conflict markers, `cargo fmt --all`, `cargo clippy` without
+  and with `--all-features`, and, when `.github/` workflows or actions change,
+  actionlint and zizmor (offline audits only, unless `GH_TOKEN` is set). Fixers rewrite the files and fail the commit;
   review the changes, `git add` them and commit again.
 - **pre-push**: `make test`.
 
@@ -99,7 +105,7 @@ The workflows live in [`.github/workflows/`](../.github/workflows/):
 
 | Workflow | Runs on | What it does |
 | --- | --- | --- |
-| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on the toolchain in `rust-toolchain.toml`, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
+| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on the toolchain in `rust-toolchain.toml`, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `workflows`: actionlint and zizmor over `.github/` (the workflows, the local action and Dependabot's config), failing on any finding; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
 | `pr-title.yml` | PRs (opened, edited, pushed to) | `conventional`: the PR title is a conventional commit |
 | `release.yml` | `v*` tag push | Creates the GitHub Release from the tag's `CHANGELOG.md` section, then publishes `waybar_gpui` on crates.io |
 | `scheduled.yml` | Mondays, or by hand | `advisories`: `cargo deny check advisories` on the locked dependencies; `beta`: tests and clippy on Rust beta |
@@ -109,11 +115,14 @@ Every job in `ci.yml` and `pr-title.yml` is required to merge, except
 release bumps the minor (0.x semver). A new push to a PR cancels its running
 `ci.yml` run. Jobs time out after 45 minutes (build jobs, which build all of
 GPUI on a cold cache) or less. Actions are pinned to a commit, with the
-release in a comment.
+release in a comment. A zizmor finding is fixed where it can be; a deliberate
+exception is ignored inline (`# zizmor: ignore[<audit>]`) or in
+[`.github/zizmor.yml`](../.github/zizmor.yml), with a comment saying why it is
+safe.
 
 [Dependabot](../.github/dependabot.yml) opens one grouped PR a week for Cargo
 dependencies (`build(deps): …`, listed in the changelog) and one for actions
-(`ci(deps): …`). It leaves the exactly pinned GPUI crates (`gpui-pre`,
+(`ci(deps): …`), each proposing only releases at least a week old. It leaves the exactly pinned GPUI crates (`gpui-pre`,
 `gpui-pre-platform`, `gpui-component`, `gpui-kit-assets`) and the starter
 template alone: those move by hand, as a breaking release.
 
