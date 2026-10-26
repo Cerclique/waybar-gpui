@@ -21,6 +21,8 @@ These pages follow `main`; for the release you installed, read
 - [Components](components.md): gpui-component widgets, and their limits.
 - [Closing and Esc](closing-and-esc.md): how popovers close, and how a panel
   takes part.
+- [Using a coding agent](using-an-agent.md): a skill that points your agent at
+  the right docs and source for your version.
 
 ## Shipping
 

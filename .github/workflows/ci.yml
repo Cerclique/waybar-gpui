@@ -144,6 +144,8 @@ jobs:
         with:
           args: --offline --no-progress --exclude-path target --exclude-path .claude './**/*.md'
           fail: true
+      # The docs the authors' skill names inside versioned URLs.
+      - run: ./scripts/check-skill.sh
 
   # Spell check, with the settings in _typos.toml. Same version as the prek
   # hook in .pre-commit-config.yaml; bump them together.

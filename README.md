@@ -63,6 +63,8 @@ placeholders by hand.
   limits, troubleshooting.
 - [Using a waybar-gpui program](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/using-a-program.md):
   for people who install a program built with it.
+- [Using a coding agent](https://github.com/Cerclique/waybar-gpui/blob/main/docs/guide/using-an-agent.md):
+  an agent skill for writing panels.
 - [API reference](https://docs.rs/waybar_gpui) on docs.rs.
 - [Example panels](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/examples/example-panels/src/main.rs):
   one runnable panel per pattern.
@@ -74,7 +76,8 @@ placeholders by hand.
 | `crates/waybar_gpui` | The SDK (and the runtime, private inside it). |
 | `examples/example-panels` | A program built on the SDK the way yours would be; `waybar/` holds the test bars `make dev` runs. |
 | `template/` | The cargo-generate starter. |
-| `scripts/` | `check-template.sh`, shared by CI and `make check-template`. |
+| `skills/waybar-gpui` | The agent skill authors copy into their program ([guide](docs/guide/using-an-agent.md)). |
+| `scripts/` | `check-template.sh`, shared by CI and `make check-template`; `check-skill.sh`, run by CI. |
 | `docs/` | The guide, the [architecture](docs/architecture.md) and ADRs. |
 
 ```sh
