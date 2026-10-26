@@ -93,7 +93,7 @@ The workflows live in [`.github/workflows/`](../.github/workflows/):
 
 | Workflow | Runs on | What it does |
 | --- | --- | --- |
-| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on Rust 1.97.1, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`; `template`: `make check-template`; `links`: the lychee link check; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
+| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on Rust 1.97.1, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
 | `pr-title.yml` | PRs (opened, edited, pushed to) | `conventional`: the PR title is a conventional commit |
 | `release.yml` | `v*` tag push | Creates the GitHub Release from the tag's `CHANGELOG.md` section, then publishes `waybar_gpui` on crates.io |
 | `scheduled.yml` | Mondays, or by hand | `advisories`: `cargo deny check advisories` on the locked dependencies; `beta`: tests and clippy on Rust beta |
