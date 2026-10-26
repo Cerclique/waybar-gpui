@@ -10,6 +10,8 @@ bar modules on Hyprland. Read before working:
 - `docs/CONTRIBUTING.md`: setup, checks and pull-request rules; read before opening a PR.
 - `docs/guide/`: the author-facing guide (README quickstart → guide → rustdoc).
   A behaviour change updates the one doc that owns the fact.
+- `skills/waybar-gpui/SKILL.md`: the agent skill shipped to authors, not for
+  work on this repo. Renaming a guide page or a CLI verb updates it too.
 
 Crates: `waybar_gpui` (SDK + runtime, with its private Hyprland IPC in
 `hypr.rs`) and `example-panels` (a program built on it).

@@ -150,6 +150,9 @@ More in the guide's [Dev loop](guide/dev-loop.md#logs).
   `Closes #<n>`.
 - A behaviour change updates the one doc that owns the fact (guide, rustdoc
   or architecture), in the same pull request.
+- Renaming a guide page or a command-line verb also updates the authors'
+  agent skill, [`skills/waybar-gpui/SKILL.md`](../skills/waybar-gpui/SKILL.md),
+  which names them. CI checks the pages it names exist.
 - Pull requests are **squash-merged**: the PR title becomes the commit title on
   `main`, and the changelog is generated from those titles. The PR title must
   follow [Conventional Commits](https://www.conventionalcommits.org/), which
@@ -185,7 +188,9 @@ whose changelog names the new versions.
    and the guide's `waybar_gpui` version, the README's `--tag`, and the
    tagged links (`blob/vX.Y.Z`, `tree/vX.Y.Z`) in the README, the guide
    index, the template README and the rustdoc. `make check-template` lists
-   any left behind.
+   any left behind. The first release that ships the agent skill also points
+   the `main` links to it (the README's *Using a coding agent* and the `curl`
+   in `docs/guide/using-an-agent.md`) at its tag, then drops this sentence.
 2. Add the release's section to the changelog:
 
    ```sh
