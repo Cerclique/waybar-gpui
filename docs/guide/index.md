@@ -7,6 +7,9 @@ program, program ID…) are defined in the [glossary](../GLOSSARY.md).
 New here? Start with the quickstart in the [README](../../README.md), then
 [Writing a panel](writing-a-panel.md).
 
+These pages follow `main`; for the release you installed, read
+[its copy of the guide](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/index.md).
+
 ## Building panels
 
 - [Writing a panel](writing-a-panel.md): the `Panel` trait, `App`, the card,

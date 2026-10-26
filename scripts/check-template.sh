@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Checks the starter template: every versioned reference to the SDK (the
-# template's dependency, tagged guide links, the README quickstart) matches the
+# template's dependency, tagged links, the README quickstart) matches the
 # workspace version, every GPUI version the docs mention matches the
 # `gpui-pre` pin, the template declares the workspace's rust-version, and
 # both variants (with and without `components`) generate and pass clippy
@@ -12,10 +12,11 @@ cd "$(dirname "$0")/.."
 repo=$PWD
 
 version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)
-# Every versioned reference to the SDK: tagged guide links and `--tag` in the
-# quickstart (`vX.Y.Z`), the `waybar_gpui` dependency in the template, the
-# guide and example-panels (`"X.Y.Z"`).
-stale=$( (grep -rnoE '(blob/|--tag )v[0-9]+\.[0-9]+\.[0-9]+' \
+# Every versioned reference to the SDK: tagged links (`blob/vX.Y.Z` or
+# `tree/vX.Y.Z`: the README's, the guide index's, the template's, the
+# rustdoc's) and `--tag` in the quickstart, the `waybar_gpui` dependency in the
+# template, the guide and example-panels (`"X.Y.Z"`).
+stale=$( (grep -rnoE '(blob/|tree/|--tag )v[0-9]+\.[0-9]+\.[0-9]+' \
   template README.md docs/guide crates/waybar_gpui/src | grep -v "v$version\$"
   grep -rnoE 'waybar_gpui = (\{ version = )?"[0-9]+\.[0-9]+\.[0-9]+"' \
   template docs/guide examples/example-panels/Cargo.toml | grep -v "\"$version\"\$") || true)
