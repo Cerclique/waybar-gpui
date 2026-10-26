@@ -73,7 +73,8 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo check --locked --all-targets --all-features
 
-  # Advisories, licenses, bans and sources (deny.toml).
+  # Advisories, licenses, bans and sources (deny.toml), then unused
+  # dependencies.
   deny:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -82,6 +83,12 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
         with:
           arguments: --all-features
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: cargo-machete
+      # The workspace members only: the template's Cargo.toml holds Liquid
+      # tags and doesn't parse.
+      - run: cargo machete crates examples
 
   # The starter template: tag matches the workspace version, both variants
   # generate and pass clippy against this checkout.
