@@ -252,15 +252,15 @@ real clicks):
 - **Version pin:** `gpui-pre` and `gpui-pre-platform` `=0.3.9` (a community
   snapshot of `zed@93d7456`, lib names still `gpui`/`gpui_platform`), with the
   `wayland` feature only. The official crates.io `gpui` 0.2.2 is a year stale
-  and has no layer shell; a git dependency on Zed `main` would need Rust 1.98.1
-  while the project targets 1.97.1. The API breaks between snapshots, so check
+  and has no layer shell; a git dependency on Zed `main` would need Rust 1.98.1,
+  newer than the project's toolchain (`rust-toolchain.toml`). The API breaks between snapshots, so check
   the source in `~/.cargo/registry/src/*/gpui-pre-0.3.9/` before using an API.
   `gpui-pre`, `gpui-pre-platform` and `gpui-component` move together, and any
   change to the three is a breaking minor release. Background:
   [`docs/research/gpui-popup-windows.md`](research/gpui-popup-windows.md).
 - **gpui-component** (`components` feature): `gpui-component =0.8.0` pins the
   same `gpui-pre =0.3.9`, so Cargo resolves a single GPUI and no `[patch]` is
-  needed; it builds on 1.97.1. It is a direct dependency, never the `gpui-kit`
+  needed; it builds on the project's toolchain. It is a direct dependency, never the `gpui-kit`
   umbrella, which turns on X11 and runtime shaders. It costs ~110 crates and
   ~10 MB of release binary. With the feature on, the runtime calls
   `gpui_component::init`, registers `gpui-kit-assets` (`with_assets`) for

@@ -50,6 +50,12 @@ out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
 # Shared between the variants, so dependencies build once.
 export CARGO_TARGET_DIR=${TEMPLATE_TARGET_DIR:-$repo/target/template}
+# The generated crates sit outside the repository, where rust-toolchain.toml
+# doesn't apply: build them with its toolchain all the same. A RUSTUP_TOOLCHAIN
+# already set wins, as it would over the file inside the repository.
+toolchain=$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)
+export RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN:-$toolchain}
+echo "building the variants with $(rustc --version)"
 
 for components in false true; do
   name=hello-panels-$components
