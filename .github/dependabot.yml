@@ -1,7 +1,8 @@
 # Weekly, one grouped PR per ecosystem. The prefixes make the PR titles
 # conventional commits: `build(deps): …` is listed in the changelog, `ci(deps): …`
-# is not. The starter template (template/) is left out: its Cargo.toml holds
-# Liquid tags and depends on the SDK by tag. A release waits a week before
+# is not. The starter template (template/) is left out: its manifest is a
+# Liquid template (Cargo.toml.liquid), and its SDK version moves with the
+# workspace's, as check-template.sh checks. A release waits a week before
 # Dependabot proposes it: time for a broken or compromised one to be pulled.
 version: 2
 updates:

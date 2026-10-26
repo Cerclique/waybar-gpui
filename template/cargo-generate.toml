@@ -1,5 +1,7 @@
 [template]
-cargo_generate_version = ">=0.23"
+# 0.23.4 also drops the `.liquid` suffix (Cargo.toml.liquid) in git
+# templates, not only in local ones.
+cargo_generate_version = ">=0.23.4"
 # Files of this repository's template folder that aren't part of a new project.
 exclude = ["pre-script.rhai"]
 
