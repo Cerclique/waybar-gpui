@@ -40,8 +40,8 @@ echo "every GPUI version mention is $gpui"
 
 # The template declares the workspace's MSRV.
 msrv=$(sed -n '/^\[workspace.package\]/,/^\[/s/^rust-version = "\(.*\)"/\1/p' Cargo.toml)
-if ! grep -qx "rust-version = \"$msrv\"" template/Cargo.toml; then
-  echo "template/Cargo.toml must declare rust-version = \"$msrv\" (the workspace's)" >&2
+if ! grep -qx "rust-version = \"$msrv\"" template/Cargo.toml.liquid; then
+  echo "template/Cargo.toml.liquid must declare rust-version = \"$msrv\" (the workspace's)" >&2
   exit 1
 fi
 echo "the template's rust-version is $msrv"

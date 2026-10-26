@@ -51,8 +51,9 @@ reload Waybar (`pkill -SIGUSR2 waybar`):
 },
 ```
 
-Click it. No cargo-generate? Copy the [`template/`](template) folder and
-replace the `{{…}}` placeholders by hand.
+Click it. No cargo-generate? Copy the [`template/`](template) folder, rename
+`Cargo.toml.liquid` to `Cargo.toml`, and replace the `{{…}}` placeholders by
+hand.
 
 ## Documentation
 

@@ -21,9 +21,6 @@ repos:
         args: [--fix=lf]
       - id: check-yaml
       - id: check-toml
-        # A cargo-generate template: Liquid tags make it invalid TOML until
-        # generated (make check-template builds both variants).
-        exclude: ^template/Cargo\.toml$
       - id: check-merge-conflict
 
   # The workflows and the local action, as CI's `workflows` job checks them;
@@ -49,10 +46,6 @@ repos:
     rev: v1.51.1
     hooks:
       - id: typos
-        # Upstream's args, plus the root config only: given a file, typos
-        # also reads the nearest Cargo.toml, and the template's isn't TOML
-        # until generated.
-        args: [--write-changes, --force-exclude, --isolated, --config, _typos.toml]
         # Its manifest also enables pre-push; once at commit time is enough.
         stages: [pre-commit]
 

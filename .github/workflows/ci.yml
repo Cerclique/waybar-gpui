@@ -84,9 +84,7 @@ jobs:
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:
           tool: cargo-machete
-      # The workspace members only: the template's Cargo.toml holds Liquid
-      # tags and doesn't parse.
-      - run: cargo machete crates examples
+      - run: cargo machete
 
   # The starter template: tag matches the workspace version, both variants
   # generate and pass clippy against this checkout.
