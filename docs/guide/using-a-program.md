@@ -52,8 +52,9 @@ hl.layer_rule({ match = { namespace = "^waybar-gpui:" }, blur = true, ignore_alp
 - Click the bar module: the popover opens next to it.
 - Close it with Esc, a click anywhere outside it, or a click on the bar.
 - While a popover is open, **the first click elsewhere only closes it**:
-  clicking another bar module takes a second click. That's how Hyprland
-  routes clicks to popovers, not a bug.
+  clicking another bar module, on any monitor, takes a second click. That's
+  by design: the popover holds the keyboard while it's open, so the first
+  click outside closes it rather than reaching what's below.
 - Only one popover is open at a time, even across different programs.
 - The first click after login takes a moment longer (the program starts in
   the background); later ones are fast.

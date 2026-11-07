@@ -20,11 +20,11 @@ The visible rectangle of a popover, sized to the panel's content, where the pane
 _Avoid_: frame, window
 
 **Backdrop**:
-The invisible rest of the popover's surface around the card, covering the whole monitor; a click that lands on it dismisses the popover.
+The invisible area around the card, on every monitor; a click that lands on it dismisses the popover.
 _Avoid_: overlay, background
 
 **Dismiss**:
-Closing a popover from outside the panel: Esc the panel doesn't handle, a click on the backdrop, or a click on another monitor.
+Closing a popover from outside the panel: Esc the panel doesn't handle, or a click on the backdrop.
 _Avoid_: hide, cancel
 
 **Toggle**:

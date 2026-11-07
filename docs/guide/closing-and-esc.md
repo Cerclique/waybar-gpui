@@ -4,17 +4,16 @@
 
 | What happens | Who decides |
 |---|---|
-| A click on the **backdrop** (anywhere outside the card on that monitor, the bar included) | Always closes; a panel can't prevent it. |
-| A click on another monitor | Always closes. |
+| A click on the **backdrop** (anywhere outside the card, on any monitor, the bar included) | Always closes; a panel can't prevent it. |
 | Esc | The panel first, if it has focus (below). Otherwise closes. |
 | The panel calls `close(cx)` | The panel. |
 | A click on the bar, the same bar module included | Closes, as a backdrop click (see the note below). |
 | Another popover opens (any program) | The old one closes first: one popover at a time. |
 
-Note: while a popover is open, Hyprland sends **every** click to it, so Waybar
-can't be clicked. Clicking the bar (the same bar module or another) is a click
-on the backdrop: it only closes the popover. A second click opens the new
-panel. See [How it works](how-it-works.md).
+Note: while a popover is open, the backdrop covers Waybar on every monitor,
+so Waybar can't be clicked. Clicking the bar (the same bar module or another,
+on any monitor) is a click on the backdrop: it only closes the popover. A
+second click opens the new panel. See [How it works](how-it-works.md).
 
 ## Closing from the panel
 

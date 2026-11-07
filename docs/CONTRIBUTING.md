@@ -130,7 +130,7 @@ template alone: those move by hand, as a breaking release.
 
 ## Trying it on screen
 
-`make dev` needs Hyprland 0.56 (Lua config) and Waybar 0.15. It builds with
+`make dev` needs Hyprland 0.57 (Lua config) and Waybar 0.15. It builds with
 the `components` feature and starts a second Waybar, with a top and a left bar
 wired to `example-panels`, on your screen next to your
 own; Ctrl-C stops it. Clicking its bar modules opens the example panels as

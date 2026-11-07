@@ -23,7 +23,7 @@ Crates: `waybar_gpui` (SDK + runtime, with its private Hyprland IPC in
 - GPUI is `gpui-pre =0.3.11` and the API is pre-1.0: check the source in
   `~/.cargo/registry/src/*/gpui-pre-0.3.11/` before using an API; don't bump the
   pin casually.
-- Hyprland is 0.56 with a **Lua** config (`hl.*`), not hyprlang. Verify
+- Hyprland is 0.57 with a **Lua** config (`hl.*`), not hyprlang. Verify
   dispatcher/rule syntax against the wiki before writing it.
 - Waybar is 0.15.0; the Waybar wiki documents master, which differs.
 - `make dev` and `example-panels toggle|preview|daemon <panel>` open popovers
