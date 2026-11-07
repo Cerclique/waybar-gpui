@@ -1624,6 +1624,7 @@ dependencies = [
 name = "example-panels"
 version = "0.1.0"
 dependencies = [
+ "gpui-pre",
  "serde",
  "serde_json",
  "waybar_gpui",

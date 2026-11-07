@@ -21,5 +21,12 @@ waybar_gpui = { path = "../../crates/waybar_gpui" }
 serde.workspace = true
 serde_json.workspace = true
 
+[dev-dependencies]
+# The smoke tests (src/smoke_tests.rs) need GPUI's TestAppContext. The guide
+# tells authors not to depend on `gpui` directly, because a second pin means a
+# second, incompatible `gpui`. This one is safe: it is the SDK's own workspace
+# pin, so cargo unifies it with waybar_gpui's into a single `gpui`.
+gpui = { workspace = true, features = ["test-support"] }
+
 [lints]
 workspace = true

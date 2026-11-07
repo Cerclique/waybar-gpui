@@ -23,9 +23,12 @@ mod clock;
 #[cfg(feature = "components")]
 mod controls;
 mod hypr;
+#[cfg(test)]
+mod smoke_tests;
 mod workspace;
 
 fn main() -> std::process::ExitCode {
+    // A new panel needs a new smoke test in `smoke_tests.rs`.
     let program =
         waybar_gpui::Program::new("example-panels").panel::<workspace::WorkspacePanel>().panel::<clock::ClockPanel>();
     #[cfg(feature = "components")]
