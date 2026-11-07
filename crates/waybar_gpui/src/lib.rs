@@ -41,7 +41,7 @@
 //!   `waybar_gpui::components`, themed from [`Theme`].
 //!
 //! The guide covers each of these with examples:
-//! <https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/index.md>.
+//! <https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/index.md>.
 
 #![deny(missing_docs)]
 

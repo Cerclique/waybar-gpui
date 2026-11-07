@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/waybar_gpui)](https://crates.io/crates/waybar_gpui)
 [![docs.rs](https://img.shields.io/docsrs/waybar_gpui)](https://docs.rs/waybar_gpui)
 [![gpui-pre =0.3.11](https://img.shields.io/badge/gpui--pre-%3D0.3.11-blue)](https://docs.rs/gpui-pre/0.3.11)
-[![compositor: Hyprland](https://img.shields.io/badge/compositor-Hyprland-58e1ff)](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/limits.md)
+[![compositor: Hyprland](https://img.shields.io/badge/compositor-Hyprland-58e1ff)](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/limits.md)
 [![CI](https://github.com/Cerclique/waybar-gpui/actions/workflows/ci.yml/badge.svg)](https://github.com/Cerclique/waybar-gpui/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/crates/l/waybar_gpui)](LICENSE)
 
@@ -32,7 +32,7 @@ and [cargo-generate](https://github.com/cargo-generate/cargo-generate)
 (`cargo install cargo-generate`).
 
 ```sh
-cargo generate --git https://github.com/Cerclique/waybar-gpui template --tag v0.1.0
+cargo generate --git https://github.com/Cerclique/waybar-gpui template --tag v0.2.0
 cd my-panels                         # the project name you gave
 cargo run -- preview hello           # the Hello panel at your cursor; Esc closes it
 cargo install --path . --locked      # into ~/.cargo/bin
@@ -52,21 +52,21 @@ reload Waybar (`pkill -SIGUSR2 waybar`):
 ```
 
 Click it. No cargo-generate? Copy the
-[`template/`](https://github.com/Cerclique/waybar-gpui/tree/v0.1.0/template) folder,
+[`template/`](https://github.com/Cerclique/waybar-gpui/tree/v0.2.0/template) folder,
 rename `Cargo.toml.liquid` to `Cargo.toml`, and replace the `{{…}}`
 placeholders by hand.
 
 ## Documentation
 
-- [The guide](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/index.md):
+- [The guide](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/index.md):
   writing panels, live data, theming, widgets, the dev loop, installing,
   limits, troubleshooting.
-- [Using a waybar-gpui program](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/using-a-program.md):
+- [Using a waybar-gpui program](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/using-a-program.md):
   for people who install a program built with it.
-- [Using a coding agent](https://github.com/Cerclique/waybar-gpui/blob/main/docs/guide/using-an-agent.md):
+- [Using a coding agent](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/using-an-agent.md):
   an agent skill for writing panels.
 - [API reference](https://docs.rs/waybar_gpui) on docs.rs.
-- [Example panels](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/examples/example-panels/src/main.rs):
+- [Example panels](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/examples/example-panels/src/main.rs):
   one runnable panel per pattern.
 
 ## This repository
@@ -93,7 +93,7 @@ On crates.io as [`waybar_gpui`](https://crates.io/crates/waybar_gpui); each
 release is also tagged `vX.Y.Z`. GPUI is pre-1.0 and pinned exactly
 (`gpui-pre =0.3.11`). 0.x semver; every GPUI pin change is a breaking
 release. Details:
-[Limits](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/limits.md#versions).
+[Limits](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/limits.md#versions).
 
 ## Contributing
 

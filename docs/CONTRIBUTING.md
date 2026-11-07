@@ -185,12 +185,11 @@ whose changelog names the new versions.
 1. On a `release/vX.Y.Z` branch from `main`, bump `version` in
    `[workspace.package]` of the top-level `Cargo.toml` (`cargo build` updates
    `Cargo.lock`) and every versioned SDK reference with it: the template's
-   and the guide's `waybar_gpui` version, the README's `--tag`, and the
-   tagged links (`blob/vX.Y.Z`, `tree/vX.Y.Z`) in the README, the guide
-   index, the template README and the rustdoc. `make check-template` lists
-   any left behind. The first release that ships the agent skill also points
-   the `main` links to it (the README's *Using a coding agent* and the `curl`
-   in `docs/guide/using-an-agent.md`) at its tag, then drops this sentence.
+   and the guide's `waybar_gpui` version, the README's `--tag`, the tagged
+   links (`blob/vX.Y.Z`, `tree/vX.Y.Z`) in the README, the guide index, the
+   template README and the rustdoc, and the agent skill's URL in the `curl`
+   of `docs/guide/using-an-agent.md`. `make check-template` lists any left
+   behind.
 2. Add the release's section to the changelog:
 
    ```sh

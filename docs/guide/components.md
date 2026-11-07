@@ -5,7 +5,7 @@ library for GPUI: buttons, switches, inputs, dropdowns, lists. The SDK offers
 it behind an opt-in feature:
 
 ```toml
-waybar_gpui = { version = "0.1.0", features = ["components"] }
+waybar_gpui = { version = "0.2.0", features = ["components"] }
 ```
 
 (The starter template asks "Use gpui-component widgets?" and writes this for

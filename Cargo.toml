@@ -7,7 +7,7 @@ exclude = ["template"]
 [workspace.package]
 edition = "2024"
 license = "MIT"
-version = "0.1.0"
+version = "0.2.0"
 # The minimum supported Rust version, checked by the `msrv` CI job. It is the
 # oldest toolchain that builds the workspace: gpui-pre 0.3.11 calls
 # `std::hint::cold_path`, stable since 1.95.

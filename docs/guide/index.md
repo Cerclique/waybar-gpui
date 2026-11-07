@@ -8,7 +8,7 @@ New here? Start with the quickstart in the [README](../../README.md), then
 [Writing a panel](writing-a-panel.md).
 
 These pages follow `main`; for the release you installed, read
-[its copy of the guide](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/index.md).
+[its copy of the guide](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/index.md).
 
 ## Building panels
 

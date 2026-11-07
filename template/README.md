@@ -1,7 +1,7 @@
 # {{project-name}}
 
 Popovers for Waybar on Hyprland, built with
-[waybar-gpui](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/README.md).
+[waybar-gpui](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/README.md).
 
 ## Develop
 
@@ -16,9 +16,9 @@ module's `on-click` at your build:
 from an older binary.
 
 Write panels in `src/`, register them in `src/main.rs`. Guide:
-[writing a panel](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/writing-a-panel.md),
-[dev loop](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/dev-loop.md),
-[all chapters](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/index.md).
+[writing a panel](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/writing-a-panel.md),
+[dev loop](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/dev-loop.md),
+[all chapters](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/index.md).
 
 Commit the `Cargo.lock` from your first build: installs use `--locked`.
 
@@ -32,7 +32,7 @@ cargo install --path . --locked
 Paste a line into a `custom/*` bar module in `~/.config/waybar/config.jsonc`
 and reload Waybar (`pkill -SIGUSR2 waybar`). Full steps, for you and for
 people installing this program:
-[Using a waybar-gpui program](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/using-a-program.md).
+[Using a waybar-gpui program](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/using-a-program.md).
 
 ## Panels
 

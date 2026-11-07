@@ -14,9 +14,10 @@ repo=$PWD
 version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)
 # Every versioned reference to the SDK: tagged links (`blob/vX.Y.Z` or
 # `tree/vX.Y.Z`: the README's, the guide index's, the template's, the
-# rustdoc's) and `--tag` in the quickstart, the `waybar_gpui` dependency in the
-# template, the guide and example-panels (`"X.Y.Z"`).
-stale=$( (grep -rnoE '(blob/|tree/|--tag )v[0-9]+\.[0-9]+\.[0-9]+' \
+# rustdoc's; `waybar-gpui/vX.Y.Z`: the raw URL of the agent skill in the
+# guide's `curl`) and `--tag` in the quickstart, the `waybar_gpui` dependency in
+# the template, the guide and example-panels (`"X.Y.Z"`).
+stale=$( (grep -rnoE '(blob/|tree/|waybar-gpui/|--tag )v[0-9]+\.[0-9]+\.[0-9]+' \
   template README.md docs/guide crates/waybar_gpui/src | grep -v "v$version\$"
   grep -rnoE 'waybar_gpui = (\{ version = )?"[0-9]+\.[0-9]+\.[0-9]+"' \
   template docs/guide examples/example-panels/Cargo.toml | grep -v "\"$version\"\$") || true)
