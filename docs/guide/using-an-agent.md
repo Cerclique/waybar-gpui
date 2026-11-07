@@ -26,7 +26,7 @@ it:
 ```sh
 mkdir -p .claude/skills/waybar-gpui
 curl -fsSL -o .claude/skills/waybar-gpui/SKILL.md \
-  https://raw.githubusercontent.com/Cerclique/waybar-gpui/main/skills/waybar-gpui/SKILL.md
+  https://raw.githubusercontent.com/Cerclique/waybar-gpui/v0.2.0/skills/waybar-gpui/SKILL.md
 ```
 
 or into `~/.claude/skills/waybar-gpui/` for all your projects. Claude Code
