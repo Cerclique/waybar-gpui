@@ -18,6 +18,8 @@ use gpui::{
 use uuid::Uuid;
 
 use crate::{
+    Theme,
+    compositor::{Compositor, Monitor},
     files::{Ownership, ProgramFiles},
     hypr,
     ipc::{Command, Target},
@@ -29,6 +31,8 @@ use crate::{
 struct Registry {
     panels: Panels,
     session: Session,
+    /// Asked where the cursor is and which monitors exist at each open.
+    compositor: Box<dyn Compositor>,
 }
 
 /// What the running process holds for its [`Mode`].
@@ -111,16 +115,10 @@ pub fn run(app: crate::Program, files: ProgramFiles, mode: Mode) -> io::Result<(
             gpui_component::init(cx);
             crate::theme::apply_to_components(&theme, cx);
         }
-        cx.set_global(theme);
-        cx.set_global(Popovers::<Windows>::new(session.is_preview()));
-        cx.set_global(Registry { panels, session });
-        cx.set_global(files);
+        install(theme, Registry { panels, session, compositor: Box::new(hypr::Hyprland) }, files, cx);
         cx.spawn(async move |cx| {
             while let Ok(command) = rx.recv().await {
-                cx.update(|cx| {
-                    let effects = cx.global_mut::<Popovers<Windows>>().on(command);
-                    apply(effects, cx);
-                });
+                cx.update(|cx| on(command, cx));
             }
         })
         .detach();
@@ -129,6 +127,20 @@ pub fn run(app: crate::Program, files: ProgramFiles, mode: Mode) -> io::Result<(
         return Err(io::Error::other("preview failed"));
     }
     Ok(())
+}
+
+/// Sets the globals the runtime reads, before the first command.
+fn install(theme: Theme, registry: Registry, files: ProgramFiles, cx: &mut App) {
+    cx.set_global(theme);
+    cx.set_global(Popovers::<Windows>::new(registry.session.is_preview()));
+    cx.set_global(registry);
+    cx.set_global(files);
+}
+
+/// Handles a command from the socket (or the starting target).
+fn on(command: Command, cx: &mut App) {
+    let effects = cx.global_mut::<Popovers<Windows>>().on(command);
+    apply(effects, cx);
 }
 
 /// Carries out the popover rules' effects, reporting each open's outcome back.
@@ -177,8 +189,8 @@ fn open(target: &Target, cx: &mut App) -> Result<Windows, Box<dyn Error>> {
     files.close_others(registry.session.is_preview());
     let id = files.id().to_owned();
 
-    let cursor: hypr::CursorPos = hypr::request("cursorpos")?;
-    let monitors: Vec<hypr::Monitor> = hypr::request("monitors")?;
+    let cursor = registry.compositor.cursor()?;
+    let monitors = registry.compositor.monitors()?;
     let placement = placement::place(cursor, &monitors).ok_or("no monitor under the cursor")?;
 
     let (width, height) = placement.monitor_size;
@@ -234,8 +246,8 @@ fn open(target: &Target, cx: &mut App) -> Result<Windows, Box<dyn Error>> {
 /// A transparent surface over all of `monitor`, Waybar included, that takes
 /// clicks but never the keyboard: the backdrop on a monitor without the card.
 /// Its namespace keeps authors' `^waybar-gpui:` layer rules off it.
-fn open_backdrop(monitor: &hypr::Monitor, id: &str, cx: &mut App) -> Result<AnyWindowHandle, Box<dyn Error>> {
-    let (width, height) = monitor.logical_size();
+fn open_backdrop(monitor: &Monitor, id: &str, cx: &mut App) -> Result<AnyWindowHandle, Box<dyn Error>> {
+    let (width, height) = monitor.size;
     let options = WindowOptions {
         titlebar: None,
         window_bounds: Some(WindowBounds::Windowed(Bounds {
@@ -348,4 +360,128 @@ fn display_for_monitor(name: &str, cx: &App) -> Option<DisplayId> {
         .into_iter()
         .find(|display| display.uuid().is_ok_and(|uuid| uuid == wanted))
         .map(|display| display.id())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use gpui::{Modifiers, MouseButton, Pixels, Point, TestAppContext, VisualTestContext};
+
+    use super::*;
+    use crate::{Panel, compositor::CursorPos};
+
+    /// Two 1920×1080 monitors side by side, each with a 36 px top bar.
+    struct FakeCompositor {
+        cursor: CursorPos,
+    }
+
+    impl Compositor for FakeCompositor {
+        fn cursor(&self) -> io::Result<CursorPos> {
+            Ok(self.cursor)
+        }
+
+        fn monitors(&self) -> io::Result<Vec<Monitor>> {
+            let monitor = |name: &str, x| Monitor {
+                name: name.into(),
+                x,
+                y: 0,
+                size: (1920.0, 1080.0),
+                focused: false,
+                reserved: [0, 36, 0, 0],
+            };
+            Ok(vec![monitor("DP-2", 0), monitor("DP-1", 1920)])
+        }
+    }
+
+    /// On DP-1's bar: the card's top edge is centred on (807, 42), local to DP-1.
+    const ON_DP1_BAR: CursorPos = CursorPos { x: 2727.0, y: 18.0 };
+
+    /// A panel whose card is 200×100: (707, 42) to (907, 142) for `ON_DP1_BAR`.
+    struct Clock;
+
+    impl Render for Clock {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            div().w(px(200.)).h(px(100.))
+        }
+    }
+
+    impl Panel for Clock {
+        const NAME: &'static str = "clock";
+        fn new(_: &[String], _: &mut Window, _: &mut Context<Self>) -> Self {
+            Clock
+        }
+    }
+
+    /// Installs the runtime as `run` does, with the fake compositor, then
+    /// toggles the clock panel. Returns the preview's failure flag.
+    fn toggle_clock(cursor: CursorPos, preview: bool, cx: &mut TestAppContext) -> Rc<Cell<bool>> {
+        let failed = Rc::new(Cell::new(false));
+        let session =
+            if preview { Session::Preview { failed: failed.clone() } } else { Session::Daemon { ownership: None } };
+        let mut panels = Panels::default();
+        panels.add::<Clock>();
+        let registry = Registry { panels, session, compositor: Box::new(FakeCompositor { cursor }) };
+        // No socket directory there: no other program to close.
+        let files = ProgramFiles::under(Path::new("/nonexistent"), "test");
+        cx.update(|cx| {
+            install(Theme::default(), registry, files, cx);
+            on(Command::Toggle(Target { panel: Clock::NAME.into(), args: Vec::new() }), cx);
+        });
+        cx.run_until_parked();
+        failed
+    }
+
+    /// The open popover's surface, and its backdrop surfaces.
+    fn windows(cx: &TestAppContext) -> (Vec<AnyWindowHandle>, Vec<AnyWindowHandle>) {
+        cx.windows().into_iter().partition(|window| window.downcast::<Popover>().is_some())
+    }
+
+    /// The press of a click, which is what dismisses (the release would go to
+    /// a removed surface).
+    fn click(window: AnyWindowHandle, position: Point<Pixels>, cx: &TestAppContext) {
+        VisualTestContext::from_window(window, cx).simulate_mouse_down(position, MouseButton::Left, Modifiers::none());
+    }
+
+    #[gpui::test]
+    fn toggle_opens_a_popover_and_a_backdrop_on_the_other_monitor(cx: &mut TestAppContext) {
+        toggle_clock(ON_DP1_BAR, false, cx);
+        let (popovers, backdrops) = windows(cx);
+        assert_eq!(popovers.len(), 1);
+        assert_eq!(backdrops.len(), 1);
+        assert!(backdrops[0].downcast::<Backdrop>().is_some());
+    }
+
+    #[gpui::test]
+    fn escape_dismisses_the_popover_and_its_backdrops(cx: &mut TestAppContext) {
+        toggle_clock(ON_DP1_BAR, false, cx);
+        let (popovers, _) = windows(cx);
+        cx.simulate_keystrokes(popovers[0], "escape");
+        assert!(cx.windows().is_empty());
+    }
+
+    #[gpui::test]
+    fn a_click_outside_the_card_dismisses_and_one_on_it_does_not(cx: &mut TestAppContext) {
+        toggle_clock(ON_DP1_BAR, false, cx);
+        let (popovers, _) = windows(cx);
+        click(popovers[0], point(px(807.), px(92.)), cx);
+        assert_eq!(cx.windows().len(), 2);
+        click(popovers[0], point(px(100.), px(500.)), cx);
+        assert!(cx.windows().is_empty());
+    }
+
+    #[gpui::test]
+    fn a_click_on_the_other_monitors_backdrop_dismisses(cx: &mut TestAppContext) {
+        toggle_clock(ON_DP1_BAR, false, cx);
+        let (_, backdrops) = windows(cx);
+        click(backdrops[0], point(px(960.), px(540.)), cx);
+        assert!(cx.windows().is_empty());
+    }
+
+    #[gpui::test]
+    fn a_cursor_over_no_monitor_opens_nothing_and_fails_a_preview(cx: &mut TestAppContext) {
+        let failed = toggle_clock(CursorPos { x: -100.0, y: -100.0 }, true, cx);
+        assert!(cx.windows().is_empty());
+        assert!(failed.get());
+    }
 }

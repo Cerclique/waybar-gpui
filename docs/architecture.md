@@ -23,7 +23,8 @@ recorded as ADRs in `docs/adr/`
 | `popovers.rs` | The popover rules without GPUI: what a toggle, `close`, `quit` or a dismissal does, and when the process quits. Returns effects; unit-tested. |
 | `runtime.rs` | The GPUI side: `daemon` and `preview` (a `Session` holds what each needs: the daemon's `Ownership`, the preview's failure for its exit status), carrying out `popovers.rs`'s effects, the popover surface and the backdrop surfaces on the other monitors, focus, dismissal. |
 | `placement.rs` | Monitor and bar-edge detection, the anchor point and margins. |
-| `hypr.rs` | Hyprland IPC: the `j/cursorpos` and `j/monitors` requests `placement.rs` reads. Private, not re-exported. |
+| `compositor.rs` | The compositor seam: the `Compositor` trait (`cursor()`, `monitors()`) and the compositor-neutral `CursorPos` and `Monitor` (logical pixels) that `placement.rs` and the backdrops read. Private. |
+| `hypr.rs` | Hyprland IPC: `Hyprland`, the `Compositor` behind the `j/cursorpos` and `j/monitors` requests, converting their JSON into the neutral types. Private, not re-exported; no Hyprland type leaves it. |
 | `theme.rs` | `Theme`, `card()`, copying `Theme` into gpui-component's theme. |
 
 ## Process model
@@ -191,6 +192,20 @@ Each popover is one GPUI window of kind `WindowKind::LayerShell`:
   `anchored()` measures the card and positions it in the same frame, so there
   is no first-frame jump and no size declared by the panel; when the content
   grows while open, the card is re-placed on the next layout.
+- **The compositor seam** (`compositor.rs`): the open path asks the cursor and
+  the monitors of the `Compositor` that `run` installs in the `Registry`
+  global, `hypr::Hyprland` (one `j/cursorpos` and one `j/monitors` request
+  per open, as above). It gets back compositor-neutral `CursorPos` and
+  `Monitor` values, already in logical pixels, so `placement.rs` and the
+  backdrops name no Hyprland type, and a second compositor (Sway, #88) would
+  only add an implementation. The runtime's headless tests (`runtime.rs`,
+  GPUI's `TestAppContext` from the `test-support` dev-dependency) install a
+  fake reporting two monitors, and check that a toggle opens a popover and
+  one backdrop, that Esc, a click outside the card and a click on the other
+  monitor's backdrop dismiss (a click on the card doesn't), and that a cursor
+  over no monitor fails the open. The test platform opens layer-shell windows
+  like any other; `display_for_monitor` finds no display there and isn't
+  tested.
 
 ### Focus and Esc
 

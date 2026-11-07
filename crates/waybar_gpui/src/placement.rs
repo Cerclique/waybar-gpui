@@ -2,7 +2,7 @@
 //! bar, clamped to the usable area. GPUI's `anchored()` measures the card and
 //! applies this in the same frame, so the runtime only computes the anchor.
 
-use crate::hypr::{CursorPos, Monitor};
+use crate::compositor::{CursorPos, Monitor};
 
 pub const GAP: f32 = 6.0;
 
@@ -30,7 +30,7 @@ pub struct Placement {
 pub fn place(cursor: CursorPos, monitors: &[Monitor]) -> Option<Placement> {
     let monitor =
         monitors.iter().find(|m| m.contains(cursor.x, cursor.y)).or_else(|| monitors.iter().find(|m| m.focused))?;
-    let (w, h) = monitor.logical_size();
+    let (w, h) = monitor.size;
     let [left, top, right, bottom] = monitor.reserved.map(|r| r as f32);
     let (x, y) = (cursor.x - monitor.x as f32, cursor.y - monitor.y as f32);
 
@@ -68,17 +68,7 @@ mod tests {
     use super::*;
 
     fn monitor(name: &str, x: i32, reserved: [i32; 4]) -> Monitor {
-        Monitor {
-            name: name.into(),
-            x,
-            y: 0,
-            width: 1920,
-            height: 1080,
-            scale: 1.0,
-            transform: 0,
-            focused: false,
-            reserved,
-        }
+        Monitor { name: name.into(), x, y: 0, size: (1920.0, 1080.0), focused: false, reserved }
     }
 
     #[test]

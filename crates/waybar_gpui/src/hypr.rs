@@ -1,5 +1,5 @@
 //! Minimal Hyprland IPC: the requests the runtime needs to place a popover
-//! (`j/cursorpos`, `j/monitors`).
+//! (`j/cursorpos`, `j/monitors`), behind the [`Compositor`] seam.
 //!
 //! Hyprland answers hyprctl-style requests on
 //! `$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket.sock`
@@ -18,6 +18,8 @@ use std::{
 
 use serde::{Deserialize, de::DeserializeOwned};
 
+use crate::compositor::{Compositor, CursorPos, Monitor};
+
 /// Directory holding this Hyprland instance's sockets.
 fn socket_dir() -> io::Result<PathBuf> {
     let his = env::var_os("HYPRLAND_INSTANCE_SIGNATURE").ok_or_else(|| {
@@ -34,7 +36,7 @@ fn socket_dir() -> io::Result<PathBuf> {
 const REPLY_TIMEOUT: Duration = Duration::from_secs(1);
 
 /// Sends `j/<command>` and deserializes the JSON reply.
-pub fn request<T: DeserializeOwned>(command: &str) -> io::Result<T> {
+fn request<T: DeserializeOwned>(command: &str) -> io::Result<T> {
     let mut stream = UnixStream::connect(socket_dir()?.join(".socket.sock"))?;
     stream.set_read_timeout(Some(REPLY_TIMEOUT))?;
     stream.write_all(format!("j/{command}").as_bytes())?;
@@ -43,42 +45,50 @@ pub fn request<T: DeserializeOwned>(command: &str) -> io::Result<T> {
     serde_json::from_str(&reply).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
 }
 
+/// The compositor on Hyprland: one request per question.
+pub struct Hyprland;
+
+impl Compositor for Hyprland {
+    fn cursor(&self) -> io::Result<CursorPos> {
+        let CursorReply { x, y } = request("cursorpos")?;
+        Ok(CursorPos { x, y })
+    }
+
+    fn monitors(&self) -> io::Result<Vec<Monitor>> {
+        let monitors: Vec<MonitorReply> = request("monitors")?;
+        Ok(monitors.into_iter().map(Monitor::from).collect())
+    }
+}
+
 /// An entry of `j/monitors`. Position is in global logical pixels, size in
 /// physical pixels (divide by `scale`).
 #[derive(Debug, Clone, Deserialize)]
-pub struct Monitor {
-    pub name: String,
-    pub x: i32,
-    pub y: i32,
-    pub width: u32,
-    pub height: u32,
-    pub scale: f32,
-    pub transform: u8,
-    pub focused: bool,
-    /// Space reserved by layer surfaces with an exclusive zone (e.g. Waybar),
-    /// as `[left, top, right, bottom]`.
-    pub reserved: [i32; 4],
+struct MonitorReply {
+    name: String,
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+    scale: f32,
+    transform: u8,
+    focused: bool,
+    reserved: [i32; 4],
 }
 
-impl Monitor {
-    /// Size in logical pixels, accounting for scale and 90°/270° rotation.
-    pub fn logical_size(&self) -> (f32, f32) {
-        let (w, h) = (self.width as f32 / self.scale, self.height as f32 / self.scale);
-        if self.transform % 2 == 1 { (h, w) } else { (w, h) }
-    }
-
-    pub fn contains(&self, x: f32, y: f32) -> bool {
-        let (w, h) = self.logical_size();
-        let (mx, my) = (self.x as f32, self.y as f32);
-        x >= mx && x < mx + w && y >= my && y < my + h
+impl From<MonitorReply> for Monitor {
+    fn from(m: MonitorReply) -> Self {
+        // Logical size: divide by scale, swap for 90°/270° rotations.
+        let (w, h) = (m.width as f32 / m.scale, m.height as f32 / m.scale);
+        let size = if m.transform % 2 == 1 { (h, w) } else { (w, h) };
+        Self { name: m.name, x: m.x, y: m.y, size, focused: m.focused, reserved: m.reserved }
     }
 }
 
 /// `j/cursorpos`, in global logical pixels.
 #[derive(Debug, Clone, Copy, Deserialize)]
-pub struct CursorPos {
-    pub x: f32,
-    pub y: f32,
+struct CursorReply {
+    x: f32,
+    y: f32,
 }
 
 #[cfg(test)]
@@ -87,13 +97,15 @@ mod tests {
 
     #[test]
     fn monitor_geometry() {
-        let m: Monitor = serde_json::from_str(
+        let m: MonitorReply = serde_json::from_str(
             r#"{"name":"DP-1","x":1920,"y":0,"width":3840,"height":2160,"scale":2,
                 "transform":1,"focused":true,"reserved":[0,36,0,0]}"#,
         )
         .unwrap();
-        assert_eq!(m.logical_size(), (1080.0, 1920.0));
+        let m = Monitor::from(m);
+        assert_eq!(m.size, (1080.0, 1920.0));
         assert!(m.contains(1920.0, 0.0));
         assert!(!m.contains(1919.0, 0.0));
+        assert_eq!((m.name.as_str(), m.focused, m.reserved), ("DP-1", true, [0, 36, 0, 0]));
     }
 }
