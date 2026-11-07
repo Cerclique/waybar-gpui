@@ -44,7 +44,7 @@ Reach for the guide page that owns the task:
 
 | Task | Page |
 | --- | --- |
-| The `Panel` trait, `App`, sizing, GPUI basics | `docs/guide/writing-a-panel.md` |
+| The `Panel` trait, `Program`, sizing, GPUI basics | `docs/guide/writing-a-panel.md` |
 | One panel behind several bar modules | `docs/guide/panel-arguments.md` |
 | Timers, event streams, state kept across opens | `docs/guide/live-data-and-state.md` |
 | Colours, `Theme`, `card()` | `docs/guide/theming.md` |
@@ -62,7 +62,7 @@ placement, allows one popover at a time, and lets panels open no other panels.
 Speak the glossary: a **panel** is the view the author writes, a **bar
 module** is the Waybar item, a **popover** is the panel on screen, the
 **card** is its visible rectangle, the **program** is the binary and its
-**program ID** is the string given to `App::new`. A Waybar entry is a "bar
+**program ID** is the string given to `Program::new`. A Waybar entry is a "bar
 module", in full, every time.
 
 ## 4. Adding a panel

@@ -12,7 +12,7 @@ These pages follow `main`; for the release you installed, read
 
 ## Building panels
 
-- [Writing a panel](writing-a-panel.md): the `Panel` trait, `App`, the card,
+- [Writing a panel](writing-a-panel.md): the `Panel` trait, `Program`, the card,
   sizing, GPUI basics you'll need.
 - [Panel arguments](panel-arguments.md): one panel, several bar modules.
 - [Live data and state](live-data-and-state.md): timers, event streams, state

@@ -25,7 +25,7 @@ impl Render for Hello {
 }
 
 fn main() -> std::process::ExitCode {
-    waybar_gpui::App::new("my-panels").panel::<Hello>().run()
+    waybar_gpui::Program::new("my-panels").panel::<Hello>().run()
 }
 ```
 
@@ -40,7 +40,7 @@ The starter template generates exactly this (see the
   `args` are the [panel arguments](panel-arguments.md).
 - **`Render`** is plain GPUI. `card(cx)` gives the standard rounded, bordered,
   themed rectangle; it's optional ([Theming](theming.md)).
-- **`App::new(id)`** names your program. The **program ID** names its socket,
+- **`Program::new(id)`** names your program. The **program ID** names its socket,
   its log file and its Hyprland layer namespace, so pick it once and keep it.
   It must match `^[a-z0-9][a-z0-9-]*$`; anything else panics at start.
 - **`.panel::<P>()`** registers a panel; two panels with the same `NAME` panic.
@@ -91,7 +91,7 @@ is re-placed on the next frame.
 One program can hold many panels:
 
 ```rust
-waybar_gpui::App::new("my-panels")
+waybar_gpui::Program::new("my-panels")
     .panel::<Clock>()
     .panel::<Volume>()
     .run()

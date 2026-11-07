@@ -17,17 +17,16 @@ A plain struct of colours, stored as a GPUI global and read with
 | `subtext` | Secondary text. |
 | `accent` | Highlights, focus rings, primary buttons. |
 
-Give your program its own:
+Give your program its own by changing the default's colours. (`Theme` may
+gain colours in a later release, so a `Theme { … }` literal doesn't compile.)
 
 ```rust
 use waybar_gpui::{gpui::{rgb, rgba}, Theme};
 
-let theme = Theme {
-    base: rgba(0x2e3440f0),
-    accent: rgb(0x88c0d0),
-    ..Theme::default()
-};
-waybar_gpui::App::new("my-panels").theme(theme).panel::<Hello>().run()
+let mut theme = Theme::default();
+theme.base = rgba(0x2e3440f0);
+theme.accent = rgb(0x88c0d0);
+waybar_gpui::Program::new("my-panels").theme(theme).panel::<Hello>().run()
 ```
 
 Use it in your panels so they follow it:

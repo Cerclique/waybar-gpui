@@ -46,7 +46,7 @@ impl Panel for ClockPanel {
         window.focus(&focus, cx);
 
         // Dropped with the panel on close, which stops the timer.
-        let _tick = cx.spawn(async move |this, cx| {
+        let tick = cx.spawn(async move |this, cx| {
             loop {
                 cx.background_executor().timer(Duration::from_secs(1)).await;
                 if this.update(cx, |_, cx| cx.notify()).is_err() {
@@ -54,7 +54,7 @@ impl Panel for ClockPanel {
                 }
             }
         });
-        Self { label, offset_hours, editing: false, opens, focus, _tick }
+        Self { label, offset_hours, editing: false, opens, focus, _tick: tick }
     }
 }
 

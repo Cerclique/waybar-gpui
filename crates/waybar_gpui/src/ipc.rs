@@ -154,7 +154,16 @@ impl Connection {
 pub(crate) fn serve(id: String, listener: UnixListener, identity: ExeId, tx: async_channel::Sender<Command>) {
     let identity = identity.to_line();
     thread::spawn(move || {
-        for mut stream in listener.incoming().flatten() {
+        for stream in listener.incoming() {
+            let mut stream = match stream {
+                Ok(stream) => stream,
+                Err(e) => {
+                    // Persistent (e.g. out of file descriptors): don't spin.
+                    eprintln!("{id}: accepting a connection failed: {e}");
+                    thread::sleep(Duration::from_millis(100));
+                    continue;
+                }
+            };
             // Connections are served one at a time: a silent client must not
             // block the ones after it.
             let _ = stream.set_read_timeout(Some(REPLY_TIMEOUT));

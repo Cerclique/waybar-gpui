@@ -1,5 +1,5 @@
 // The program ID names the program's socket, log file and Hyprland layer
-// namespace: same rule as waybar_gpui's App::new.
+// namespace: same rule as waybar_gpui's Program::new.
 if !variable::is_set("id") {
     let id = variable::get("project-name");
     try {

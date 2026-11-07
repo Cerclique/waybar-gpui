@@ -21,7 +21,7 @@
 //! }
 //!
 //! fn main() -> std::process::ExitCode {
-//!     waybar_gpui::App::new("my-panels").panel::<Hello>().run()
+//!     waybar_gpui::Program::new("my-panels").panel::<Hello>().run()
 //! }
 //! ```
 //!
@@ -95,16 +95,16 @@ pub trait Panel: Render + Sized {
 
 /// The author's program: an ID, a theme and its panels.
 #[must_use = "call .run() to start the program"]
-pub struct App {
+pub struct Program {
     id: String,
     theme: Theme,
     panels: Panels,
 }
 
 /// Panels hold build functions, so they show as their names.
-impl fmt::Debug for App {
+impl fmt::Debug for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("App")
+        f.debug_struct("Program")
             .field("id", &self.id)
             .field("theme", &self.theme)
             .field("panels", &self.panels.names().collect::<Vec<_>>())
@@ -112,7 +112,7 @@ impl fmt::Debug for App {
     }
 }
 
-impl App {
+impl Program {
     /// Starts a program. `id` names its socket
     /// (`$XDG_RUNTIME_DIR/waybar-gpui/<id>.sock`), its Hyprland layer
     /// namespace (`waybar-gpui:<id>`) and its log, so keep it stable.
@@ -176,6 +176,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "invalid program ID")]
     fn new_rejects_invalid_id() {
-        let _ = App::new("My Panels");
+        let _ = Program::new("My Panels");
     }
 }

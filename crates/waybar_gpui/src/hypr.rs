@@ -13,6 +13,7 @@ use std::{
     io::{self, Read, Write},
     os::unix::net::UnixStream,
     path::PathBuf,
+    time::Duration,
 };
 
 use serde::{Deserialize, de::DeserializeOwned};
@@ -28,9 +29,14 @@ fn socket_dir() -> io::Result<PathBuf> {
     Ok(base.join(his))
 }
 
+/// How long to wait for Hyprland's reply. Requests run on GPUI's foreground
+/// thread, so a stalled Hyprland must not freeze the daemon.
+const REPLY_TIMEOUT: Duration = Duration::from_secs(1);
+
 /// Sends `j/<command>` and deserializes the JSON reply.
 pub fn request<T: DeserializeOwned>(command: &str) -> io::Result<T> {
     let mut stream = UnixStream::connect(socket_dir()?.join(".socket.sock"))?;
+    stream.set_read_timeout(Some(REPLY_TIMEOUT))?;
     stream.write_all(format!("j/{command}").as_bytes())?;
     let mut reply = String::new();
     stream.read_to_string(&mut reply)?;

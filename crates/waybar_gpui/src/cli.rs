@@ -1,9 +1,9 @@
 //! The author's command line, owned entirely by the SDK.
 
-use std::{env, ffi::OsString, io, path::Path, process::ExitCode};
+use std::{borrow::Cow, env, ffi::OsString, fmt::Write as _, io, path::Path, process::ExitCode};
 
 use crate::{
-    App,
+    Program,
     client::{self, CurrentExe},
     files::ProgramFiles,
     ipc::Target,
@@ -61,9 +61,28 @@ fn parse(args: &[String], panels: &Panels) -> Result<Invocation, UsageError> {
     }
 }
 
+/// Quotes `word` for `sh`, which runs Waybar's `on-click`, unless it only
+/// holds characters the shell takes literally.
+fn shell_quote(word: &str) -> Cow<'_, str> {
+    let literal = |c: char| c.is_ascii_alphanumeric() || "/._-+,:@%=".contains(c);
+    if !word.is_empty() && word.chars().all(literal) {
+        Cow::Borrowed(word)
+    } else {
+        Cow::Owned(format!("'{}'", word.replace('\'', r"'\''")))
+    }
+}
+
+/// A Waybar `on-click` entry toggling `panel`: valid JSON, and one shell word
+/// for the program's path, whatever characters the path holds.
+fn on_click_line(exe: &Path, panel: &str) -> String {
+    let command = format!("{} toggle {panel}", shell_quote(&exe.to_string_lossy()));
+    format!("\"on-click\": {}", serde_json::Value::String(command))
+}
+
 /// The commands, the registered panels and a ready-to-paste `on-click` line
 /// per panel, using the program's real path.
 fn usage(exe: &Path, panels: &Panels) -> String {
+    let on_click = |panel: &str| on_click_line(exe, panel);
     let exe = exe.display();
     let mut text = format!(
         "usage: {exe} <command>\n\n\
@@ -77,12 +96,12 @@ fn usage(exe: &Path, panels: &Panels) -> String {
          panels and their Waybar on-click lines:\n"
     );
     for panel in panels.names() {
-        text.push_str(&format!("  {panel:<12} \"on-click\": \"{exe} toggle {panel}\"\n"));
+        let _ = writeln!(text, "  {panel:<12} {}", on_click(panel));
     }
     text
 }
 
-fn run(app: App, invocation: Invocation, usage_text: String) -> io::Result<()> {
+fn run(app: Program, invocation: Invocation, usage_text: &str) -> io::Result<()> {
     let files = ProgramFiles::from_env(&app.id);
     match invocation {
         Invocation::Toggle(target) => client::toggle(&files, target, &CurrentExe),
@@ -97,7 +116,7 @@ fn run(app: App, invocation: Invocation, usage_text: String) -> io::Result<()> {
     }
 }
 
-pub fn main(app: App) -> ExitCode {
+pub fn main(app: Program) -> ExitCode {
     let exe = env::current_exe().unwrap_or_else(|_| env::args_os().next().unwrap_or_default().into());
     let usage_text = usage(&exe, &app.panels);
     let invocation = match utf8_args(env::args_os().skip(1)).and_then(|args| parse(&args, &app.panels)) {
@@ -108,7 +127,7 @@ pub fn main(app: App) -> ExitCode {
         }
     };
     let id = app.id.clone();
-    match run(app, invocation, usage_text) {
+    match run(app, invocation, &usage_text) {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("{id}: {e}");
@@ -184,5 +203,13 @@ mod tests {
         assert!(text.starts_with("usage: /home/me/.cargo/bin/my-panels <command>\n"));
         assert!(text.contains("  workspace    \"on-click\": \"/home/me/.cargo/bin/my-panels toggle workspace\"\n"));
         assert!(text.contains("  clock        \"on-click\": \"/home/me/.cargo/bin/my-panels toggle clock\"\n"));
+
+        // A space, quotes or a backslash: still valid JSON, still one shell word.
+        let exe = r#"/home/me/my "best" panels\bin/it's"#;
+        let text = usage(Path::new(exe), &panels());
+        let line = text.lines().find(|l| l.trim_start().starts_with("clock")).unwrap();
+        let entry = line.trim_start().trim_start_matches("clock").trim_start();
+        let json: serde_json::Value = serde_json::from_str(&format!("{{{entry}}}")).unwrap();
+        assert_eq!(json["on-click"], r#"'/home/me/my "best" panels\bin/it'\''s' toggle clock"#);
     }
 }
