@@ -56,7 +56,7 @@ mod popovers;
 mod runtime;
 mod theme;
 
-use std::process::ExitCode;
+use std::{fmt, process::ExitCode};
 
 use gpui::{Context, Render, Window};
 
@@ -94,10 +94,22 @@ pub trait Panel: Render + Sized {
 }
 
 /// The author's program: an ID, a theme and its panels.
+#[must_use = "call .run() to start the program"]
 pub struct App {
     id: String,
     theme: Theme,
     panels: Panels,
+}
+
+/// Panels hold build functions, so they show as their names.
+impl fmt::Debug for App {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("App")
+            .field("id", &self.id)
+            .field("theme", &self.theme)
+            .field("panels", &self.panels.names().collect::<Vec<_>>())
+            .finish()
+    }
 }
 
 impl App {
@@ -164,6 +176,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "invalid program ID")]
     fn new_rejects_invalid_id() {
-        App::new("My Panels");
+        let _ = App::new("My Panels");
     }
 }

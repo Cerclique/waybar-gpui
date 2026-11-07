@@ -54,6 +54,10 @@ impl Global for Popovers<AnyWindowHandle> {}
 
 /// Closes this program's popover once the current update finishes. Call it
 /// from the panel's own event handlers.
+///
+/// # Panics
+///
+/// Outside a program started by [`App::run`](crate::App::run).
 pub fn close(cx: &mut App) {
     defer_close("panel", cx);
 }
