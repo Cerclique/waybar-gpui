@@ -17,28 +17,38 @@ here contradicts that version's guide, the guide wins.
 Before writing code, run in the project:
 
 ```sh
-cargo pkgid waybar_gpui   # …#waybar_gpui@X.Y.Z
-cargo pkgid gpui-pre      # …#gpui-pre@A.B.C
+cargo pkgid waybar_gpui
+cargo metadata --format-version 1 |
+  grep -oE '[^"]*/(waybar_gpui(-[0-9.]+)?|gpui-pre-[0-9.]+)/Cargo.toml'
 ```
 
-and check whether the `waybar_gpui` dependency in `Cargo.toml` turns on the
-`components` feature (gpui-component widgets). These three facts pick every
-source below. Done when you have all three.
+The first line gives the SDK's **ref**, the git ref its guide is read at:
+
+- `registry+…#waybar_gpui@X.Y.Z` (from crates.io): the ref is `vX.Y.Z`.
+- `git+…?branch=B#…`, `?tag=T#…` or `?rev=R#…` (a git dependency): the ref
+  is `B`, `T` or `R`. Ignore the `@X.Y.Z` at the end: an unreleased branch
+  still carries the last release's version.
+
+The second prints the `Cargo.toml` of the SDK and of GPUI (`gpui-pre`) that
+this project actually compiles; their directories are the **sources** below.
+Also check whether the `waybar_gpui` dependency in the project's `Cargo.toml`
+turns on the `components` feature (gpui-component widgets). Done when you have
+the ref, both source directories, and `components` on or off.
 
 ## 2. Where the facts live
 
-- **The guide**, for version `X.Y.Z`:
-  `https://raw.githubusercontent.com/Cerclique/waybar-gpui/vX.Y.Z/docs/guide/<page>.md`.
-  Start at `docs/guide/index.md`; terms are in `docs/GLOSSARY.md`. A git
-  dependency on a branch reads the same path at that branch.
-- **The SDK's source and rustdoc**:
-  `${CARGO_HOME:-~/.cargo}/registry/src/*/waybar_gpui-X.Y.Z/src/`. Read
+- **The guide**, at the ref:
+  `https://raw.githubusercontent.com/Cerclique/waybar-gpui/<ref>/docs/guide/<page>.md`.
+  Start at `docs/guide/index.md`; terms are in `docs/GLOSSARY.md`. A relative
+  link in a page resolves against that page's URL. The guide's example panels
+  are at `https://raw.githubusercontent.com/Cerclique/waybar-gpui/<ref>/examples/example-panels/src/<file>.rs`;
+  `main.rs` there lists which panel shows which pattern.
+- **The SDK's source and rustdoc**: `src/` in its source directory. Read
   `lib.rs` first: its docs list the public API.
-- **GPUI's source**: `${CARGO_HOME:-~/.cargo}/registry/src/*/gpui-pre-A.B.C/`.
-  Read the definition of every GPUI type, method or macro before you use it.
-  The SDK re-exports GPUI as `waybar_gpui::gpui`; use that path, and leave
-  `gpui-pre` out of the project's `Cargo.toml`. The pin moves only with an
-  SDK release.
+- **GPUI's source**: its source directory. Read the definition of every GPUI
+  type, method or macro before you use it. The SDK re-exports GPUI as
+  `waybar_gpui::gpui`; use that path, and leave `gpui-pre` out of the
+  project's `Cargo.toml`. The pin moves only with an SDK release.
 
 Reach for the guide page that owns the task:
 
@@ -70,7 +80,7 @@ module", in full, every time.
 1. Write a struct implementing `Panel` (a unique `NAME`, `new` taking the
    panel arguments) and GPUI's `Render`, in its own module.
 2. Register it in `main` with `.panel::<NewPanel>()`.
-3. `cargo build`, then `cargo clippy`, clean.
+3. `cargo build`, then `cargo clippy --all-targets`, clean.
 4. Run it with `cargo run -- preview <NAME>`, after telling the user it opens
    a popover at their cursor (step 6).
 5. Give the user the Waybar bar module for it: run the program with no
