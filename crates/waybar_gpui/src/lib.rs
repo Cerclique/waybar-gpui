@@ -47,6 +47,7 @@
 
 mod cli;
 mod client;
+mod compositor;
 mod files;
 mod hypr;
 mod ipc;

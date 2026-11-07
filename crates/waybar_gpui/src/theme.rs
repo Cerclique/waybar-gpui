@@ -118,3 +118,71 @@ pub(crate) fn apply_to_components(theme: &Theme, cx: &mut App) {
     config.colors = colors;
     ComponentTheme::global_mut(cx).apply_config(&Rc::new(config));
 }
+
+#[cfg(test)]
+mod tests {
+    use gpui::TestAppContext;
+
+    use super::*;
+
+    /// A theme whose every colour differs from the default's.
+    fn nord() -> Theme {
+        Theme {
+            base: rgba(0x2e3440f0),
+            surface: rgb(0x3b4252),
+            overlay: rgb(0x434c5e),
+            text: rgb(0xeceff4),
+            subtext: rgb(0xd8dee9),
+            accent: rgb(0x88c0d0),
+        }
+    }
+
+    fn colours(t: Theme) -> [Rgba; 6] {
+        [t.base, t.surface, t.overlay, t.text, t.subtext, t.accent]
+    }
+
+    #[gpui::test]
+    fn get_returns_the_set_theme(cx: &mut TestAppContext) {
+        cx.set_global(Theme::default());
+        assert!(cx.read(|cx| colours(Theme::get(cx)) == colours(Theme::default())));
+        cx.set_global(nord());
+        assert!(cx.read(|cx| colours(Theme::get(cx)) == colours(nord())));
+    }
+
+    #[gpui::test]
+    #[should_panic(expected = "no state of type waybar_gpui::theme::Theme exists")]
+    fn get_panics_without_a_theme(cx: &mut TestAppContext) {
+        cx.read(Theme::get);
+    }
+
+    /// gpui-component keeps `Hsla`: compare as `0xrrggbbaa`, past rounding.
+    #[cfg(feature = "components")]
+    fn hex(c: impl Into<Rgba>) -> u32 {
+        let c = c.into();
+        u32::from_be_bytes([c.r, c.g, c.b, c.a].map(|v| (v * 255.0).round() as u8))
+    }
+
+    #[cfg(feature = "components")]
+    #[gpui::test]
+    fn apply_to_components_maps_our_colours(cx: &mut TestAppContext) {
+        use gpui_component::theme::Theme as ComponentTheme;
+
+        let theme = nord();
+        cx.update(|cx| {
+            gpui_component::init(cx);
+            apply_to_components(&theme, cx);
+        });
+        cx.read(|cx| {
+            let colors = &ComponentTheme::global(cx).colors;
+            assert_eq!(hex(colors.background), hex(theme.base));
+            assert_eq!(hex(colors.foreground), hex(theme.text));
+            assert_eq!(hex(colors.border), hex(theme.overlay));
+            assert_eq!(hex(colors.muted), hex(theme.surface));
+            assert_eq!(hex(colors.muted_foreground), hex(theme.subtext));
+            assert_eq!(hex(colors.primary), hex(theme.accent));
+            assert_eq!(hex(colors.primary_foreground), hex(Rgba { a: 1.0, ..theme.base }));
+            assert_eq!(hex(colors.popover), hex(theme.surface));
+            assert_eq!(hex(colors.ring), hex(theme.accent));
+        });
+    }
+}
