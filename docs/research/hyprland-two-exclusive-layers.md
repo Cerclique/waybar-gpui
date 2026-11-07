@@ -2,6 +2,8 @@
 
 Research date: 2026-10-24. Target: Hyprland **v0.56.2** (tag commit `efb5099`). Ticket: #12, child of map #7.
 
+> **2026-11-07:** the pointer part no longer holds from Hyprland 0.57, which stopped forcing the pointer onto exclusive-keyboard layers. See [hyprland-057-pointer-routing.md](hyprland-057-pointer-routing.md). The keyboard part still holds.
+
 Sources: the Hyprland source at tag `v0.56.2` (read only, not built or run), and the wlr-layer-shell protocol XML that ships with that tag (`protocols/wlr-layer-shell-unstable-v1.xml`). Links use `https://github.com/hyprwm/Hyprland/blob/v0.56.2/<path>#L<n>`. No experiments were run, so nothing here was checked on a live session. Some conclusions follow from reading the code paths together. Those are marked **(inferred)**.
 
 ## Question

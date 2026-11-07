@@ -45,14 +45,15 @@ window, so the popover can't hang off Waybar's icon. Instead:
 - Your panel is drawn inside it as the **card**, placed next to the bar:
   centred on the cursor, 6 px off the bar edge, kept inside the screen. Top,
   bottom, left and right bars all work.
-- The rest of the surface is the invisible **backdrop**. A click on it closes
-  the popover.
+- The rest of the surface is the invisible **backdrop**, and every other
+  monitor gets a transparent surface of its own that extends it. A click on
+  the backdrop, on any monitor, closes the popover.
 - It takes the keyboard exclusively, so Esc always works.
 
-Hyprland sends every click to such a layer while it's open. That's why Waybar
-can't be clicked while a popover is open, why the first click outside only
-closes it, and why a click on another monitor closes it too. See
-[Closing and Esc](closing-and-esc.md).
+While a popover is open, the keyboard stays with it, so it must not stay open
+after a click elsewhere. That's why the backdrop covers every monitor, Waybar
+included: Waybar can't be clicked while a popover is open, and the first click
+outside only closes it. See [Closing and Esc](closing-and-esc.md).
 
 ## Panels are fresh on every open
 

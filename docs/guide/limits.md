@@ -36,7 +36,7 @@
 - GPUI (`gpui-pre`) and gpui-component are **pinned exactly**, and move
   together. Every change to those pins is a breaking release, with the new
   versions in the changelog. Upgrade deliberately, and keep your `Cargo.lock`.
-- Tested with Hyprland 0.56 (Lua config), Waybar 0.15 and the Rust in
+- Tested with Hyprland 0.57 (Lua config), Waybar 0.15 and the Rust in
   [`rust-toolchain.toml`](../../rust-toolchain.toml); the oldest Rust that
   builds it is 1.95 (`rust-version`, checked in CI). GPUI
   renders with Vulkan.

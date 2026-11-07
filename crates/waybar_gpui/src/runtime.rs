@@ -1,6 +1,8 @@
 //! The daemon: one full-output transparent layer surface per open popover,
 //! the panel drawn inside it through `anchored()` (measured and placed in the
-//! same frame). A click that reaches the backdrop around the card dismisses.
+//! same frame), plus a transparent click-catching surface on every other
+//! monitor. A click that reaches the backdrop around the card, on any
+//! monitor, dismisses.
 
 use std::{cell::Cell, error::Error, io, os::fd::AsFd, rc::Rc};
 
@@ -54,7 +56,15 @@ pub enum Mode {
 
 impl Global for Registry {}
 
-impl Global for Popovers<AnyWindowHandle> {}
+/// The surfaces of one open popover: the popover itself, and a backdrop
+/// surface on each other monitor (Hyprland 0.57+ sends clicks there to
+/// whatever is under the pointer, not to the popover).
+struct Windows {
+    popover: AnyWindowHandle,
+    backdrops: Vec<AnyWindowHandle>,
+}
+
+impl Global for Popovers<Windows> {}
 
 /// Closes this program's popover once the current update finishes. Call it
 /// from the panel's own event handlers.
@@ -70,7 +80,7 @@ pub fn close(cx: &mut App) {
 /// during its own dispatch.
 fn defer_close(reason: &'static str, cx: &mut App) {
     cx.defer(move |cx| {
-        let effects = cx.global_mut::<Popovers<AnyWindowHandle>>().close(reason);
+        let effects = cx.global_mut::<Popovers<Windows>>().close(reason);
         apply(effects, cx);
     });
 }
@@ -102,13 +112,13 @@ pub fn run(app: crate::Program, files: ProgramFiles, mode: Mode) -> io::Result<(
             crate::theme::apply_to_components(&theme, cx);
         }
         cx.set_global(theme);
-        cx.set_global(Popovers::<AnyWindowHandle>::new(session.is_preview()));
+        cx.set_global(Popovers::<Windows>::new(session.is_preview()));
         cx.set_global(Registry { panels, session });
         cx.set_global(files);
         cx.spawn(async move |cx| {
             while let Ok(command) = rx.recv().await {
                 cx.update(|cx| {
-                    let effects = cx.global_mut::<Popovers<AnyWindowHandle>>().on(command);
+                    let effects = cx.global_mut::<Popovers<Windows>>().on(command);
                     apply(effects, cx);
                 });
             }
@@ -123,18 +133,20 @@ pub fn run(app: crate::Program, files: ProgramFiles, mode: Mode) -> io::Result<(
 
 /// Carries out the popover rules' effects, reporting each open's outcome back.
 /// No decisions here: those are in `Popovers`.
-fn apply(effects: Vec<Effect<AnyWindowHandle>>, cx: &mut App) {
+fn apply(effects: Vec<Effect<Windows>>, cx: &mut App) {
     for effect in effects {
         match effect {
-            Effect::Close { target, window, reason } => {
-                let _ = window.update(cx, |_, window, _| window.remove_window());
+            Effect::Close { target, window: windows, reason } => {
+                for window in windows.backdrops.into_iter().chain([windows.popover]) {
+                    let _ = window.update(cx, |_, window, _| window.remove_window());
+                }
                 eprintln!("{}: closed {target} ({reason})", cx.global::<ProgramFiles>().id());
             }
             Effect::Open(target) => match open(&target, cx) {
-                Ok(window) => cx.global_mut::<Popovers<AnyWindowHandle>>().opened(target, window),
+                Ok(window) => cx.global_mut::<Popovers<Windows>>().opened(target, window),
                 Err(e) => {
                     eprintln!("{}: cannot open {target}: {e}", cx.global::<ProgramFiles>().id());
-                    let effects = cx.global_mut::<Popovers<AnyWindowHandle>>().open_failed();
+                    let effects = cx.global_mut::<Popovers<Windows>>().open_failed();
                     apply(effects, cx);
                 }
             },
@@ -156,7 +168,7 @@ fn apply(effects: Vec<Effect<AnyWindowHandle>>, cx: &mut App) {
     }
 }
 
-fn open(target: &Target, cx: &mut App) -> Result<AnyWindowHandle, Box<dyn Error>> {
+fn open(target: &Target, cx: &mut App) -> Result<Windows, Box<dyn Error>> {
     let registry = cx.global::<Registry>();
     let build = registry.panels.get(&target.panel).ok_or_else(|| format!("unknown panel {:?}", target.panel))?;
 
@@ -201,8 +213,60 @@ fn open(target: &Target, cx: &mut App) -> Result<AnyWindowHandle, Box<dyn Error>
         cx.new(|cx| Popover::new(content, placement.clone(), window, cx))
     })?;
 
+    // After the popover, which has taken the keyboard. A backdrop that fails
+    // to open only loses dismissal on its monitor.
+    let backdrops = monitors
+        .iter()
+        .filter(|monitor| monitor.name != placement.monitor)
+        .filter_map(|monitor| match open_backdrop(monitor, &id, cx) {
+            Ok(window) => Some(window),
+            Err(e) => {
+                eprintln!("{id}: no backdrop on {}: {e}", monitor.name);
+                None
+            }
+        })
+        .collect();
+
     eprintln!("{id}: opened {target} on {} ({:?} bar)", placement.monitor, placement.edge);
+    Ok(Windows { popover: handle.into(), backdrops })
+}
+
+/// A transparent surface over all of `monitor`, Waybar included, that takes
+/// clicks but never the keyboard: the backdrop on a monitor without the card.
+/// Its namespace keeps authors' `^waybar-gpui:` layer rules off it.
+fn open_backdrop(monitor: &hypr::Monitor, id: &str, cx: &mut App) -> Result<AnyWindowHandle, Box<dyn Error>> {
+    let (width, height) = monitor.logical_size();
+    let options = WindowOptions {
+        titlebar: None,
+        window_bounds: Some(WindowBounds::Windowed(Bounds {
+            origin: point(px(0.), px(0.)),
+            size: Size::new(px(width), px(height)),
+        })),
+        app_id: Some(format!("waybar-gpui-{id}")),
+        window_background: WindowBackgroundAppearance::Transparent,
+        kind: WindowKind::LayerShell(LayerShellOptions {
+            namespace: format!("waybar-gpui-backdrop:{id}"),
+            layer: Layer::Overlay,
+            anchor: Anchor::TOP | Anchor::BOTTOM | Anchor::LEFT | Anchor::RIGHT,
+            exclusive_zone: Some(px(-1.)),
+            keyboard_interactivity: KeyboardInteractivity::None,
+            ..Default::default()
+        }),
+        focus: false,
+        display_id: display_for_monitor(&monitor.name, cx),
+        ..Default::default()
+    };
+    let handle = cx.open_window(options, |_, cx| cx.new(|_| Backdrop))?;
     Ok(handle.into())
+}
+
+/// The root view of a backdrop surface: any click on it dismisses.
+struct Backdrop;
+
+impl Render for Backdrop {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().on_any_mouse_down(|_, _, cx| defer_close("click on another monitor", cx))
+    }
 }
 
 /// The popover's root view: the full-monitor backdrop, with the panel's card
@@ -236,8 +300,9 @@ impl Render for Popover {
             // Never larger than the usable area; the panel scrolls past that.
             .max_w(px(w - left - right))
             .max_h(px(h - top - bottom))
-            // Clicks on other monitors arrive with coordinates outside this
-            // surface (Hyprland forces them to the exclusive layer); nothing
+            // Hyprland 0.56 only: clicks on other monitors arrive with
+            // coordinates outside this surface (it forces them to the
+            // exclusive layer, so the backdrop surfaces get none); nothing
             // here is "hovered" for those, so test geometrically.
             .on_mouse_down_out(move |event, _, cx| {
                 let inside_surface = event.position.x >= px(0.)

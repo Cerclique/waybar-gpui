@@ -9,7 +9,8 @@ recorded as ADRs in `docs/adr/`
 ([0001](adr/0001-full-monitor-surface-with-drawn-card.md),
 [0002](adr/0002-daemon-per-program.md),
 [0003](adr/0003-no-gpui-component-root.md),
-[0004](adr/0004-published-on-crates-io.md)).
+[0004](adr/0004-published-on-crates-io.md),
+[0006](adr/0006-backdrop-surface-on-every-other-monitor.md)).
 
 | File | What it owns |
 |---|---|
@@ -20,7 +21,7 @@ recorded as ADRs in `docs/adr/`
 | `panels.rs` | `Panels`: the registered panels, the one place a panel is looked up by name (`cli.rs` to check a command line and print the usage, `runtime.rs` to build it) and a duplicate name is rejected. |
 | `ipc.rs` | Line protocol, `Target` (a panel name and its arguments), daemon identity (`ExeId`), and its two ends: `Connection` (the client's, to a socket path) and `serve` (the daemon's, on a bound socket). It knows no paths or directories; `files.rs` depends on it, not the reverse. |
 | `popovers.rs` | The popover rules without GPUI: what a toggle, `close`, `quit` or a dismissal does, and when the process quits. Returns effects; unit-tested. |
-| `runtime.rs` | The GPUI side: `daemon` and `preview` (a `Session` holds what each needs: the daemon's `Ownership`, the preview's failure for its exit status), carrying out `popovers.rs`'s effects, the popover surface, focus, dismissal. |
+| `runtime.rs` | The GPUI side: `daemon` and `preview` (a `Session` holds what each needs: the daemon's `Ownership`, the preview's failure for its exit status), carrying out `popovers.rs`'s effects, the popover surface and the backdrop surfaces on the other monitors, focus, dismissal. |
 | `placement.rs` | Monitor and bar-edge detection, the anchor point and margins. |
 | `hypr.rs` | Hyprland IPC: the `j/cursorpos` and `j/monitors` requests `placement.rs` reads. Private, not re-exported. |
 | `theme.rs` | `Theme`, `card()`, copying `Theme` into gpui-component's theme. |
@@ -209,7 +210,7 @@ dispatch; commands from the socket close at once:
 | Path | Reason logged |
 |---|---|
 | Any mouse button down on the backdrop (left, right, middle, side). The card and any overlay a widget draws (a menu overflowing the card) `.occlude()` it, so those clicks never reach it. The panel can't veto. | `click outside` |
-| Mouse down outside the surface's own bounds: a click on another monitor, which Hyprland delivers to this surface with outside coordinates. Tested geometrically in the card's `on_mouse_down_out`, because nothing is hovered for such a click. | `click on another monitor` |
+| A click on another monitor. From Hyprland 0.57, it lands on that monitor's backdrop surface (below). On 0.56, Hyprland delivered it to the popover's surface with outside coordinates, and the card's `on_mouse_down_out` tests that geometrically, because nothing is hovered for such a click. | `click on another monitor` |
 | Esc the panel didn't stop. | `escape` |
 | `close(cx)` from the panel. | `panel` |
 | `toggle` of the open target, or of another one. | `toggle` |
@@ -220,31 +221,43 @@ In `preview`, any close quits the process.
 
 ## Hyprland exclusive-layer input routing
 
-The popover's design rests on how Hyprland 0.56.2 routes input to
-exclusive-keyboard layer surfaces. Conclusions of
-[`docs/research/hyprland-two-exclusive-layers.md`][hypr-research] (read from the
-Hyprland source at `v0.56.2`; the click-routing part was then confirmed with
-real clicks):
+The popover is an exclusive-keyboard layer surface, so its design rests on how
+Hyprland routes input to those. Conclusions of
+[`docs/research/hyprland-057-pointer-routing.md`][hypr057-research] (0.57) and
+[`docs/research/hyprland-two-exclusive-layers.md`][hypr-research] (0.56; its
+keyboard part still holds), confirmed with real clicks on both versions:
 
-- Hyprland keeps one global, map-ordered list of every mapped
-  exclusive-keyboard layer surface (`m_exclusiveLSes`), across monitors,
-  layers and clients.
-- **Clicks:** the "forced above all" block in `mouseMoveUnified`
-  (`InputManager.cpp` L453–465) hit-tests that list newest first, on input
-  regions. If no surface is hit (another monitor, a gap), the pointer goes to
-  the **oldest** exclusive surface, with coordinates outside its bounds.
-  Nothing outside the list can get pointer focus while it is non-empty.
-- Hence, while any popover is open, **Waybar can't be clicked**: clicking
-  another bar module only dismisses, and a second click opens the new panel.
-  The first click outside the card only closes the popover; it never reaches
-  the window below.
-- Hence also the other-monitor path above: those clicks land on the popover
-  with coordinates outside the surface.
-- **Keyboard:** the surface mapped last takes focus as it maps. Afterwards
-  focus follows the pointer between exclusive layers (`InputManager.cpp`
-  L733–736) unless `input:follow_mouse = 3`. The wlr-layer-shell protocol
-  leaves two exclusive surfaces "implementation-defined". Windows can't take
-  focus back while any exclusive layer is mapped.
+- **Clicks, from 0.57:** an exclusive-keyboard layer gets the pointer only
+  where its input region is under the cursor, like any surface
+  ([hyprwm/Hyprland#15899](https://github.com/hyprwm/Hyprland/pull/15899),
+  a spec conformance fix). A click on another monitor goes to whatever is
+  there, and the popover's surface gets no event.
+- Hence the **backdrop surfaces**: while a popover is open, the runtime maps a
+  transparent full-output surface on every other monitor, on the Overlay
+  layer (above Waybar) with no keyboard interactivity
+  ([ADR 0006](adr/0006-backdrop-surface-on-every-other-monitor.md)). Any click
+  on one dismisses, as the backdrop does on the popover's monitor. The
+  monitors are read once at open, so a monitor plugged in while a popover is
+  open has none. Their namespace, `waybar-gpui-backdrop:<id>`, keeps authors'
+  `^waybar-gpui:` layer rules (blur, fade) off them.
+- Hence, while a popover is open, **Waybar can't be clicked** on any monitor:
+  the popover's surface covers the bar on its own monitor, and a backdrop
+  surface covers it elsewhere. Clicking another bar module only dismisses, and
+  a second click opens the new panel. The first click outside the card only
+  closes the popover; it never reaches the window below.
+- **Clicks, on 0.56:** Hyprland forced the pointer onto exclusive-keyboard
+  layers ("forced above all" in `mouseMoveUnified`, `InputManager.cpp`
+  L453–465 at `v0.56.2`). A click that hit no exclusive surface went to the
+  oldest one, with coordinates outside its bounds, so the backdrop surfaces
+  get nothing and the card's `on_mouse_down_out` closes instead. Kept so 0.56
+  still works; only 0.57 is tested.
+- **Keyboard (unchanged in 0.57):** the surface mapped last takes focus as it
+  maps. Afterwards focus follows the pointer between exclusive layers
+  (`InputManager.cpp` L733–736 at `v0.56.2`) unless `input:follow_mouse = 3`.
+  The wlr-layer-shell protocol leaves two exclusive surfaces
+  "implementation-defined". Windows can't take focus back while any exclusive
+  layer is mapped, which is why a popover must not stay open after a click
+  elsewhere: the keyboard would stay with it.
 - **Third-party exclusive surfaces** (out of scope, accepted): if a launcher
   such as fuzzel opens over a popover, moving the pointer off the launcher
   hands the keyboard back to the popover, and a click there closes the popover
@@ -311,14 +324,22 @@ Each was tried or considered; details in the tickets of the
 - **A small layer surface sized to the panel, closing on focus loss:** the
   first design. With `follow_mouse = 1`, moving the pointer onto the popover
   handed focus to the window underneath and it closed within ~300 ms.
-- **A separate transparent full-output backdrop surface under the popover:**
-  Esc worked, but clicks outside, and on the icon, reached neither the
-  backdrop nor Waybar: Hyprland sends every click to the exclusive-keyboard
-  layer (the routing above). Replaced by one surface with the card drawn
-  inside, which also retired a 300 ms reopen guard.
-- **Closing on clicks via hover tests:** clicks from other monitors arrive
-  with outside coordinates and nothing hovered; hence the geometric
+- **A separate transparent full-output backdrop surface under the popover,
+  on its own monitor:** under Hyprland 0.56, Esc worked, but clicks outside,
+  and on the icon, reached neither the backdrop nor Waybar: Hyprland sent
+  every click to the exclusive-keyboard layer. Replaced by one surface with
+  the card drawn inside, which also retired a 300 ms reopen guard. (From
+  0.57 the same kind of surface works, and is used on the *other* monitors.)
+- **Closing on clicks via hover tests:** on 0.56, clicks from other monitors
+  arrive with outside coordinates and nothing hovered; hence the geometric
   `on_mouse_down_out` test.
+- **Leaving the popover open on a click on another monitor** (Hyprland 0.57's
+  default for our surface): the keyboard stays with the popover while the
+  pointer works elsewhere. **Closing when the pointer leaves the monitor:**
+  closes on mere movement. Both rejected in
+  [#134](https://github.com/Cerclique/waybar-gpui/issues/134) for the backdrop
+  surfaces, at the cost of a one-click switch to another monitor's bar
+  module.
 - **Keeping panels alive and hidden between opens:** stale data and hidden
   background work. Panels are built fresh per open and dropped on close, which
   stops their tasks.
@@ -345,7 +366,13 @@ Each was tried or considered; details in the tickets of the
 
 ## Verified behaviour
 
-Test machine: Arch, Hyprland 0.56.2 (Lua config), Waybar 0.15.0, Rust 1.97.1,
+On Hyprland 0.57.1 (2026-11-07, `make dev`, two monitors, `components` on and
+off): a click anywhere on the other monitor (a window, the wallpaper, Waybar)
+closes the popover and doesn't reach what's below; the next click there works
+normally; click outside, icon re-click and Esc are unchanged on the
+popover's monitor; nothing shows on the other monitor while it's open.
+
+Test machine for the rest of this section: Arch, Hyprland 0.56.2 (Lua config), Waybar 0.15.0, Rust 1.97.1,
 NVIDIA + Vulkan, two 1920×1080 monitors (DP-2 at x=0, DP-1 at x=1920),
 Waybar height 36.
 
@@ -375,4 +402,5 @@ gpui-component widgets themed from `Theme` without `Root`. A blocking event
 reader (Hyprland's socket) keeps its thread until the next event after close.
 
 [hypr-research]: research/hyprland-two-exclusive-layers.md
+[hypr057-research]: research/hyprland-057-pointer-routing.md
 [component-research]: research/gpui-component-compat.md
