@@ -25,8 +25,9 @@ use std::{
     time::Duration,
 };
 
-/// How long a client waits for the daemon's identity line. A daemon from before
-/// the identity reply never sends one.
+/// How long a client waits for the daemon's identity line, and the daemon for
+/// the client's command. A daemon from before the identity reply never sends
+/// one; a stalled client never sends its command.
 const REPLY_TIMEOUT: Duration = Duration::from_secs(1);
 
 /// A panel to open and the arguments its build function receives. Equal
@@ -154,6 +155,9 @@ pub(crate) fn serve(id: String, listener: UnixListener, identity: ExeId, tx: asy
     let identity = identity.to_line();
     thread::spawn(move || {
         for mut stream in listener.incoming().flatten() {
+            // Connections are served one at a time: a silent client must not
+            // block the ones after it.
+            let _ = stream.set_read_timeout(Some(REPLY_TIMEOUT));
             // Fails if the client already hung up; its command is still readable.
             let _ = stream.write_all(identity.as_bytes());
             let mut line = String::new();
@@ -227,6 +231,28 @@ mod tests {
         for line in ["", "\n", "exe\t1\n", "exe\t1\t2\t3\n", "exe\t1\tx\n", "dev\t1\t2\n", "toggle\tclock\n"] {
             assert_eq!(ExeId::parse(line), None, "{line:?}");
         }
+    }
+
+    #[test]
+    fn silent_client_does_not_block_later_commands() {
+        let dir = std::env::temp_dir().join(format!("waybar-gpui-ipc-silent-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let socket = dir.join("test.sock");
+        let _ = fs::remove_file(&socket);
+        let listener = UnixListener::bind(&socket).unwrap();
+        let (tx, rx) = async_channel::unbounded();
+        serve("test".into(), listener, ExeId::new(1, 2), tx);
+
+        // Connects, then neither writes nor hangs up until the end of the test.
+        let silent = UnixStream::connect(&socket).unwrap();
+        Connection::open(&socket).unwrap().send(&Command::Close).unwrap();
+
+        let (done_tx, done_rx) = std::sync::mpsc::channel();
+        thread::spawn(move || done_tx.send(rx.recv_blocking()));
+        let received = done_rx.recv_timeout(REPLY_TIMEOUT * 5).expect("command blocked behind a silent client");
+        assert_eq!(received, Ok(Command::Close));
+        drop(silent);
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

@@ -23,7 +23,7 @@ enum Invocation {
 }
 
 /// Why a command line was rejected; the usage text follows the message.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct UsageError(String);
 
 /// The command line as UTF-8 strings; any other argument is a usage error.
@@ -35,6 +35,10 @@ fn parse(args: &[String], panels: &Panels) -> Result<Invocation, UsageError> {
     let target = |rest: &[String]| match Target::from_words(rest.iter().cloned()) {
         None => Err(UsageError("missing panel name".into())),
         Some(t) if panels.get(&t.panel).is_none() => Err(UsageError(format!("unknown panel {:?}", t.panel))),
+        // The socket's line format can't carry them (see `ipc`).
+        Some(t) if t.args.iter().any(|a| a.contains(['\t', '\n'])) => {
+            Err(UsageError("panel arguments can't contain tabs or newlines".into()))
+        }
         Some(t) => Ok(t),
     };
     let (command, rest) = match args.split_first() {
@@ -156,6 +160,13 @@ mod tests {
         assert_eq!(parse_words("toggle calendar"), Err(UsageError("unknown panel \"calendar\"".into())));
         assert_eq!(parse_words("daemon calendar"), Err(UsageError("unknown panel \"calendar\"".into())));
         assert_eq!(parse_words("quit now"), Err(UsageError("quit takes no arguments".into())));
+        let control = UsageError("panel arguments can't contain tabs or newlines".into());
+        for command in ["toggle", "preview", "daemon"] {
+            for arg in ["New\tYork", "New\nYork"] {
+                let args = [command, "clock", arg].map(str::to_owned);
+                assert_eq!(parse(&args, &panels()), Err(control.clone()), "{command} {arg:?}");
+            }
+        }
     }
 
     #[test]

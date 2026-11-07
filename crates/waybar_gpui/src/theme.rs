@@ -37,6 +37,10 @@ impl Global for Theme {}
 
 impl Theme {
     /// The program's theme, as given to [`App::theme`](crate::App::theme).
+    ///
+    /// # Panics
+    ///
+    /// Outside a program started by [`App::run`](crate::App::run).
     pub fn get(cx: &App) -> Self {
         *cx.global::<Self>()
     }
@@ -44,6 +48,10 @@ impl Theme {
 
 /// Standard card chrome: rounded, bordered, themed. Opt-in; a panel may draw
 /// its own shape instead.
+///
+/// # Panics
+///
+/// Outside a program started by [`App::run`](crate::App::run).
 pub fn card(cx: &App) -> Div {
     let theme = Theme::get(cx);
     div()

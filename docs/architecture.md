@@ -102,12 +102,16 @@ sequenceDiagram
      `quit`, and hangs up.
 
   Panel arguments travel as separate words, so they may contain spaces but not
-  tabs or newlines. Clients that don't care who answers (`close`, `quit`, other
-  programs) write without reading the identity; the daemon ignores a failed
-  identity write and still reads the command. A connection that writes nothing
-  (the `wait_gone` probe) is ignored, and an unknown command is logged and
-  dropped. The listener runs on a plain thread and forwards commands to GPUI
-  through an `async_channel`.
+  tabs or newlines; the command line rejects those with a usage error, so
+  `toggle` and `daemon <panel>` see the same arguments. Clients that don't
+  care who answers (`close`, `quit`, other programs) write without reading the
+  identity; the daemon ignores a failed identity write and still reads the
+  command. A connection that writes nothing (the `wait_gone` probe) is
+  ignored, and an unknown command is logged and dropped. Connections are
+  served one at a time, so the daemon waits at most 1 s for a command: a
+  client that connects and stays silent can't block the ones after it. The
+  listener runs on a plain thread and forwards commands to GPUI through an
+  `async_channel`.
 - **Identity and stale-binary replacement:** at startup the daemon records the
   device and inode of `/proc/self/exe`, which keep naming the file it started
   from even after that file is replaced. `toggle` (`client.rs`) compares them
