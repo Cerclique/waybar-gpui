@@ -26,6 +26,7 @@ body:
       description: >-
         The relevant lines of `~/.local/state/waybar-gpui/<id>.log`, where
         `<id>` is the program ID (for `preview`, the terminal output instead).
+        See [Reporting a bug](https://github.com/Cerclique/waybar-gpui/blob/main/docs/guide/troubleshooting.md#reporting-a-bug).
       render: text
   - type: input
     id: sdk-version
