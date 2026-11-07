@@ -55,7 +55,7 @@ The SDK re-exports GPUI as `waybar_gpui::gpui`; don't add `gpui` (or
 `gpui-pre`) to your own `Cargo.toml`, or you'll get two copies that don't fit
 together. GPUI is pre-1.0 and the SDK pins an exact snapshot: the
 [SDK's API](https://docs.rs/waybar_gpui) and
-[GPUI's](https://docs.rs/gpui-pre/0.3.9) are on docs.rs, and
+[GPUI's](https://docs.rs/gpui-pre/0.3.11) are on docs.rs, and
 `cargo doc --open` in your project shows both offline.
 
 GPUI's derive macros (`#[derive(IntoElement)]` and friends) expand to paths

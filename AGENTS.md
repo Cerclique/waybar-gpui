@@ -20,8 +20,8 @@ Crates: `waybar_gpui` (SDK + runtime, with its private Hyprland IPC in
   `--all-features`, plus `cargo doc` with `-D warnings`).
 - Try it: `make dev` builds with the `components` feature and runs a second
   Waybar from `examples/example-panels/waybar/` wired to `example-panels`.
-- GPUI is `gpui-pre =0.3.9` and the API is pre-1.0: check the source in
-  `~/.cargo/registry/src/*/gpui-pre-0.3.9/` before using an API; don't bump the
+- GPUI is `gpui-pre =0.3.11` and the API is pre-1.0: check the source in
+  `~/.cargo/registry/src/*/gpui-pre-0.3.11/` before using an API; don't bump the
   pin casually.
 - Hyprland is 0.56 with a **Lua** config (`hl.*`), not hyprlang. Verify
   dispatcher/rule syntax against the wiki before writing it.

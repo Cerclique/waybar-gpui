@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/waybar_gpui)](https://crates.io/crates/waybar_gpui)
 [![docs.rs](https://img.shields.io/docsrs/waybar_gpui)](https://docs.rs/waybar_gpui)
-[![gpui-pre =0.3.9](https://img.shields.io/badge/gpui--pre-%3D0.3.9-blue)](https://docs.rs/gpui-pre/0.3.9)
+[![gpui-pre =0.3.11](https://img.shields.io/badge/gpui--pre-%3D0.3.11-blue)](https://docs.rs/gpui-pre/0.3.11)
 [![compositor: Hyprland](https://img.shields.io/badge/compositor-Hyprland-58e1ff)](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/limits.md)
 [![CI](https://github.com/Cerclique/waybar-gpui/actions/workflows/ci.yml/badge.svg)](https://github.com/Cerclique/waybar-gpui/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/crates/l/waybar_gpui)](LICENSE)
@@ -91,7 +91,7 @@ make check-template   # the starter template, as CI checks it (needs cargo-gener
 
 On crates.io as [`waybar_gpui`](https://crates.io/crates/waybar_gpui); each
 release is also tagged `vX.Y.Z`. GPUI is pre-1.0 and pinned exactly
-(`gpui-pre =0.3.9`). 0.x semver; every GPUI pin change is a breaking
+(`gpui-pre =0.3.11`). 0.x semver; every GPUI pin change is a breaking
 release. Details:
 [Limits](https://github.com/Cerclique/waybar-gpui/blob/v0.1.0/docs/guide/limits.md#versions).
 

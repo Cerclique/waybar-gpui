@@ -9,7 +9,7 @@ edition = "2024"
 license = "MIT"
 version = "0.1.0"
 # The minimum supported Rust version, checked by the `msrv` CI job. It is the
-# oldest toolchain that builds the workspace: gpui-pre 0.3.9 calls
+# oldest toolchain that builds the workspace: gpui-pre 0.3.11 calls
 # `std::hint::cold_path`, stable since 1.95.
 rust-version = "1.95"
 repository = "https://github.com/Cerclique/waybar-gpui"
@@ -22,8 +22,8 @@ serde_json = "1"
 
 # GPUI is pre-1.0 and breaks between snapshots: keep these pinned exactly
 # (see docs/research/gpui-popup-windows.md).
-gpui          = { package = "gpui-pre",          version = "=0.3.9" }
-gpui_platform = { package = "gpui-pre-platform", version = "=0.3.9", features = ["wayland"] }
+gpui          = { package = "gpui-pre",          version = "=0.3.11" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.11", features = ["wayland"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
