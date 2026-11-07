@@ -78,3 +78,7 @@ _Avoid_: host, server
 **Daemon**:
 A program's background process that shows its popovers and stays running between opens until told to quit.
 _Avoid_: server, service, runtime (that's the whole, not this process)
+
+**Compositor**:
+The Wayland compositor the bar and popovers run under, which says where the cursor is and which monitors exist; Hyprland is the only one supported.
+_Avoid_: window manager, WM, Hyprland (when any compositor is meant)
