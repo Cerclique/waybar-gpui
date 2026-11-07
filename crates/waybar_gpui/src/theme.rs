@@ -111,6 +111,10 @@ pub(crate) fn apply_to_components(theme: &Theme, cx: &mut App) {
     colors.secondary_foreground = hex(theme.text);
     colors.input = hex(theme.overlay);
     colors.ring = hex(theme.accent);
-    let config = ThemeConfig { name: "waybar-gpui".into(), mode: ThemeMode::Dark, colors, ..Default::default() };
+    // (ThemeConfig is #[non_exhaustive] too.)
+    let mut config = ThemeConfig::default();
+    config.name = "waybar-gpui".into();
+    config.mode = ThemeMode::Dark;
+    config.colors = colors;
     ComponentTheme::global_mut(cx).apply_config(&Rc::new(config));
 }
