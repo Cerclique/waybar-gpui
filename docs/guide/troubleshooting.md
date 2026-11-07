@@ -15,6 +15,6 @@ by a click, the terminal for `preview`.
 | Errors about `gpui::…` paths from a derive macro | `gpui` isn't in scope in that module. | `use waybar_gpui::gpui;` ([Writing a panel](writing-a-panel.md#gpui)). |
 | Two versions of `gpui` in the dependency tree, types don't match | You depend on `gpui`/`gpui-pre` or `gpui-component` directly. | Remove them; use `waybar_gpui::gpui` and the `components` feature. |
 | A dialog or notification from gpui-component doesn't show | Unsupported without `Root`. | Build it as a view inside your panel ([Components](components.md)). |
-| `invalid program ID` panic at start | The ID passed to `App::new` has uppercase letters, `_`, spaces… | Use `a-z`, `0-9` and `-`, not starting with `-`. |
+| `invalid program ID` panic at start | The ID passed to `Program::new` has uppercase letters, `_`, spaces… | Use `a-z`, `0-9` and `-`, not starting with `-`. |
 | The program keeps running after `cargo uninstall` | The daemon outlives its deleted binary. | `<program> quit` (or log out). |
 | The first popover after login is slow | The first click starts the daemon. | Expected; later clicks are fast. |

@@ -7,7 +7,11 @@ use std::{cell::Cell, error::Error, io, os::fd::AsFd, rc::Rc};
 use gpui::{
     AnyView, AnyWindowHandle, App, AppContext as _, Bounds, Context, DisplayId, Edges, FocusHandle, Global,
     IntoElement, QuitMode, Render, Size, Window, WindowBackgroundAppearance, WindowBounds, WindowKind, WindowOptions,
-    anchored, div, layer_shell::*, point, prelude::*, px,
+    anchored, div,
+    layer_shell::{Anchor, KeyboardInteractivity, Layer, LayerShellOptions},
+    point,
+    prelude::*,
+    px,
 };
 use uuid::Uuid;
 
@@ -57,7 +61,7 @@ impl Global for Popovers<AnyWindowHandle> {}
 ///
 /// # Panics
 ///
-/// Outside a program started by [`App::run`](crate::App::run).
+/// Outside a program started by [`Program::run`](crate::Program::run).
 pub fn close(cx: &mut App) {
     defer_close("panel", cx);
 }
@@ -73,7 +77,7 @@ fn defer_close(reason: &'static str, cx: &mut App) {
 
 impl Global for ProgramFiles {}
 
-pub fn run(app: crate::App, files: ProgramFiles, mode: Mode) -> io::Result<()> {
+pub fn run(app: crate::Program, files: ProgramFiles, mode: Mode) -> io::Result<()> {
     let (tx, rx) = async_channel::unbounded();
     let failed = Rc::new(Cell::new(false));
     let (initial, session) = match mode {
@@ -86,7 +90,7 @@ pub fn run(app: crate::App, files: ProgramFiles, mode: Mode) -> io::Result<()> {
         let _ = tx.try_send(Command::Toggle(target));
     }
     // The program ID is `files`' from here on.
-    let crate::App { theme, panels, .. } = app;
+    let crate::Program { theme, panels, .. } = app;
 
     let application = gpui_platform::application().with_quit_mode(QuitMode::Explicit);
     #[cfg(feature = "components")]

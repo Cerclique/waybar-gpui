@@ -44,7 +44,7 @@ impl Panel for WorkspacePanel {
         let (workspace, clients) = active_workspace_clients();
         // The documented live-data pattern: block on a background thread,
         // update the panel on the foreground one.
-        let _events = cx.spawn(async move |this, cx| {
+        let events = cx.spawn(async move |this, cx| {
             let Ok(mut events) = hypr::Events::connect() else { return };
             loop {
                 let (back, event) = cx
@@ -69,7 +69,7 @@ impl Panel for WorkspacePanel {
                 }
             }
         });
-        Self { workspace, clients, updates: 0, _events }
+        Self { workspace, clients, updates: 0, _events: events }
     }
 }
 

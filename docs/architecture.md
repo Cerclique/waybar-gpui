@@ -13,7 +13,7 @@ recorded as ADRs in `docs/adr/`
 
 | File | What it owns |
 |---|---|
-| `lib.rs` | Public API: `Panel`, `App`, re-exports. |
+| `lib.rs` | Public API: `Panel`, `Program`, re-exports. |
 | `cli.rs` | argv parsing, usage text, dispatching each command to `client.rs` or `runtime.rs`. |
 | `client.rs` | The click client: making sure a daemon of *this* program receives `toggle`, `close` or `quit`. Behind `toggle`: comparing the daemon's identity with its own, replacing a daemon of another executable (`quit`, wait for it to go, start ours) and starting one when none runs. The seam is `Executable` (its identity, starting its daemon): `CurrentExe` re-runs `current_exe() daemon <panel> [args…]` detached with stderr appended to the log; tests start fake daemons in a temp directory. |
 | `files.rs` | What a program owns on disk: `ProgramFiles` (socket directory, socket, lock and log paths, resolved once from `XDG_RUNTIME_DIR`, `XDG_STATE_HOME` and `HOME`, the only place reading them), and the daemon taking ownership (`claim`: lock, check, remove a stale socket, bind, claim the log, serve) and giving it up (`Ownership::give_up` removes the socket on `quit`); closing other programs' popovers (`close_others`: scanning the socket directory, deleting stale sockets). Everything that touches the shared directory is here. |
@@ -93,7 +93,7 @@ sequenceDiagram
   once per process, with the socket, lock and log paths. One socket per program,
   `<id>.sock`, named by the program ID. The same ID names the layer namespace
   (`waybar-gpui:<id>`), the log file and the prefix of every log line
-  (`<id>: …`). `App::new` rejects IDs outside `^[a-z0-9][a-z0-9-]*$`, so the ID
+  (`<id>: …`). `Program::new` rejects IDs outside `^[a-z0-9][a-z0-9-]*$`, so the ID
   is safe in a file name and a namespace.
 - **Protocol** (the module doc of `ipc.rs` is the reference): one exchange per
   connection, `\n`-terminated lines of tab-separated words.

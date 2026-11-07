@@ -4,7 +4,19 @@ use gpui::{App, Div, Global, Rgba, div, prelude::*, rgb, rgba};
 
 /// Colours shared by [`card`] and panels, stored by the runtime as a GPUI
 /// global. Defaults: Catppuccin Mocha.
+///
+/// Colours may be added without a breaking release, so a `Theme` is built by
+/// changing the fields of [`Theme::default`]:
+///
+/// ```
+/// use waybar_gpui::{gpui::{rgb, rgba}, Theme};
+///
+/// let mut theme = Theme::default();
+/// theme.base = rgba(0x2e3440f0);
+/// theme.accent = rgb(0x88c0d0);
+/// ```
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct Theme {
     /// Card background (translucent).
     pub base: Rgba,
@@ -36,11 +48,11 @@ impl Default for Theme {
 impl Global for Theme {}
 
 impl Theme {
-    /// The program's theme, as given to [`App::theme`](crate::App::theme).
+    /// The program's theme, as given to [`Program::theme`](crate::Program::theme).
     ///
     /// # Panics
     ///
-    /// Outside a program started by [`App::run`](crate::App::run).
+    /// Outside a program started by [`Program::run`](crate::Program::run).
     pub fn get(cx: &App) -> Self {
         *cx.global::<Self>()
     }
@@ -51,7 +63,7 @@ impl Theme {
 ///
 /// # Panics
 ///
-/// Outside a program started by [`App::run`](crate::App::run).
+/// Outside a program started by [`Program::run`](crate::Program::run).
 pub fn card(cx: &App) -> Div {
     let theme = Theme::get(cx);
     div()
