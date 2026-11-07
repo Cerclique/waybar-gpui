@@ -155,7 +155,7 @@ fn spawn_detached(exe: &Path, args: &[String], log: Option<File>) -> io::Result<
 mod tests {
     use std::{
         io::{BufRead as _, BufReader},
-        os::unix::net::UnixListener,
+        os::{fd::AsFd as _, unix::net::UnixListener},
         sync::{Mutex, mpsc},
         time::Instant,
     };
@@ -163,7 +163,7 @@ mod tests {
     use std::path::PathBuf;
 
     use super::*;
-    use crate::ipc;
+    use crate::{files::Ownership, ipc};
 
     /// A fresh directory standing in for the runtime and state directories.
     struct Root(PathBuf);
@@ -227,6 +227,15 @@ mod tests {
             }
         });
         rx
+    }
+
+    /// A real daemon's side of `files`: the socket claimed by
+    /// [`ProgramFiles::claim`], stderr pointing at a file that isn't the log.
+    /// Returns the ownership and the commands it receives.
+    fn claimed(root: &Root, files: &ProgramFiles) -> (Ownership, async_channel::Receiver<Command>) {
+        let stderr = File::create(root.0.join("elsewhere")).unwrap();
+        let (tx, commands) = async_channel::unbounded();
+        (files.claim(stderr.as_fd(), tx).unwrap(), commands)
     }
 
     /// An executable with a chosen identity that records the daemons it
@@ -346,6 +355,39 @@ mod tests {
         assert_eq!(received.recv(), Ok(Command::Close));
         quit(&files).unwrap();
         assert_eq!(received.recv(), Ok(Command::Quit));
+    }
+
+    /// The client and the daemon find out who they are differently (a stat of
+    /// `current_exe()`, a stat of `/proc/self/exe`); they must agree, or every
+    /// click would replace the daemon.
+    #[test]
+    fn current_exe_has_the_identity_its_daemon_reports() {
+        assert_eq!(CurrentExe.identity(), Some(ExeId::running().unwrap()));
+    }
+
+    /// The real identity, through a claimed socket: the daemon is kept.
+    #[test]
+    fn toggle_sends_to_a_claimed_socket_of_the_same_executable() {
+        let root = Root::new("claimed-toggle");
+        let files = root.files();
+        let (ownership, commands) = claimed(&root, &files);
+        let exe = FakeExe::new(CurrentExe.identity());
+        toggle(&files, clock(), &exe).unwrap();
+        assert_eq!(commands.recv_blocking(), Ok(Command::Toggle(clock())));
+        assert_eq!(exe.started(), []);
+        ownership.give_up();
+    }
+
+    #[test]
+    fn close_and_quit_reach_a_claimed_socket() {
+        let root = Root::new("claimed-close");
+        let files = root.files();
+        let (ownership, commands) = claimed(&root, &files);
+        close(&files).unwrap();
+        assert_eq!(commands.recv_blocking(), Ok(Command::Close));
+        quit(&files).unwrap();
+        assert_eq!(commands.recv_blocking(), Ok(Command::Quit));
+        ownership.give_up();
     }
 
     /// No socket file, or one nobody answers on (left by a crashed daemon).
