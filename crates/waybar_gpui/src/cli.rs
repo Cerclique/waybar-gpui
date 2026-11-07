@@ -1,6 +1,6 @@
 //! The author's command line, owned entirely by the SDK.
 
-use std::{env, io, path::Path, process::ExitCode};
+use std::{env, ffi::OsString, io, path::Path, process::ExitCode};
 
 use crate::{
     App,
@@ -25,6 +25,11 @@ enum Invocation {
 /// Why a command line was rejected; the usage text follows the message.
 #[derive(Debug, PartialEq, Eq)]
 struct UsageError(String);
+
+/// The command line as UTF-8 strings; any other argument is a usage error.
+fn utf8_args(args: impl Iterator<Item = OsString>) -> Result<Vec<String>, UsageError> {
+    args.map(OsString::into_string).collect::<Result<_, _>>().map_err(|_| UsageError("arguments must be UTF-8".into()))
+}
 
 fn parse(args: &[String], panels: &Panels) -> Result<Invocation, UsageError> {
     let target = |rest: &[String]| match Target::from_words(rest.iter().cloned()) {
@@ -89,10 +94,9 @@ fn run(app: App, invocation: Invocation, usage_text: String) -> io::Result<()> {
 }
 
 pub fn main(app: App) -> ExitCode {
-    let exe = env::current_exe().unwrap_or_else(|_| env::args().next().unwrap_or_default().into());
-    let args: Vec<String> = env::args().skip(1).collect();
+    let exe = env::current_exe().unwrap_or_else(|_| env::args_os().next().unwrap_or_default().into());
     let usage_text = usage(&exe, &app.panels);
-    let invocation = match parse(&args, &app.panels) {
+    let invocation = match utf8_args(env::args_os().skip(1)).and_then(|args| parse(&args, &app.panels)) {
         Ok(invocation) => invocation,
         Err(UsageError(message)) => {
             eprint!("{}: {message}\n\n{usage_text}", app.id);
@@ -152,6 +156,15 @@ mod tests {
         assert_eq!(parse_words("toggle calendar"), Err(UsageError("unknown panel \"calendar\"".into())));
         assert_eq!(parse_words("daemon calendar"), Err(UsageError("unknown panel \"calendar\"".into())));
         assert_eq!(parse_words("quit now"), Err(UsageError("quit takes no arguments".into())));
+    }
+
+    #[test]
+    fn rejects_non_utf8_arguments() {
+        use std::os::unix::ffi::OsStringExt;
+        let args = [OsString::from("toggle"), OsString::from("clock"), OsString::from_vec(vec![0xff])];
+        assert_eq!(utf8_args(args.into_iter()), Err(UsageError("arguments must be UTF-8".into())));
+        let args = [OsString::from("toggle"), OsString::from("clock")];
+        assert_eq!(utf8_args(args.into_iter()), Ok(vec!["toggle".to_owned(), "clock".to_owned()]));
     }
 
     #[test]
