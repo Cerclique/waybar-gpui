@@ -109,7 +109,7 @@ The workflows live in [`.github/workflows/`](../.github/workflows/):
 | --- | --- | --- |
 | `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on the toolchain in `rust-toolchain.toml`, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `typos`: the spell check (`_typos.toml`); `workflows`: actionlint and zizmor over `.github/` (the workflows, the local action and Dependabot's config), failing on any finding; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
 | `pr-title.yml` | PRs (opened, edited, pushed to) | `conventional`: the PR title is a conventional commit |
-| `release.yml` | `v*` tag push | Creates the GitHub Release from the tag's `CHANGELOG.md` section, then publishes `waybar_gpui` on crates.io |
+| `release.yml` | `v*` tag push | Publishes `waybar_gpui` on crates.io, then creates the GitHub Release from the tag's `CHANGELOG.md` section |
 | `scheduled.yml` | Mondays, or by hand | `advisories`: `cargo deny check advisories` on the locked dependencies; `beta`: tests and clippy on Rust beta |
 
 Every job in `ci.yml` and `pr-title.yml` is required to merge, except
@@ -209,18 +209,29 @@ whose changelog names the new versions.
    git push origin vX.Y.Z
    ```
 
-   Pushing the tag runs the `Release` workflow: it creates the GitHub Release
-   with the tag's section of `CHANGELOG.md` as notes, and fails if that
-   section is missing or undated.
-5. The same workflow then publishes the SDK on crates.io from the tagged
-   commit (`cargo publish -p waybar_gpui`), with
+   Pushing the tag runs the `Release` workflow. It first publishes the SDK
+   on crates.io from the tagged commit (`cargo publish -p waybar_gpui`), with
    [trusted publishing](https://crates.io/docs/trusted-publishing): crates.io
-   trusts this repository's `release.yml`, so no token is stored. Check the
-   new version appears on crates.io.
+   trusts this repository's `release.yml`, so no token is stored. It fails
+   before publishing if the tag's section of `CHANGELOG.md` is missing or
+   undated.
 
-   It can't be undone: a published version can be yanked, never replaced
-   ([ADR 0004](adr/0004-published-on-crates-io.md)). If it fails, fix the
-   cause in a new patch release rather than moving the tag.
+   Publishing can't be undone: a published version can be yanked, never
+   replaced ([ADR 0004](adr/0004-published-on-crates-io.md)). If the
+   `publish` job fails, no Release is created; check crates.io:
+
+   - The version isn't there: for a transient failure (a crates.io outage),
+     re-run the job. Otherwise fix the cause in a pull request, then delete
+     the tag (`git push origin :vX.Y.Z`, `git tag -d vX.Y.Z`) and tag the
+     new merge commit on `main` as above.
+   - The version is there (the upload succeeded, then the job failed): don't
+     move the tag, and don't re-run the job, whose `cargo publish` would now
+     fail. Create the Release by hand, with the `gh release create` line
+     from `release.yml` and the tag's changelog section as notes.
+5. Once the version is on crates.io, the same workflow creates the GitHub
+   Release with the tag's section of `CHANGELOG.md` as notes. If only this
+   job fails, re-run it on its own. Check the new version appears on
+   crates.io and the Release on GitHub.
 
 v0.1.0 differs: the version is already 0.1.0 and its entry is hand-written,
 so its release pull request only replaces `Unreleased` in the entry's heading
