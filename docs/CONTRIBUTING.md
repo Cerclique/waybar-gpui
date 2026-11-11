@@ -28,7 +28,8 @@ vulnerability, do **not** open a public issue; follow
   and its clippy and rustfmt, are declared once, in
   [`rust-toolchain.toml`](../rust-toolchain.toml): rustup uses it in the
   repository whatever your default, and installs it on first use. CI builds
-  with the same file. To bump it, edit `channel` there, by hand: that one edit
+  with the same file. Dependabot proposes each new stable release as a
+  `chore(deps)` PR; to bump it yourself, edit `channel` there: that one edit
   moves CI and local builds together. The minimum supported Rust version
   (MSRV) is the `rust-version` in [`Cargo.toml`](../Cargo.toml), 1.95 (GPUI
   needs it); don't use language or library features newer than it. CI checks
