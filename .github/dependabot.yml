@@ -1,8 +1,11 @@
 # Weekly, one grouped PR per ecosystem. The prefixes make the PR titles
-# conventional commits: `build(deps): …` is listed in the changelog, `ci(deps): …`
-# is not. The starter template (template/) is left out: its manifest is a
-# Liquid template (Cargo.toml.liquid), and its SDK version moves with the
-# workspace's, as check-template.sh checks. A release waits a week before
+# conventional commits: `build(deps): …` is listed in the changelog,
+# `ci(deps): …` and `chore(deps): …` are not. The Rust toolchain
+# (rust-toolchain.toml) only moves CI and local builds, not what users build
+# with (`rust-version`), so its bumps stay out of the changelog. The starter
+# template (template/) is left out: its manifest is a Liquid template
+# (Cargo.toml.liquid), and its SDK version moves with the workspace's, as
+# check-template.sh checks. A release waits a week before
 # Dependabot proposes it: time for a broken or compromised one to be pulled.
 version: 2
 updates:
@@ -37,3 +40,12 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+  - package-ecosystem: rust-toolchain
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore
+      include: scope
