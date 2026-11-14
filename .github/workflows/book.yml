@@ -11,7 +11,7 @@ on:
     branches: [main]
     paths:
       - "docs/**"
-      - scripts/book-links.py
+      - scripts/book-preprocessor.py
       - .github/workflows/book.yml
   workflow_dispatch:
     inputs:
@@ -60,7 +60,7 @@ jobs:
       - run: mdbook build docs
         env:
           # The ref the book's links into the repository use
-          # (scripts/book-links.py), and the root its 404 page links to.
+          # (scripts/book-preprocessor.py), and the root its 404 page links to.
           BOOK_REF: ${{ inputs.latest && inputs.ref || 'main' }}
           MDBOOK_OUTPUT__HTML__SITE_URL: ${{ inputs.latest && '/waybar-gpui/' || '/waybar-gpui/dev/' }}
       - uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0

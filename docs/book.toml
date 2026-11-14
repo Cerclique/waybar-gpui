@@ -13,8 +13,8 @@ build-dir = "book"
 create-missing = false
 
 # Runs after the `{{#include}}` expansion, so it sees the included text too.
-[preprocessor.repo-links]
-command = "python3 ../scripts/book-links.py"
+[preprocessor.guide]
+command = "python3 ../scripts/book-preprocessor.py"
 after = ["links"]
 
 [output.html]

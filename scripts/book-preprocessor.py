@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""mdbook preprocessor (docs/book.toml): the guide's links that leave the book.
+"""The guide site's mdbook preprocessor (docs/book.toml).
 
-The guide's pages link to the rest of the repository with relative links
-(`../GLOSSARY.md`, `../../examples/…`), which work on GitHub and for the
-authors' agent skill but point nowhere on the site. This rewrites them:
+Links that leave the book: the guide's pages link to the rest of the
+repository with relative links (`../GLOSSARY.md`, `../../examples/…`), which
+work on GitHub and for the authors' agent skill but point nowhere on the site.
+This rewrites them:
 
 - `../GLOSSARY.md` becomes the book's own glossary page (`glossary.md`,
   which includes it);

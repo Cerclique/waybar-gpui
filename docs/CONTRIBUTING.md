@@ -92,9 +92,9 @@ page, so a new page goes there too. The glossary enters the book through
 the latter.
 
 - Link from a page to the rest of the repository with ordinary relative links
-  (`../../examples/…`): they work on GitHub, and on the site
-  [`scripts/book-links.py`](../scripts/book-links.py) turns them into GitHub
-  links at the version being built.
+  (`../../examples/…`): they work on GitHub, and on the site the book's
+  preprocessor, [`scripts/book-preprocessor.py`](../scripts/book-preprocessor.py),
+  turns them into GitHub links at the version being built.
 - Preview with live reload: `mdbook serve docs`
   ([mdbook](https://rust-lang.github.io/mdBook/guide/installation.html), and
   `python3` for that script).

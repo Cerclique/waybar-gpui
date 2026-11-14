@@ -78,7 +78,7 @@ placeholders by hand.
 | `examples/example-panels` | A program built on the SDK the way yours would be; `waybar/` holds the test bars `make dev` runs. |
 | `template/` | The cargo-generate starter. |
 | `skills/waybar-gpui` | The agent skill authors copy into their program ([guide](docs/guide/using-an-agent.md)). |
-| `scripts/` | `check-template.sh`, shared by CI and `make check-template`; `check-skill.sh`, run by CI; `book-links.py`, the guide site's link rewriter. |
+| `scripts/` | `check-template.sh`, shared by CI and `make check-template`; `check-skill.sh`, run by CI; `book-preprocessor.py`, the guide site's mdbook preprocessor. |
 | `docs/` | The guide (and its site, `book.toml`), the [architecture](docs/architecture.md) and ADRs. |
 
 ```sh
