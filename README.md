@@ -86,7 +86,7 @@ make dev              # a second Waybar (top + left bars) wired to example-panel
 make test             # unit tests and doctests
 make lint             # clippy without and with --all-features, cargo doc -D warnings
 make check-template   # the starter template, as CI checks it (needs cargo-generate)
-make book             # the guide's site into docs/book/, links checked (needs mdbook, lychee)
+make book             # the guide's site into docs/book/, links checked (needs mdbook, python3, lychee)
 ```
 
 ## Versions

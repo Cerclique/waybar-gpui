@@ -61,7 +61,7 @@ jobs:
         env:
           # The ref the book's links into the repository use
           # (scripts/book-preprocessor.py), and the root its 404 page links to.
-          BOOK_REF: ${{ inputs.latest && inputs.ref || 'main' }}
+          BOOK_REF: ${{ inputs.ref || 'main' }}
           MDBOOK_OUTPUT__HTML__SITE_URL: ${{ inputs.latest && '/waybar-gpui/' || '/waybar-gpui/dev/' }}
       - uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
