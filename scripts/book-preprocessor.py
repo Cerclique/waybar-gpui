@@ -34,10 +34,13 @@ REWRITES = {"docs/GLOSSARY.md": f"{SRC}/glossary.md"}
 INLINE = re.compile(r"(\]\()(\.\./[^)\s]+)(\))")
 DEFINITION = re.compile(r"^(\s*\[[^\]]+\]:\s*)(\.\./\S+)()", re.MULTILINE)
 # A fenced code block, its fence at the start of a line.
-FENCED = re.compile(r"^(?P<fence>`{3,}|~{3,})[^\n]*\n(?P<body>.*?)^(?P=fence)[ \t]*$", re.MULTILINE | re.DOTALL)
+FENCED = re.compile(
+    r"^(?P<open>(?P<fence>`{3,}|~{3,})[^\n]*\n)(?P<body>.*?)(?P<close>^(?P=fence)[ \t]*$)",
+    re.MULTILINE | re.DOTALL,
+)
 
 
-def rewrite(content, chapter_dir, repo_url, ref):
+def rewrite_links(content, chapter_dir, repo_url, ref):
     def link(match):
         target, _, fragment = match.group(2).partition("#")
         fragment = f"#{fragment}" if fragment else ""
@@ -54,10 +57,7 @@ def rewrite(content, chapter_dir, repo_url, ref):
 
 def dedent(content):
     def block(match):
-        start, end = match.span("body")
-        whole = match.group(0)
-        offset = match.start()
-        return whole[: start - offset] + textwrap.dedent(match.group("body")) + whole[end - offset :]
+        return match["open"] + textwrap.dedent(match["body"]) + match["close"]
 
     return FENCED.sub(block, content)
 
@@ -79,7 +79,7 @@ def main():
         source = chapter.get("source_path")
         if source:
             chapter_dir = posixpath.dirname(source)
-            content = rewrite(chapter["content"], chapter_dir, repo_url, ref)
+            content = rewrite_links(chapter["content"], chapter_dir, repo_url, ref)
             chapter["content"] = dedent(content)
     json.dump(book, sys.stdout)
 
