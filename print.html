@@ -1,0 +1,1020 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>waybar-gpui guide</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Write GPUI panels that open as popovers from Waybar bar modules on Hyprland.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-59846cee.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-62b8afe8.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">waybar-gpui guide</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/Cerclique/waybar-gpui" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="waybar-gpui-guide"><a class="header" href="#waybar-gpui-guide">waybar-gpui guide</a></h1>
+<p>For <strong>authors</strong>: people writing their own panels with the <code>waybar_gpui</code> SDK,
+in their own repository. Terms (bar module, panel, popover, card, backdrop,
+program, program ID…) are defined in the <a href="#waybar-gpui-popovers">glossary</a>.</p>
+<p>New here? Start with the quickstart in the <a href="https://github.com/Cerclique/waybar-gpui/blob/main/README.md">README</a>, then
+<a href="#writing-a-panel">Writing a panel</a>.</p>
+<p>Which version: the guide’s <a href="https://cerclique.github.io/waybar-gpui/">site</a>
+is for the latest release, and its <a href="https://cerclique.github.io/waybar-gpui/dev/"><code>/dev/</code></a>
+copy follows <code>main</code>, as <code>docs/guide/</code> on the <code>main</code> branch does. For another
+release, read <code>docs/guide/</code> in the repository at its tag (<code>vX.Y.Z</code>).</p>
+<h2 id="building-panels"><a class="header" href="#building-panels">Building panels</a></h2>
+<ul>
+<li><a href="#writing-a-panel">Writing a panel</a>: the <code>Panel</code> trait, <code>Program</code>, the card,
+sizing, GPUI basics you’ll need.</li>
+<li><a href="#panel-arguments">Panel arguments</a>: one panel, several bar modules.</li>
+<li><a href="#live-data-and-state">Live data and state</a>: timers, event streams, state
+that survives a close.</li>
+<li><a href="#theming">Theming</a>: <code>Theme</code>, <code>card()</code>, your own colours.</li>
+<li><a href="#components">Components</a>: gpui-component widgets, and their limits.</li>
+<li><a href="#closing-and-esc">Closing and Esc</a>: how popovers close, and how a panel
+takes part.</li>
+<li><a href="#using-a-coding-agent">Using a coding agent</a>: a skill that points your agent at
+the right docs and source for your version.</li>
+</ul>
+<h2 id="shipping"><a class="header" href="#shipping">Shipping</a></h2>
+<ul>
+<li><a href="#dev-loop">Dev loop</a>: <code>preview</code>, trying it on your bar, logs, panics.</li>
+<li><a href="#installing">Installing</a>: <code>cargo install</code>, the Waybar and Hyprland config.</li>
+<li><a href="#using-a-waybar-gpui-program">Using a waybar-gpui program</a>: for people who install
+your program; link it from your README.</li>
+</ul>
+<h2 id="background"><a class="header" href="#background">Background</a></h2>
+<ul>
+<li><a href="#how-it-works">How it works</a>: what happens on a click, in plain terms.</li>
+<li><a href="#limits">Limits</a>: what isn’t possible, and versioning.</li>
+<li><a href="#troubleshooting">Troubleshooting</a>: symptoms and fixes.</li>
+<li><a href="#waybar-gpui-popovers">Glossary</a>: the terms, defined.</li>
+</ul>
+<p>Contributors changing the SDK itself: see
+<a href="https://github.com/Cerclique/waybar-gpui/blob/main/docs/architecture.md"><code>docs/architecture.md</code></a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="writing-a-panel"><a class="header" href="#writing-a-panel">Writing a panel</a></h1>
+<p>A <strong>panel</strong> is a GPUI view. Your <strong>program</strong> registers one or more panels and
+hands control to the SDK, which turns a click on a bar module into a
+<strong>popover</strong> showing the panel.</p>
+<h2 id="the-smallest-program"><a class="header" href="#the-smallest-program">The smallest program</a></h2>
+<pre><code class="language-rust">use waybar_gpui::{card, gpui::{prelude::*, Context, Window}, Panel};
+
+struct Hello;
+
+impl Panel for Hello {
+    const NAME: &amp;'static str = "hello";
+    fn new(_args: &amp;[String], _window: &amp;mut Window, _cx: &amp;mut Context&lt;Self&gt;) -&gt; Self {
+        Hello
+    }
+}
+
+impl Render for Hello {
+    fn render(&amp;mut self, _window: &amp;mut Window, cx: &amp;mut Context&lt;Self&gt;) -&gt; impl IntoElement {
+        card(cx).child("Hello")
+    }
+}
+
+fn main() -&gt; std::process::ExitCode {
+    waybar_gpui::Program::new("my-panels").panel::&lt;Hello&gt;().run()
+}</code></pre>
+<p>The starter template generates exactly this (see the
+<a href="https://github.com/Cerclique/waybar-gpui/blob/main/README.md#quickstart">README</a>).</p>
+<ul>
+<li><strong><code>Panel::NAME</code></strong> is what a bar module’s <code>on-click</code> names:
+<code>my-panels toggle hello</code>.</li>
+<li><strong><code>Panel::new</code></strong> builds the panel each time its popover opens. The panel is
+dropped when the popover closes; nothing is kept between opens (see
+<a href="#live-data-and-state">Live data and state</a> for what to do instead).
+<code>args</code> are the <a href="#panel-arguments">panel arguments</a>.</li>
+<li><strong><code>Render</code></strong> is plain GPUI. <code>card(cx)</code> gives the standard rounded, bordered,
+themed rectangle; it’s optional (<a href="#theming">Theming</a>).</li>
+<li><strong><code>Program::new(id)</code></strong> names your program. The <strong>program ID</strong> names its socket,
+its log file and its Hyprland layer namespace, so pick it once and keep it.
+It must match <code>^[a-z0-9][a-z0-9-]*$</code>; anything else panics at start.</li>
+<li><strong><code>.panel::&lt;P&gt;()</code></strong> registers a panel; two panels with the same <code>NAME</code> panic.</li>
+<li><strong><code>.run()</code></strong> owns the command line: <code>toggle</code>, <code>close</code>, <code>quit</code>, <code>preview</code>,
+<code>daemon</code>, <code>help</code>. Run your program with no arguments to see the usage and an
+<code>on-click</code> line per panel. If you want commands of your own, handle them in
+<code>main</code> before calling <code>run</code>.</li>
+</ul>
+<h2 id="gpui"><a class="header" href="#gpui">GPUI</a></h2>
+<p>The SDK re-exports GPUI as <code>waybar_gpui::gpui</code>; don’t add <code>gpui</code> (or
+<code>gpui-pre</code>) to your own <code>Cargo.toml</code>, or you’ll get two copies that don’t fit
+together. GPUI is pre-1.0 and the SDK pins an exact snapshot: the
+<a href="https://docs.rs/waybar_gpui">SDK’s API</a> and
+<a href="https://docs.rs/gpui-pre/0.3.11">GPUI’s</a> are on docs.rs, and
+<code>cargo doc --open</code> in your project shows both offline.</p>
+<p>GPUI’s derive macros (<code>#[derive(IntoElement)]</code> and friends) expand to paths
+starting with <code>gpui::</code>. In any module that uses them, bring the name into
+scope:</p>
+<pre><code class="language-rust">use waybar_gpui::gpui;</code></pre>
+<p><a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/workspace.rs"><code>workspace.rs</code></a> in the example
+panels shows a <code>#[derive(IntoElement)]</code> row.</p>
+<h2 id="size"><a class="header" href="#size">Size</a></h2>
+<p>Don’t declare a size. The <strong>card</strong> fits its content and is placed next to the
+clicked bar module, centred on the cursor. Cap it yourself if it can grow, and
+scroll the overflow:</p>
+<pre><code class="language-rust">card(cx)
+    .w(gpui::px(340.))
+    .max_h(gpui::px(420.))
+    .child(div().id("rows").flex().flex_col().overflow_y_scroll().children(rows))</code></pre>
+<p>The runtime also keeps the card inside the monitor’s usable area; past that,
+scrolling is up to you. When content grows while the popover is open, the card
+is re-placed on the next frame.</p>
+<h2 id="several-panels"><a class="header" href="#several-panels">Several panels</a></h2>
+<p>One program can hold many panels:</p>
+<pre><code class="language-rust">waybar_gpui::Program::new("my-panels")
+    .panel::&lt;Clock&gt;()
+    .panel::&lt;Volume&gt;()
+    .run()</code></pre>
+<p>Only one popover is open at a time, across all programs: opening one closes
+the other.</p>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<ul>
+<li>Try it without Waybar: <a href="#dev-loop">Dev loop</a>.</li>
+<li>Patterns, each shown in one runnable example:
+<a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/main.rs"><code>examples/example-panels</code></a>.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="panel-arguments"><a class="header" href="#panel-arguments">Panel arguments</a></h1>
+<p>The words after the panel’s name in <code>on-click</code> are its <strong>panel arguments</strong>,
+handed to <code>Panel::new</code> as <code>&amp;[String]</code>:</p>
+<pre><code class="language-jsonc">"custom/clock-paris": { "on-click": "~/.cargo/bin/my-panels toggle clock Paris 1", … },
+"custom/clock-tokyo": { "on-click": "~/.cargo/bin/my-panels toggle clock Tokyo 9", … },
+</code></pre>
+<pre><code class="language-rust">impl Panel for ClockPanel {
+    const NAME: &amp;'static str = "clock";
+
+    fn new(args: &amp;[String], window: &amp;mut Window, cx: &amp;mut Context&lt;Self&gt;) -&gt; Self {
+        let label = args.first().cloned().unwrap_or_else(|| "UTC".into());
+        let offset_hours = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+        …
+    }
+}</code></pre>
+<p>Full example: <a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/clock.rs"><code>clock.rs</code></a>.</p>
+<ul>
+<li><strong>You parse them.</strong> The SDK passes plain strings; decide your own defaults
+and what to do with bad input (fall back, or show an error in the card).</li>
+<li><strong>Toggle compares them.</strong> A click closes the popover if the <em>same panel with
+the same arguments</em> is open; otherwise it opens the panel with the new
+arguments. So “Paris” and “Tokyo” are two different popovers of one panel.</li>
+<li><strong>Words, not a shell string.</strong> Waybar runs <code>on-click</code> through <code>/bin/sh -c</code>,
+so quoting works as in a shell (<code>toggle note "two words"</code>). Arguments can’t
+contain tabs or newlines.</li>
+<li><strong><code>preview</code> takes them too:</strong> <code>cargo run -- preview clock Tokyo 9</code>.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="live-data-and-state"><a class="header" href="#live-data-and-state">Live data and state</a></h1>
+<p>The SDK adds nothing here: it’s plain GPUI. Two facts shape everything:</p>
+<ul>
+<li>A panel is <strong>built when its popover opens and dropped when it closes</strong>.</li>
+<li>Your program’s <strong>daemon stays running</strong> between opens, until <code>quit</code> or logout.</li>
+</ul>
+<p>So: work tied to one open belongs to the panel; anything that must outlive a
+close belongs to the daemon, in a GPUI <code>Global</code>.</p>
+<h2 id="updating-while-open"><a class="header" href="#updating-while-open">Updating while open</a></h2>
+<p>Store the <code>Task</code> in a field. Dropping the panel drops the task, which stops it;
+there’s nothing to clean up.</p>
+<p><strong>From a timer</strong>, as in <a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/clock.rs"><code>clock.rs</code></a>:</p>
+<pre><code class="language-rust">pub struct ClockPanel {
+    _tick: Task&lt;()&gt;,
+    …
+}
+
+let _tick = cx.spawn(async move |this, cx| loop {
+    cx.background_executor().timer(Duration::from_secs(1)).await;
+    if this.update(cx, |_, cx| cx.notify()).is_err() {
+        return; // the panel is gone
+    }
+});</code></pre>
+<p><strong>From a blocking source</strong> (a socket, a pipe, a D-Bus call), as in
+<a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/workspace.rs"><code>workspace.rs</code></a>, which follows
+Hyprland’s event socket: block on a background thread, update on the
+foreground one. (<code>hypr</code> is the example’s own small Hyprland client,
+<a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/hypr.rs"><code>hypr.rs</code></a>; the SDK doesn’t provide
+one, so bring your own or a crate.)</p>
+<pre><code class="language-rust">let _events = cx.spawn(async move |this, cx| {
+    let Ok(mut events) = hypr::Events::connect() else { return };
+    loop {
+        let (back, event) = cx
+            .background_executor()
+            .spawn(async move { let event = events.next(); (events, event) })
+            .await;
+        events = back;
+        let Some(Ok(event)) = event else { return };
+        if this.update(cx, |panel, cx| { panel.refresh(); cx.notify(); }).is_err() {
+            return;
+        }
+    }
+});</code></pre>
+<p>After the popover closes, a background read that is already waiting keeps its
+thread until the next event arrives; then the update fails and the loop ends.
+That’s harmless for event streams that tick often. For sources that can stay
+silent for a long time, prefer a timeout or a non-blocking API.</p>
+<h2 id="state-that-survives-a-close"><a class="header" href="#state-that-survives-a-close">State that survives a close</a></h2>
+<p>Put it in a GPUI <code>Global</code>. It lives in the daemon, so it’s there on the next
+open, until the daemon quits (or is replaced by a rebuilt binary, see
+<a href="#dev-loop">Dev loop</a>).</p>
+<pre><code class="language-rust">#[derive(Default)]
+struct Opens(u32);
+impl Global for Opens {}
+
+// in Panel::new
+let opens = {
+    let opens = cx.default_global::&lt;Opens&gt;();
+    opens.0 += 1;
+    opens.0
+};</code></pre>
+<p><a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/clock.rs"><code>clock.rs</code></a> counts its opens this
+way. For anything that must survive the daemon too (settings, history), write
+it to a file yourself.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="theming"><a class="header" href="#theming">Theming</a></h1>
+<p>The runtime paints nothing: the popover’s surface is transparent, and the
+<strong>card</strong> is whatever your panel draws. The SDK gives you two opt-in pieces.</p>
+<h2 id="theme"><a class="header" href="#theme"><code>Theme</code></a></h2>
+<p>A plain struct of colours, stored as a GPUI global and read with
+<code>Theme::get(cx)</code>. The default is Catppuccin Mocha.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Used for</th></tr>
+</thead>
+<tbody>
+<tr><td><code>base</code></td><td>Card background (translucent by default).</td></tr>
+<tr><td><code>surface</code></td><td>Raised rows, selected items.</td></tr>
+<tr><td><code>overlay</code></td><td>Borders, hover.</td></tr>
+<tr><td><code>text</code></td><td>Main text.</td></tr>
+<tr><td><code>subtext</code></td><td>Secondary text.</td></tr>
+<tr><td><code>accent</code></td><td>Highlights, focus rings, primary buttons.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Give your program its own by changing the default’s colours. (<code>Theme</code> may
+gain colours in a later release, so a <code>Theme { … }</code> literal doesn’t compile.)</p>
+<pre><code class="language-rust">use waybar_gpui::{gpui::{rgb, rgba}, Theme};
+
+let mut theme = Theme::default();
+theme.base = rgba(0x2e3440f0);
+theme.accent = rgb(0x88c0d0);
+waybar_gpui::Program::new("my-panels").theme(theme).panel::&lt;Hello&gt;().run()</code></pre>
+<p>Use it in your panels so they follow it:</p>
+<pre><code class="language-rust">let theme = Theme::get(cx);
+div().text_color(theme.subtext).child("secondary")</code></pre>
+<h2 id="card"><a class="header" href="#card"><code>card()</code></a></h2>
+<p><code>card(cx)</code> returns a <code>div</code> with the standard chrome: a column with gaps and
+padding, rounded corners, a 1 px <code>overlay</code> border, <code>base</code> background, <code>text</code>
+colour, small text. It’s a starting point you can chain onto
+(<code>card(cx).w(px(300.))</code>), or skip entirely and draw your own shape: the
+runtime places whatever your panel’s root element is.</p>
+<h2 id="waybars-style"><a class="header" href="#waybars-style">Waybar’s style</a></h2>
+<p>Your panels don’t read Waybar’s <code>style.css</code>; match its colours through
+<code>Theme</code>. The optional Hyprland rule in <a href="#hyprland">Installing</a>
+adds blur behind the card.</p>
+<p>With the <a href="#components"><code>components</code></a> feature, <code>Theme</code> also colours
+gpui-component’s widgets.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="components"><a class="header" href="#components">Components</a></h1>
+<p><a href="https://github.com/longbridge/gpui-component">gpui-component</a> is a widget
+library for GPUI: buttons, switches, inputs, dropdowns, lists. The SDK offers
+it behind an opt-in feature:</p>
+<pre><code class="language-toml">waybar_gpui = { version = "0.2.0", features = ["components"] }
+</code></pre>
+<p>(The starter template asks “Use gpui-component widgets?” and writes this for
+you.) It’s then available as <code>waybar_gpui::components</code>; don’t depend on
+<code>gpui-component</code> yourself, for the same reason as GPUI.</p>
+<pre><code class="language-rust">use waybar_gpui::components::{button::{Button, ButtonVariants as _}, switch::Switch};
+
+card(cx)
+    .child(Switch::new("wifi").checked(self.wifi).on_click(…))
+    .child(Button::new("done").primary().label("Done").on_click(|_, _, cx| close(cx)))</code></pre>
+<p>Full example with switches and a dropdown:
+<a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/controls.rs"><code>controls.rs</code></a>.</p>
+<h2 id="what-the-runtime-does-for-you"><a class="header" href="#what-the-runtime-does-for-you">What the runtime does for you</a></h2>
+<ul>
+<li>Initialises the library and registers its icon assets.</li>
+<li>Copies your <a href="#theming"><code>Theme</code></a> into gpui-component’s theme at startup, so
+widgets match your cards. Adjust gpui-component’s theme in code afterwards
+if you want finer control.</li>
+</ul>
+<h2 id="what-works-what-doesnt"><a class="header" href="#what-works-what-doesnt">What works, what doesn’t</a></h2>
+<ul>
+<li><strong>Works:</strong> widgets, menus and dropdowns, in-window popovers. A menu may
+overflow the card; clicking it doesn’t dismiss the popover.</li>
+<li><strong>Doesn’t:</strong> gpui-component <strong>dialogs and notifications</strong>. They need its
+<code>Root</code> view, which on Linux draws a window border and shadow around layer
+surfaces and veils the whole monitor, so the runtime doesn’t use it. Build a
+“dialog” as a second view inside your panel instead.</li>
+</ul>
+<h2 id="costs"><a class="header" href="#costs">Costs</a></h2>
+<p>About 110 more crates to build and ~10 MB more binary. Programs without the
+feature pay nothing.</p>
+<h2 id="versions"><a class="header" href="#versions">Versions</a></h2>
+<p>gpui-component is pinned exactly, together with GPUI: the three pins always
+move together, and each move is a breaking SDK release (see
+<a href="#versions-1">Limits</a>).</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="closing-and-esc"><a class="header" href="#closing-and-esc">Closing and Esc</a></h1>
+<h2 id="how-a-popover-closes"><a class="header" href="#how-a-popover-closes">How a popover closes</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>What happens</th><th>Who decides</th></tr>
+</thead>
+<tbody>
+<tr><td>A click on the <strong>backdrop</strong> (anywhere outside the card, on any monitor, the bar included)</td><td>Always closes; a panel can’t prevent it.</td></tr>
+<tr><td>Esc</td><td>The panel first, if it has focus (below). Otherwise closes.</td></tr>
+<tr><td>The panel calls <code>close(cx)</code></td><td>The panel.</td></tr>
+<tr><td>A click on the bar, the same bar module included</td><td>Closes, as a backdrop click (see the note below).</td></tr>
+<tr><td>Another popover opens (any program)</td><td>The old one closes first: one popover at a time.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Note: while a popover is open, the backdrop covers Waybar on every monitor,
+so Waybar can’t be clicked. Clicking the bar (the same bar module or another,
+on any monitor) is a click on the backdrop: it only closes the popover. A
+second click opens the new panel. See <a href="#how-it-works">How it works</a>.</p>
+<h2 id="closing-from-the-panel"><a class="header" href="#closing-from-the-panel">Closing from the panel</a></h2>
+<p>Call <code>close(cx)</code> from any event handler, typically after doing the thing the
+user clicked:</p>
+<pre><code class="language-rust">div()
+    .id("row")
+    .on_click(move |_, _, cx| {
+        std::process::Command::new("hyprctl").args(["dispatch", "…"]).spawn().ok();
+        close(cx);
+    })</code></pre>
+<p>The close is deferred until the current event finishes, so it’s safe inside
+the panel’s own handlers.</p>
+<p><strong>Actions are yours.</strong> The SDK only provides what needs the runtime (closing
+the popover). Running commands, Hyprland dispatches, D-Bus calls are your own
+code: <code>std::process::Command</code>, a client crate, anything.</p>
+<h2 id="esc"><a class="header" href="#esc">Esc</a></h2>
+<p>Esc goes to the focused element first and bubbles up to the runtime, which
+closes the popover. To handle keys yourself:</p>
+<ol>
+<li>Focus one of your elements in <code>Panel::new</code> (otherwise nothing of yours has
+focus and Esc goes straight to the runtime).</li>
+<li>Handle the key; call <code>cx.stop_propagation()</code> to keep the popover open.</li>
+</ol>
+<pre><code class="language-rust">fn new(_args: &amp;[String], window: &amp;mut Window, cx: &amp;mut Context&lt;Self&gt;) -&gt; Self {
+    let focus = cx.focus_handle();
+    window.focus(&amp;focus, cx);
+    Self { focus, editing: false }
+}
+
+// in render
+card(cx)
+    .track_focus(&amp;self.focus)
+    .on_key_down(cx.listener(|this, event: &amp;gpui::KeyDownEvent, _, cx| {
+        if event.keystroke.key == "escape" &amp;&amp; this.editing {
+            this.editing = false;
+            cx.notify();
+            cx.stop_propagation(); // first Esc leaves edit mode, the popover stays
+        }
+    }))</code></pre>
+<p><a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/clock.rs"><code>clock.rs</code></a> does this with an edit
+mode (<code>e</code> enters it, the first Esc leaves it, the second closes).</p>
+<p>Your panel can’t stop a backdrop click: with Waybar unclickable while a
+popover is open, that guarantees the user can always get out.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="using-a-coding-agent"><a class="header" href="#using-a-coding-agent">Using a coding agent</a></h1>
+<p>GPUI is pre-1.0, so a coding agent’s memory of its API is usually wrong for
+the snapshot the SDK pins, and it knows little about <code>waybar_gpui</code>. The
+repository ships an agent skill,
+<a href="https://github.com/Cerclique/waybar-gpui/blob/main/skills/waybar-gpui/SKILL.md"><code>skills/waybar-gpui/SKILL.md</code></a>, that sets
+it straight. It holds no API of its own: it makes the agent find your
+project’s <code>waybar_gpui</code> and GPUI versions, then read the guide, the SDK’s
+source and GPUI’s source for exactly those versions. It also tells it:</p>
+<ul>
+<li>the words to use (panel, bar module, popover…: the
+<a href="#waybar-gpui-popovers">glossary</a>);</li>
+<li>the steps to add a panel, ending in <code>preview</code>;</li>
+<li>to check your Waybar and Hyprland versions before editing their config;</li>
+<li>to warn you before running <code>preview</code> or <code>toggle</code>, which open popovers on
+your screen.</li>
+</ul>
+<p>One file serves every version: an old copy keeps working after you upgrade the
+SDK, and the guide for your version wins wherever the two disagree.</p>
+<h2 id="claude-code"><a class="header" href="#claude-code">Claude Code</a></h2>
+<p>Copy the skill into your program’s repository, so everyone working on it gets
+it:</p>
+<pre><code class="language-sh">mkdir -p .claude/skills/waybar-gpui
+curl -fsSL -o .claude/skills/waybar-gpui/SKILL.md \
+  https://raw.githubusercontent.com/Cerclique/waybar-gpui/v0.2.0/skills/waybar-gpui/SKILL.md
+</code></pre>
+<p>or into <code>~/.claude/skills/waybar-gpui/</code> for all your projects. Claude Code
+uses it on its own when you work on a panel; <code>/waybar-gpui</code> invokes it by
+hand.</p>
+<h2 id="other-agents"><a class="header" href="#other-agents">Other agents</a></h2>
+<p>Agents that read skills (<code>SKILL.md</code> with a <code>name</code> and <code>description</code>) take the
+same file in their own skills folder. For the rest, save it anywhere in the
+repository and point the agent’s instructions file at it, e.g. in
+<code>AGENTS.md</code>:</p>
+<pre><code class="language-markdown">Before working on a panel, read and follow `docs/waybar-gpui-skill.md`.
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="dev-loop"><a class="header" href="#dev-loop">Dev loop</a></h1>
+<h2 id="preview-no-waybar-needed"><a class="header" href="#preview-no-waybar-needed">Preview, no Waybar needed</a></h2>
+<pre><code class="language-sh">cargo run -- preview hello            # or: preview clock Tokyo 9
+</code></pre>
+<p><code>preview</code> opens the panel at your cursor, logs to the terminal, and <strong>exits
+when the popover closes</strong> (Esc, a click outside, or <code>close(cx)</code>). It doesn’t
+touch your program’s running daemon, but it does close any open popover first.
+It has no socket, so the reverse doesn’t hold: a <code>toggle</code> from a keybind or
+script, or another program opening its popover, can’t close a preview, and you
+get two popovers. (Clicks still close it, like any popover.)
+Exit status: 0 after a normal close, 1 if the panel couldn’t open, 2 for a bad
+command line.</p>
+<p>To rebuild and reopen on save, let a file watcher restart the preview, for
+example <a href="https://github.com/watchexec/watchexec">watchexec</a> or
+<a href="https://github.com/watchexec/cargo-watch">cargo-watch</a>:</p>
+<pre><code class="language-sh">watchexec -r -e rs -- cargo run -- preview hello
+cargo watch -x 'run -- preview hello'
+</code></pre>
+<h2 id="on-your-real-bar"><a class="header" href="#on-your-real-bar">On your real bar</a></h2>
+<p>Point a bar module at your build directly:</p>
+<pre><code class="language-jsonc">"custom/hello": {
+  "exec": "echo hello",
+  "interval": "once",
+  "on-click": "/path/to/your-repo/target/debug/my-panels toggle hello",
+},
+</code></pre>
+<p>Then just <code>cargo build</code> and click: a daemon started from an older binary
+<strong>replaces itself</strong> on the next click, so you never need to stop it by hand.
+This also works between a <code>target/debug</code> build and an installed copy with the
+same program ID: whichever one a click runs takes over. <code>my-panels quit</code>
+remains if you want the daemon gone.</p>
+<h2 id="logs"><a class="header" href="#logs">Logs</a></h2>
+<p>A daemon started by a click logs to
+<code>~/.local/state/waybar-gpui/&lt;id&gt;.log</code> (<code>$XDG_STATE_HOME/waybar-gpui/&lt;id&gt;.log</code>),
+emptied each time a click starts a new daemon:</p>
+<pre><code class="language-sh">tail -f ~/.local/state/waybar-gpui/my-panels.log
+</code></pre>
+<p>Everything written to stderr lands there: the runtime’s lines
+(<code>my-panels: opened hello on DP-1 (Top bar)</code>,
+<code>my-panels: closed hello (escape)</code>), your <code>eprintln!</code>, any logger you set
+up (<code>env_logger</code>, <code>tracing-subscriber</code>), and panic messages. <code>preview</code>, and
+<code>daemon</code> run by hand, log to the terminal instead. The SDK has no logging
+dependency; use whatever you like.</p>
+<h2 id="panics"><a class="header" href="#panics">Panics</a></h2>
+<p>A panic in your panel takes the daemon down: the popover disappears and the
+panic message is in the log. The next click starts a fresh daemon. Nothing
+else to do.</p>
+<h2 id="example-panels"><a class="header" href="#example-panels">Example panels</a></h2>
+<p>This repository’s <a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/main.rs"><code>examples/example-panels</code></a>
+is a program built the way yours is, with one panel per pattern. Clone the
+repo and run <code>make dev</code> to get a second Waybar wired to them, or
+<code>cargo run -p example-panels -- preview clock Paris 1</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="installing"><a class="header" href="#installing">Installing</a></h1>
+<h2 id="build-and-install"><a class="header" href="#build-and-install">Build and install</a></h2>
+<p>In your program’s repository:</p>
+<pre><code class="language-sh">cargo install --path . --locked
+</code></pre>
+<p>This puts the binary in <code>~/.cargo/bin</code>. Commit your <code>Cargo.lock</code> so <code>--locked</code>
+installs exactly what you tested. To update later, pull and run the same
+command: the next click replaces the running daemon with the new binary, with
+no Waybar reload.</p>
+<h2 id="waybar"><a class="header" href="#waybar">Waybar</a></h2>
+<p>Run your program with no arguments: the usage text ends with a ready-to-paste
+<code>on-click</code> line per panel, using the real path of the binary:</p>
+<pre><code class="language-text">panels and their Waybar on-click lines:
+  hello        "on-click": "/home/me/.cargo/bin/my-panels toggle hello"
+</code></pre>
+<p>Waybar started by Hyprland usually doesn’t have <code>~/.cargo/bin</code> on its <code>PATH</code>,
+so use the full path. <code>~</code> works too: Waybar runs <code>on-click</code> through
+<code>/bin/sh -c</code>. A bar module for it, in <code>~/.config/waybar/config.jsonc</code>:</p>
+<pre><code class="language-jsonc">"modules-right": ["custom/hello", …],
+
+"custom/hello": {
+  "exec": "echo hello",        // what the bar shows; any custom/* program works
+  "interval": "once",
+  "exec-on-event": false,      // no need to re-run exec after a click
+  "on-click": "~/.cargo/bin/my-panels toggle hello",
+},
+</code></pre>
+<p>The bar module’s own output (<code>exec</code>, <code>format</code>, styling) is ordinary Waybar
+<code>custom/*</code> configuration (<code>man 5 waybar-custom</code>); the SDK only handles the
+popover. If <code>~/.cargo/bin</code> <em>is</em> on Waybar’s <code>PATH</code>, the bare name works:
+<code>"on-click": "my-panels toggle hello"</code>.</p>
+<p>After editing the config, reload Waybar: <code>pkill -SIGUSR2 waybar</code>.</p>
+<h2 id="hyprland"><a class="header" href="#hyprland">Hyprland</a></h2>
+<p>Nothing is required: the popover is a layer surface that places itself. One
+optional rule, for every waybar-gpui program at once, adds blur behind the
+card and a fade (Hyprland 0.55+ Lua config, <code>~/.config/hypr/hyprland.lua</code>):</p>
+<pre><code class="language-lua">hl.layer_rule({
+  match = { namespace = "^waybar-gpui:" },
+  blur = true,
+  ignore_alpha = 0.3,   -- blur only the card, not the transparent rest
+  animation = "fade",
+})
+</code></pre>
+<p>For one program only, match <code>^waybar-gpui:&lt;id&gt;$</code>.</p>
+<h2 id="uninstalling"><a class="header" href="#uninstalling">Uninstalling</a></h2>
+<p>Stop the daemon first, or it keeps running from the deleted binary until you
+log out:</p>
+<pre><code class="language-sh">my-panels quit
+cargo uninstall my-panels
+</code></pre>
+<p>Then remove the bar modules from your Waybar config.</p>
+<h2 id="for-your-users"><a class="header" href="#for-your-users">For your users</a></h2>
+<p>People installing your program need the same steps without the Rust: link
+<a href="#using-a-waybar-gpui-program">Using a waybar-gpui program</a> from your README (the
+starter template’s README already does).</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="using-a-waybar-gpui-program"><a class="header" href="#using-a-waybar-gpui-program">Using a waybar-gpui program</a></h1>
+<p>This page is for people who install a program built with waybar-gpui (say,
+<code>my-panels</code>) to get popovers on their Waybar. You don’t need to write Rust.
+Requirements: Hyprland, Waybar, a Rust toolchain to build it, and a working
+Vulkan driver.</p>
+<h2 id="install"><a class="header" href="#install">Install</a></h2>
+<p>Follow the program’s own instructions; usually:</p>
+<pre><code class="language-sh">git clone &lt;the program's repository&gt; &amp;&amp; cd &lt;it&gt;
+cargo install --path . --locked
+</code></pre>
+<h2 id="add-it-to-waybar"><a class="header" href="#add-it-to-waybar">Add it to Waybar</a></h2>
+<p>Run the program with no arguments. It lists its panels, each with the line to
+paste into a Waybar bar module:</p>
+<pre><code class="language-text">panels and their Waybar on-click lines:
+  clock        "on-click": "/home/me/.cargo/bin/my-panels toggle clock"
+</code></pre>
+<p>In <code>~/.config/waybar/config.jsonc</code>, add a bar module and put it in a
+<code>modules-*</code> list:</p>
+<pre><code class="language-jsonc">"custom/clock": {
+  "exec": "echo clock",
+  "interval": "once",
+  "exec-on-event": false,
+  "on-click": "/home/me/.cargo/bin/my-panels toggle clock",
+},
+</code></pre>
+<p>Keep the full path: Waybar usually can’t find programs in <code>~/.cargo/bin</code> by
+name. Some panels take extra words after their name (<code>toggle clock Paris 1</code>);
+the program’s README says which. Reload Waybar with <code>pkill -SIGUSR2 waybar</code>.</p>
+<p>Optional, in <code>~/.config/hypr/hyprland.lua</code>, for blur behind every waybar-gpui
+popover:</p>
+<pre><code class="language-lua">hl.layer_rule({ match = { namespace = "^waybar-gpui:" }, blur = true, ignore_alpha = 0.3, animation = "fade" })
+</code></pre>
+<h2 id="using-it"><a class="header" href="#using-it">Using it</a></h2>
+<ul>
+<li>Click the bar module: the popover opens next to it.</li>
+<li>Close it with Esc, a click anywhere outside it, or a click on the bar.</li>
+<li>While a popover is open, <strong>the first click elsewhere only closes it</strong>:
+clicking another bar module, on any monitor, takes a second click. That’s
+by design: the popover holds the keyboard while it’s open, so the first
+click outside closes it rather than reaching what’s below.</li>
+<li>Only one popover is open at a time, even across different programs.</li>
+<li>The first click after login takes a moment longer (the program starts in
+the background); later ones are fast.</li>
+</ul>
+<h2 id="when-something-is-wrong"><a class="header" href="#when-something-is-wrong">When something is wrong</a></h2>
+<ul>
+<li><strong>Nothing opens:</strong> check the path in <code>on-click</code> (run it in a terminal), and
+read the log: <code>~/.local/state/waybar-gpui/&lt;program&gt;.log</code>.</li>
+<li><strong>It still shows an old version after an update:</strong> click again; a click
+replaces an outdated background process. <code>my-panels quit</code> stops it outright.</li>
+<li><strong>Uninstall:</strong> <code>my-panels quit</code>, then <code>cargo uninstall my-panels</code>, then
+remove the bar module.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="how-it-works"><a class="header" href="#how-it-works">How it works</a></h1>
+<p>What happens between a click and a popover, at the level an author needs to
+understand what they see. The full picture, with the reasons and the
+evidence, is in <a href="https://github.com/Cerclique/waybar-gpui/blob/main/docs/architecture.md"><code>docs/architecture.md</code></a>.</p>
+<h2 id="one-binary-two-roles"><a class="header" href="#one-binary-two-roles">One binary, two roles</a></h2>
+<p>Your program is both the <strong>click client</strong> and a <strong>daemon</strong>:</p>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant W as Waybar
+    participant C as my-panels toggle hello
+    participant D as my-panels daemon
+    W-&gt;&gt;C: on-click runs it
+    alt no daemon yet (first click)
+        C-&gt;&gt;D: start it in the background
+        D-&gt;&gt;D: open the popover
+    else daemon running
+        C-&gt;&gt;D: toggle hello (Unix socket)
+        D-&gt;&gt;D: open the popover, or close it if hello is open
+    end
+    Note over C: exits right away
+    Note over D: stays running: GPU and fonts stay loaded
+</code></pre>
+<ul>
+<li>The first click starts the daemon, so it’s slower (a few hundred ms); later
+clicks only open a window and are fast.</li>
+<li>The daemon lives until <code>my-panels quit</code> or logout. If the binary on disk
+changed (you rebuilt or reinstalled), the next click replaces the daemon.</li>
+<li>The daemon’s socket is <code>$XDG_RUNTIME_DIR/waybar-gpui/&lt;id&gt;.sock</code>, named by
+your program ID. Every program’s socket is in that one directory, which is
+how programs close each other’s popovers: at most one is open at a time.
+Next to it, an empty <code>&lt;id&gt;.lock</code> is used only while a daemon starts, so two
+clicks at once start one daemon, not two; it stays there, and that’s normal.</li>
+</ul>
+<h2 id="the-popover-is-a-full-screen-transparent-layer"><a class="header" href="#the-popover-is-a-full-screen-transparent-layer">The popover is a full-screen, transparent layer</a></h2>
+<p>Wayland doesn’t let one program attach a real popup to another program’s
+window, so the popover can’t hang off Waybar’s icon. Instead:</p>
+<ul>
+<li>The popover is a <strong>transparent layer surface covering the whole monitor</strong>
+the click came from, bar included, above everything else.</li>
+<li>Your panel is drawn inside it as the <strong>card</strong>, placed next to the bar:
+centred on the cursor, 6 px off the bar edge, kept inside the screen. Top,
+bottom, left and right bars all work.</li>
+<li>The rest of the surface is the invisible <strong>backdrop</strong>, and every other
+monitor gets a transparent surface of its own that extends it. A click on
+the backdrop, on any monitor, closes the popover.</li>
+<li>It takes the keyboard exclusively, so Esc always works.</li>
+</ul>
+<p>While a popover is open, the keyboard stays with it, so it must not stay open
+after a click elsewhere. That’s why the backdrop covers every monitor, Waybar
+included: Waybar can’t be clicked while a popover is open, and the first click
+outside only closes it. See <a href="#closing-and-esc">Closing and Esc</a>.</p>
+<h2 id="panels-are-fresh-on-every-open"><a class="header" href="#panels-are-fresh-on-every-open">Panels are fresh on every open</a></h2>
+<p>The daemon builds your panel when the popover opens and drops it when it
+closes. Live updates and state that outlives a close are plain GPUI patterns:
+<a href="#live-data-and-state">Live data and state</a>.</p>
+<h2 id="logs-1"><a class="header" href="#logs-1">Logs</a></h2>
+<p>A daemon started by a click writes its stderr to
+<code>~/.local/state/waybar-gpui/&lt;id&gt;.log</code>; see <a href="#logs">Dev loop</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="limits"><a class="header" href="#limits">Limits</a></h1>
+<h2 id="by-design"><a class="header" href="#by-design">By design</a></h2>
+<ul>
+<li><strong>Hyprland only.</strong> Placement and click handling depend on Hyprland’s IPC and
+how it routes input to layer surfaces. Other compositors (Sway, niri…) aren’t
+supported.</li>
+<li><strong>Waybar can’t be clicked while a popover is open.</strong> The first click outside
+the card only closes the popover; clicking another bar module takes a second
+click. It comes from how Hyprland routes clicks; nothing in the SDK can
+change it.</li>
+<li><strong>One popover at a time,</strong> across all programs.</li>
+<li><strong>Placement is fixed:</strong> next to the bar, centred on the cursor. Panels don’t
+choose an alignment or an offset.</li>
+<li><strong>Panels don’t open other panels.</strong> Only bar-module clicks (or <code>toggle</code> from
+a script or keybind) open panels; several views inside one panel are plain
+GPUI state.</li>
+<li><strong>No gpui-component dialogs or notifications</strong> (they need its <code>Root</code>, which
+breaks layer surfaces). Menus and in-window popovers work. See
+<a href="#components">Components</a>.</li>
+<li><strong>Other exclusive surfaces</strong> (rofi, fuzzel, wlogout) opened over a popover
+interact awkwardly: moving the pointer can hand the keyboard back to the
+popover, and a full-screen one blocks it until it closes.</li>
+<li><strong>The theme is set in code</strong> (<code>Program::theme</code>): people who install a program
+can’t restyle it with a theme file.</li>
+<li><strong>The SDK covers the popover, not the bar.</strong> What the bar module shows is
+ordinary Waybar <code>custom/*</code> configuration.</li>
+</ul>
+<h2 id="versions-1"><a class="header" href="#versions-1">Versions</a></h2>
+<ul>
+<li>The SDK is on <strong>crates.io</strong>: <code>waybar_gpui = "X.Y.Z"</code> in your <code>Cargo.toml</code>.
+Each release is also tagged <code>vX.Y.Z</code> in the repository; the starter
+template uses the tag, and the guide’s site shows the latest release.</li>
+<li><strong>0.x semver:</strong> a breaking change bumps the minor version (<code>v0.1.x</code> →
+<code>v0.2.0</code>); fixes bump the patch.</li>
+<li>GPUI (<code>gpui-pre</code>) and gpui-component are <strong>pinned exactly</strong>, and move
+together. Every change to those pins is a breaking release, with the new
+versions in the changelog. Upgrade deliberately, and keep your <code>Cargo.lock</code>.</li>
+<li>Tested with Hyprland 0.57 (Lua config), Waybar 0.15 and the Rust in
+<a href="https://github.com/Cerclique/waybar-gpui/blob/main/rust-toolchain.toml"><code>rust-toolchain.toml</code></a>; the oldest Rust that
+builds it is 1.95 (<code>rust-version</code>, checked in CI). GPUI
+renders with Vulkan.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h1>
+<p>Start with the log: <code>~/.local/state/waybar-gpui/&lt;id&gt;.log</code> for a daemon started
+by a click, the terminal for <code>preview</code>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td>Clicking the bar module does nothing; no log file</td><td>Waybar can’t find the program.</td><td>Use the full path in <code>on-click</code> (<a href="#waybar">Installing</a>); run the same command in a terminal to see the error.</td></tr>
+<tr><td>Clicking does nothing; the log shows <code>cannot open</code></td><td>Hyprland unreachable (<code>HYPRLAND_INSTANCE_SIGNATURE</code> not set for Waybar), or no monitor found.</td><td>Start Waybar from Hyprland (<code>exec-once</code>); check <code>hyprctl monitors</code>.</td></tr>
+<tr><td><code>unknown panel "x"</code></td><td><code>on-click</code> names a panel your program doesn’t register.</td><td>Run the program with no arguments for the list.</td></tr>
+<tr><td>The popover shows an old version</td><td>An old daemon.</td><td>Click again: a click replaces a daemon whose binary changed. Or <code>&lt;program&gt; quit</code>.</td></tr>
+<tr><td><code>daemon</code> run by hand exits with <code>&lt;id&gt;: daemon already running</code></td><td>A daemon already runs; a hand-run <code>daemon</code> doesn’t replace it.</td><td><code>&lt;program&gt; quit</code> first.</td></tr>
+<tr><td>The popover vanished and the log ends with <code>panicked at</code></td><td>A panic in the panel took the daemon down.</td><td>Fix the panic; the next click starts a fresh daemon.</td></tr>
+<tr><td>A click on another bar module only closed the popover</td><td>Expected: Waybar can’t be clicked while a popover is open.</td><td>Click again.</td></tr>
+<tr><td>Esc doesn’t reach my panel’s key handler</td><td>Nothing of yours has focus.</td><td>Focus an element in <code>Panel::new</code> (<a href="#esc">Closing and Esc</a>).</td></tr>
+<tr><td>Errors about <code>gpui::…</code> paths from a derive macro</td><td><code>gpui</code> isn’t in scope in that module.</td><td><code>use waybar_gpui::gpui;</code> (<a href="#gpui">Writing a panel</a>).</td></tr>
+<tr><td>Two versions of <code>gpui</code> in the dependency tree, types don’t match</td><td>You depend on <code>gpui</code>/<code>gpui-pre</code> or <code>gpui-component</code> directly.</td><td>Remove them; use <code>waybar_gpui::gpui</code> and the <code>components</code> feature.</td></tr>
+<tr><td>A dialog or notification from gpui-component doesn’t show</td><td>Unsupported without <code>Root</code>.</td><td>Build it as a view inside your panel (<a href="#components">Components</a>).</td></tr>
+<tr><td><code>invalid program ID</code> panic at start</td><td>The ID passed to <code>Program::new</code> has uppercase letters, <code>_</code>, spaces…</td><td>Use <code>a-z</code>, <code>0-9</code> and <code>-</code>, not starting with <code>-</code>.</td></tr>
+<tr><td>The program keeps running after <code>cargo uninstall</code></td><td>The daemon outlives its deleted binary.</td><td><code>&lt;program&gt; quit</code> (or log out).</td></tr>
+<tr><td>The first popover after login is slow</td><td>The first click starts the daemon.</td><td>Expected; later clicks are fast.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="investigating"><a class="header" href="#investigating">Investigating</a></h2>
+<p>For a problem the table doesn’t list, start with what the runtime logs. Where
+the log is depends on how the daemon started: see
+<a href="#logs">Dev loop</a>.</p>
+<ul>
+<li><strong>Read the runtime’s lines first.</strong> Each open logs
+<code>&lt;id&gt;: opened &lt;panel&gt; on &lt;monitor&gt; (&lt;edge&gt; bar)</code>, each close
+<code>&lt;id&gt;: closed &lt;panel&gt; (&lt;reason&gt;)</code>, and a failed open
+<code>&lt;id&gt;: cannot open &lt;panel&gt;: &lt;error&gt;</code> (a panel’s arguments follow its name,
+e.g. <code>clock ["Paris"]</code>). They tell you whether the popover opened, on which
+monitor, and why it closed.</li>
+<li><strong>Get the output in the terminal.</strong> <code>&lt;program&gt; preview &lt;panel&gt;</code> opens the
+panel at your cursor and logs to the terminal, without Waybar.</li>
+<li><strong>Run the daemon in the foreground.</strong> <code>&lt;program&gt; quit</code>, then
+<code>&lt;program&gt; daemon &lt;panel&gt;</code>: the daemon logs to the terminal, and clicks on
+the bar module reach it if its <code>on-click</code> runs the same executable (another
+one replaces it). Run <code>quit</code> first: while a daemon runs, a hand-run <code>daemon</code>
+exits with <code>&lt;id&gt;: daemon already running</code>.</li>
+<li><strong>Tell Hyprland from GPUI.</strong> While the popover is open,
+<code>hyprctl layers</code> lists its surface as <code>namespace: waybar-gpui:&lt;id&gt;</code> and a
+backdrop on each other monitor as <code>namespace: waybar-gpui-backdrop:&lt;id&gt;</code>.
+A surface that is listed but shows nothing points at drawing (GPUI); no
+surface points at the open itself (look for <code>cannot open</code> in the log).
+<code>hyprctl monitors</code> and
+<code>hyprctl cursorpos</code> show what placement used: the popover opens on the
+monitor under the cursor, next to its bar.</li>
+</ul>
+<h2 id="reporting-a-bug"><a class="header" href="#reporting-a-bug">Reporting a bug</a></h2>
+<p>Open an issue with the
+<a href="https://github.com/Cerclique/waybar-gpui/issues/new?template=bug_report.yml">bug report</a>
+template. It asks for what happened, the steps to reproduce, the relevant log
+lines, your <code>waybar_gpui</code>, Rust, Hyprland and Waybar versions, whether the
+<code>components</code> feature is on, and your distribution and GPU.</p>
+<p>Tip: reproduce with <code>&lt;program&gt; preview &lt;panel&gt;</code> if you can. The output lands
+in the terminal, ready to paste.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- The book's copy of ../GLOSSARY.md, which stays the one to edit. -->
+<h1 id="waybar-gpui-popovers"><a class="header" href="#waybar-gpui-popovers">Waybar GPUI popovers</a></h1>
+<p>Clicking an item in Waybar opens a small GPUI UI next to it. This repo
+provides what makes that work and lets authors write the UI themselves.</p>
+<h2 id="language"><a class="header" href="#language">Language</a></h2>
+<h3 id="what-the-person-at-the-bar-sees"><a class="header" href="#what-the-person-at-the-bar-sees">What the person at the bar sees</a></h3>
+<p><strong>Bar module</strong>:
+An item in Waybar (a <code>custom/*</code> entry): its icon or text, plus the <code>on-click</code> that toggles a panel.
+<em>Avoid</em>: module (alone), plugin, widget</p>
+<p><strong>Popover</strong>:
+A panel while it is on screen, placed next to the clicked bar module. At most one is open at a time, across all programs.
+<em>Avoid</em>: popup, window</p>
+<p><strong>Card</strong>:
+The visible rectangle of a popover, sized to the panel’s content, where the panel is drawn.
+<em>Avoid</em>: frame, window</p>
+<p><strong>Backdrop</strong>:
+The invisible area around the card, on every monitor; a click that lands on it dismisses the popover.
+<em>Avoid</em>: overlay, background</p>
+<p><strong>Dismiss</strong>:
+Closing a popover from outside the panel: Esc the panel doesn’t handle, or a click on the backdrop.
+<em>Avoid</em>: hide, cancel</p>
+<p><strong>Toggle</strong>:
+What a bar module’s click asks for: open the panel, or close it if the same panel with the same panel arguments is already open.
+<em>Avoid</em>: show, open (when closing is also meant)</p>
+<h3 id="what-an-author-builds"><a class="header" href="#what-an-author-builds">What an author builds</a></h3>
+<p><strong>Author</strong>:
+Someone writing their own panels with the SDK, in their own repository.
+<em>Avoid</em>: user (ambiguous with the person clicking the bar)</p>
+<p><strong>Panel</strong>:
+The GPUI UI an author writes, built fresh each time its popover opens.
+<em>Avoid</em>: module, plugin, popup, view</p>
+<p><strong>Panel arguments</strong>:
+The words after the panel’s name in a bar module’s <code>on-click</code>, handed to the panel when it opens.
+<em>Avoid</em>: options, parameters, config</p>
+<p><strong>Preview</strong>:
+Opening a panel from a terminal, without a bar module, until it is dismissed.
+<em>Avoid</em>: demo, test mode</p>
+<p><strong>Program</strong>:
+An author’s executable that registers one or more panels; each program runs its own runtime.
+<em>Avoid</em>: binary, app, plugin</p>
+<p><strong>Program ID</strong>:
+The stable name an author gives their program, by which programs tell each other apart.
+<em>Avoid</em>: app id, socket name</p>
+<p><strong>Theme</strong>:
+The colours a program’s cards, panels and widgets share.
+<em>Avoid</em>: style, palette</p>
+<p><strong>SDK</strong>:
+The Rust crate authors build panels and programs against.
+<em>Avoid</em>: API, framework, library (as a name for it)</p>
+<p><strong>waybar-gpui</strong>:
+This project as a whole: the SDK, its runtime and the guide. The SDK’s crate alone is <code>waybar_gpui</code>.
+<em>Avoid</em>: waybar_gpui (except for the crate)</p>
+<h3 id="what-makes-it-work"><a class="header" href="#what-makes-it-work">What makes it work</a></h3>
+<p><strong>Runtime</strong>:
+The part of every program that turns a toggle into a popover and back: its daemon, placement and dismissal.
+<em>Avoid</em>: host, server</p>
+<p><strong>Daemon</strong>:
+A program’s background process that shows its popovers and stays running between opens until told to quit.
+<em>Avoid</em>: server, service, runtime (that’s the whole, not this process)</p>
+<p><strong>Compositor</strong>:
+The Wayland compositor the bar and popovers run under, which says where the cursor is and which monitors exist; Hyprland is the only one supported.
+<em>Avoid</em>: window manager, WM, Hyprland (when any compositor is meant)</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+
+    </div>
+    </body>
+</html>
