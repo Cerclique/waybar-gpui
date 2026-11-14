@@ -40,8 +40,11 @@ the ref, both source directories, and `components` on or off.
 - **The guide**, at the ref:
   `https://raw.githubusercontent.com/Cerclique/waybar-gpui/<ref>/docs/guide/<page>.md`.
   Start at `docs/guide/index.md`; terms are in `docs/GLOSSARY.md`. A relative
-  link in a page resolves against that page's URL. The guide's example panels
-  are at `https://raw.githubusercontent.com/Cerclique/waybar-gpui/<ref>/examples/example-panels/src/<file>.rs`;
+  link in a page resolves against that page's URL. A code block holding
+  `{{#include snippets/src/<file>.rs:<name>}}` stands for the lines between
+  `// ANCHOR: <name>` and `// ANCHOR_END: <name>` in that file, which sits
+  next to the page (`docs/guide/snippets/src/<file>.rs`, at the same ref).
+  The guide's example panels are at `https://raw.githubusercontent.com/Cerclique/waybar-gpui/<ref>/examples/example-panels/src/<file>.rs`;
   `main.rs` there lists which panel shows which pattern. The same guide is
   a site at `https://cerclique.github.io/waybar-gpui/` (the latest release;
   `/dev/` for `main`): link the user there, but read the raw pages at the ref.

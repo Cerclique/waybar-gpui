@@ -1,0 +1,24 @@
+# The guide's Rust snippets, compiled so they can't drift from the SDK and the
+# pinned GPUI. Never run: built, linted and tested with the workspace. See
+# src/lib.rs.
+[package]
+name = "guide-snippets"
+description = "The waybar-gpui guide's code snippets, compiled"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+# The Components page's snippets. A feature, as in example-panels, rather
+# than always on: cargo would otherwise turn `components` on for the whole
+# workspace's build, and CI's build without it would test nothing.
+components = ["waybar_gpui/components"]
+
+[dependencies]
+waybar_gpui = { path = "../../../crates/waybar_gpui" }
+
+[lints]
+workspace = true

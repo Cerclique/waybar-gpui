@@ -95,6 +95,15 @@ the latter.
   (`../../examples/…`): they work on GitHub, and on the site the book's
   preprocessor, [`scripts/book-preprocessor.py`](../scripts/book-preprocessor.py),
   turns them into GitHub links at the version being built.
+- Rust code goes in the snippets crate, `docs/guide/snippets/`, one module
+  per page (`src/<page>.rs`), between `// ANCHOR: <name>` and
+  `// ANCHOR_END: <name>` comments; the page shows it with
+  `{{#include snippets/src/<page>.rs:<name>}}` inside a `rust` code block.
+  The crate is a workspace member, so `cargo build`, `make lint` and CI
+  compile it and the snippets keep up with the SDK and GPUI; its
+  `components` feature (on with `--all-features`) holds the Components page.
+  `cargo fmt` skips it: lay the snippets out by hand for the page. The site
+  strips the indentation of a snippet taken from inside a function.
 - Preview with live reload: `mdbook serve docs`
   ([mdbook](https://rust-lang.github.io/mdBook/guide/installation.html), and
   `python3` for that script).

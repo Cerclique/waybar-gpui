@@ -7,26 +7,7 @@ hands control to the SDK, which turns a click on a bar module into a
 ## The smallest program
 
 ```rust
-use waybar_gpui::{card, gpui::{prelude::*, Context, Window}, Panel};
-
-struct Hello;
-
-impl Panel for Hello {
-    const NAME: &'static str = "hello";
-    fn new(_args: &[String], _window: &mut Window, _cx: &mut Context<Self>) -> Self {
-        Hello
-    }
-}
-
-impl Render for Hello {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        card(cx).child("Hello")
-    }
-}
-
-fn main() -> std::process::ExitCode {
-    waybar_gpui::Program::new("my-panels").panel::<Hello>().run()
-}
+{{#include snippets/src/writing_a_panel.rs:program}}
 ```
 
 The starter template generates exactly this (see the
@@ -63,7 +44,7 @@ starting with `gpui::`. In any module that uses them, bring the name into
 scope:
 
 ```rust
-use waybar_gpui::gpui;
+{{#include snippets/src/writing_a_panel.rs:derive}}
 ```
 
 [`workspace.rs`](../../examples/example-panels/src/workspace.rs) in the example
@@ -76,10 +57,7 @@ clicked bar module, centred on the cursor. Cap it yourself if it can grow, and
 scroll the overflow:
 
 ```rust
-card(cx)
-    .w(gpui::px(340.))
-    .max_h(gpui::px(420.))
-    .child(div().id("rows").flex().flex_col().overflow_y_scroll().children(rows))
+{{#include snippets/src/writing_a_panel.rs:size}}
 ```
 
 The runtime also keeps the card inside the monitor's usable area; past that,
@@ -91,10 +69,7 @@ is re-placed on the next frame.
 One program can hold many panels:
 
 ```rust
-waybar_gpui::Program::new("my-panels")
-    .panel::<Clock>()
-    .panel::<Volume>()
-    .run()
+{{#include snippets/src/writing_a_panel.rs:several}}
 ```
 
 Only one popover is open at a time, across all programs: opening one closes

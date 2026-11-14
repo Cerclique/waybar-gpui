@@ -1,0 +1,5 @@
+# The snippets are laid out by hand for the page they appear on (short lines,
+# one call per line where it reads better), as the guide's code blocks always
+# were: no rustfmt width setting reproduces that, so `cargo fmt` leaves this
+# crate alone. Keep to the workspace's style otherwise.
+disable_all_formatting = true

@@ -1,6 +1,8 @@
 /target
 # `make book`'s output.
 /docs/book/
+# Python bytecode, should anything import scripts/book-preprocessor.py.
+__pycache__/
 # Claude Code: agent worktrees and personal settings (a shared
 # .claude/settings.json can still be committed).
 /.claude/worktrees/

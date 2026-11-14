@@ -12,6 +12,11 @@ This rewrites them:
   (default `main`; the release deploy sets the tag), under the book's
   `output.html.git-repository-url`.
 
+Indented snippets: mdbook keeps the indentation of a snippet included with
+`{{#include file.rs:anchor}}`, so a fragment taken from inside a function
+would sit indented on the page. This strips the indentation that every line
+of a code block shares, for blocks fenced at the start of a line.
+
 Standard library only; mdbook runs it from the book's root (`docs/`).
 """
 
@@ -20,6 +25,7 @@ import os
 import posixpath
 import re
 import sys
+import textwrap
 
 SRC = "docs/guide"  # The book's `src`, from the repository root.
 REWRITES = {"docs/GLOSSARY.md": f"{SRC}/glossary.md"}
@@ -27,9 +33,14 @@ REWRITES = {"docs/GLOSSARY.md": f"{SRC}/glossary.md"}
 # `](../target)` inline links, and `[label]: ../target` definitions.
 INLINE = re.compile(r"(\]\()(\.\./[^)\s]+)(\))")
 DEFINITION = re.compile(r"^(\s*\[[^\]]+\]:\s*)(\.\./\S+)()", re.MULTILINE)
+# A fenced code block, its fence at the start of a line.
+FENCED = re.compile(
+    r"^(?P<open>(?P<fence>`{3,}|~{3,})[^\n]*\n)(?P<body>.*?)(?P<close>^(?P=fence)[ \t]*$)",
+    re.MULTILINE | re.DOTALL,
+)
 
 
-def rewrite(content, chapter_dir, repo_url, ref):
+def rewrite_links(content, chapter_dir, repo_url, ref):
     def link(match):
         target, _, fragment = match.group(2).partition("#")
         fragment = f"#{fragment}" if fragment else ""
@@ -42,6 +53,13 @@ def rewrite(content, chapter_dir, repo_url, ref):
         return f"{match.group(1)}{new}{fragment}{match.group(3)}"
 
     return DEFINITION.sub(link, INLINE.sub(link, content))
+
+
+def dedent(content):
+    def block(match):
+        return match["open"] + textwrap.dedent(match["body"]) + match["close"]
+
+    return FENCED.sub(block, content)
 
 
 def chapters(items):
@@ -61,7 +79,8 @@ def main():
         source = chapter.get("source_path")
         if source:
             chapter_dir = posixpath.dirname(source)
-            chapter["content"] = rewrite(chapter["content"], chapter_dir, repo_url, ref)
+            content = rewrite_links(chapter["content"], chapter_dir, repo_url, ref)
+            chapter["content"] = dedent(content)
     json.dump(book, sys.stdout)
 
 

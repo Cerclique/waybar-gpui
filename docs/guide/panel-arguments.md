@@ -9,15 +9,7 @@ handed to `Panel::new` as `&[String]`:
 ```
 
 ```rust
-impl Panel for ClockPanel {
-    const NAME: &'static str = "clock";
-
-    fn new(args: &[String], window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let label = args.first().cloned().unwrap_or_else(|| "UTC".into());
-        let offset_hours = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
-        …
-    }
-}
+{{#include snippets/src/panel_arguments.rs:new}}
 ```
 
 Full example: [`clock.rs`](../../examples/example-panels/src/clock.rs).
