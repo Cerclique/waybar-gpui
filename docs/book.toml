@@ -22,3 +22,7 @@ git-repository-url = "https://github.com/Cerclique/waybar-gpui"
 edit-url-template = "https://github.com/Cerclique/waybar-gpui/edit/main/docs/{path}"
 # For the 404 page; the /dev/ deploy overrides it (MDBOOK_OUTPUT__HTML__SITE_URL).
 site-url = "/waybar-gpui/"
+
+# The Rust Playground has no waybar_gpui: no "run" button on the snippets.
+[output.html.playground]
+runnable = false
