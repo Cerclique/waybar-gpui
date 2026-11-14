@@ -80,6 +80,27 @@ cargo-generate and lychee); CI runs them. Run every hook on the whole tree with
 `prek run --all-files`. Skip them for one commit with `git commit --no-verify`;
 CI runs the same checks anyway.
 
+## Editing the guide
+
+The author guide, [`docs/guide/`](guide/index.md), is also published as an
+[mdbook](https://rust-lang.github.io/mdBook/) site,
+<https://cerclique.github.io/waybar-gpui/>: the latest release at the root,
+`main` at `/dev/`. Its configuration is [`docs/book.toml`](book.toml); its
+table of contents, [`docs/guide/SUMMARY.md`](guide/SUMMARY.md), lists every
+page, so a new page goes there too. The glossary enters the book through
+`docs/guide/glossary.md`, which includes [`GLOSSARY.md`](GLOSSARY.md): edit
+the latter.
+
+- Link from a page to the rest of the repository with ordinary relative links
+  (`../../examples/…`): they work on GitHub, and on the site the book's
+  preprocessor, [`scripts/book-preprocessor.py`](../scripts/book-preprocessor.py),
+  turns them into GitHub links at the version being built.
+- Preview with live reload: `mdbook serve docs`
+  ([mdbook](https://rust-lang.github.io/mdBook/guide/installation.html), and
+  `python3` for that script).
+- `make book` builds the site into `docs/book/` and checks its links and
+  anchors with lychee, as CI's `book` job does.
+
 ## Checks
 
 Before opening a pull request, run what CI runs:
@@ -90,6 +111,7 @@ make lint             # cargo fmt --all --check, clippy without and with
 make test             # unit tests and doctests, without and with --all-features
 make check-template   # every versioned SDK reference matches the workspace version;
                       # both template variants generate and pass clippy
+make book             # the guide's site builds and its links resolve
 cargo deny check      # advisories, licenses, bans, sources (deny.toml)
 ```
 
@@ -108,9 +130,10 @@ The workflows live in [`.github/workflows/`](../.github/workflows/):
 
 | Workflow | Runs on | What it does |
 | --- | --- | --- |
-| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on the toolchain in `rust-toolchain.toml`, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `typos`: the spell check (`_typos.toml`); `workflows`: actionlint and zizmor over `.github/` (the workflows, the local action and Dependabot's config), failing on any finding; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
+| `ci.yml` | PRs, pushes to `main` | `rust`: fmt, build, tests, clippy and docs on the toolchain in `rust-toolchain.toml`, as `make lint` and `make test`; `msrv`: `cargo check` on the `rust-version` from `Cargo.toml`; `deny`: `cargo deny check --all-features`, then `cargo machete` for unused dependencies; `template`: `make check-template`; `links`: the lychee link check; `book`: the guide's site, as `make book`; `typos`: the spell check (`_typos.toml`); `workflows`: actionlint and zizmor over `.github/` (the workflows, the local action and Dependabot's config), failing on any finding; `semver` (PRs only): `cargo semver-checks` against the latest release on crates.io |
 | `pr-title.yml` | PRs (opened, edited, pushed to) | `conventional`: the PR title is a conventional commit |
-| `release.yml` | `v*` tag push | Publishes `waybar_gpui` on crates.io, then creates the GitHub Release from the tag's `CHANGELOG.md` section |
+| `release.yml` | `v*` tag push | Publishes `waybar_gpui` on crates.io, then creates the GitHub Release from the tag's `CHANGELOG.md` section, then deploys the release's guide (`book.yml`) |
+| `book.yml` | Pushes to `main` touching `docs/`, release.yml, or by hand | `deploy`: builds the guide's site and commits it to the `gh-pages` branch, `main` to `/dev/`, a release (`latest`) to the root |
 | `scheduled.yml` | Mondays, or by hand | `advisories`: `cargo deny check advisories` on the locked dependencies; `beta`: tests and clippy on Rust beta |
 
 Every job in `ci.yml` and `pr-title.yml` is required to merge, except
@@ -122,6 +145,10 @@ release in a comment. A zizmor finding is fixed where it can be; a deliberate
 exception is ignored inline (`# zizmor: ignore[<audit>]`) or in
 [`.github/zizmor.yml`](../.github/zizmor.yml), with a comment saying why it is
 safe.
+
+GitHub Pages serves the `gh-pages` branch (Settings → Pages: deploy from a
+branch, `gh-pages`, `/ (root)`). Each deploy commits only its own folder, so
+`/dev/` and the release at the root don't overwrite each other.
 
 [Dependabot](../.github/dependabot.yml) opens one grouped PR a week for Cargo
 dependencies (`build(deps): …`, listed in the changelog) and one for actions
@@ -187,8 +214,8 @@ whose changelog names the new versions.
    `[workspace.package]` of the top-level `Cargo.toml` (`cargo build` updates
    `Cargo.lock`) and every versioned SDK reference with it: the template's
    and the guide's `waybar_gpui` version, the README's `--tag`, the tagged
-   links (`blob/vX.Y.Z`, `tree/vX.Y.Z`) in the README, the guide index, the
-   template README and the rustdoc, and the agent skill's URL in the `curl`
+   links (`blob/vX.Y.Z`, `tree/vX.Y.Z`) in the README and the template
+   README, and the agent skill's URL in the `curl`
    of `docs/guide/using-an-agent.md`. `make check-template` lists any left
    behind.
 2. Add the release's section to the changelog:
@@ -232,6 +259,9 @@ whose changelog names the new versions.
    Release with the tag's section of `CHANGELOG.md` as notes. If only this
    job fails, re-run it on its own. Check the new version appears on
    crates.io and the Release on GitHub.
+6. Last, it deploys the tag's guide at the site's root (`book` job, calling
+   `book.yml`). If it fails, re-run it, or run the `Book` workflow by hand
+   with the tag as `ref` and `latest` checked.
 
 v0.1.0 differs: the version is already 0.1.0 and its entry is hand-written,
 so its release pull request only replaces `Unreleased` in the entry's heading

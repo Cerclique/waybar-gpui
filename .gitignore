@@ -1,4 +1,6 @@
 /target
+# `make book`'s output.
+/docs/book/
 # Claude Code: agent worktrees and personal settings (a shared
 # .claude/settings.json can still be committed).
 /.claude/worktrees/

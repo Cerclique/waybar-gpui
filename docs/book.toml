@@ -1,0 +1,28 @@
+# The guide as an mdbook site: `make book` builds it into docs/book/ and checks
+# its links; `mdbook serve docs` previews it. Deployed to GitHub Pages by
+# .github/workflows/book.yml: the latest release at the root, `main` at /dev/.
+[book]
+title = "waybar-gpui guide"
+description = "Write GPUI panels that open as popovers from Waybar bar modules on Hyprland."
+language = "en"
+src = "guide"
+
+[build]
+build-dir = "book"
+# A page missing from SUMMARY.md is an error, not a new empty file.
+create-missing = false
+
+# Runs after the `{{#include}}` expansion, so it sees the included text too.
+[preprocessor.guide]
+command = "python3 ../scripts/book-preprocessor.py"
+after = ["links"]
+
+[output.html]
+git-repository-url = "https://github.com/Cerclique/waybar-gpui"
+edit-url-template = "https://github.com/Cerclique/waybar-gpui/edit/main/docs/{path}"
+# For the 404 page; the /dev/ deploy overrides it (MDBOOK_OUTPUT__HTML__SITE_URL).
+site-url = "/waybar-gpui/"
+
+# The Rust Playground has no waybar_gpui: no "run" button on the snippets.
+[output.html.playground]
+runnable = false

@@ -1,0 +1,71 @@
+name: Book
+
+# Deploys the guide's site (docs/book.toml) to GitHub Pages, served from the
+# gh-pages branch: `main` to /dev/ on each push that touches it, a release to
+# the root (called by release.yml, or run by hand: CONTRIBUTING, Releases).
+# Each deploy rewrites only its own folder; actions/deploy-pages would replace
+# the whole site. The root keeps its old files (`keep_files`, or /dev/ would
+# go too): a page removed from the guide stays reachable at its URL.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - scripts/book-preprocessor.py
+      - .github/workflows/book.yml
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The tag or branch to build
+        required: true
+        default: main
+        type: string
+      latest:
+        description: Publish at the site's root, as the latest release (else at /dev/)
+        required: true
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      latest:
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    # One deploy per folder at a time. A push's `inputs` are empty: /dev/.
+    concurrency:
+      group: book-${{ inputs.latest && 'root' || 'dev' }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      # mdbook at the version this release of the action pins; Dependabot's
+      # bumps of the action move it.
+      - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        with:
+          tool: mdbook
+      - run: mdbook build docs
+        env:
+          # The ref the book's links into the repository use
+          # (scripts/book-preprocessor.py), and the root its 404 page links to.
+          BOOK_REF: ${{ inputs.ref || 'main' }}
+          MDBOOK_OUTPUT__HTML__SITE_URL: ${{ inputs.latest && '/waybar-gpui/' || '/waybar-gpui/dev/' }}
+      - uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/book
+          destination_dir: ${{ !inputs.latest && 'dev' || '' }}
+          keep_files: ${{ inputs.latest || false }}

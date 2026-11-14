@@ -71,3 +71,15 @@ jobs:
       - run: gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"
         env:
           GH_TOKEN: ${{ github.token }}
+
+  # The release's guide at the site's root (book.yml), once it is on
+  # crates.io. If it fails, re-run it on its own, or run the Book workflow by
+  # hand with the tag and `latest`.
+  book:
+    needs: release
+    permissions:
+      contents: write
+    uses: ./.github/workflows/book.yml
+    with:
+      ref: ${{ github.ref_name }}
+      latest: true
