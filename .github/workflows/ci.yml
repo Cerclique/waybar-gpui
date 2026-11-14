@@ -147,6 +147,26 @@ jobs:
       # The docs the authors' skill names inside versioned URLs.
       - run: ./scripts/check-skill.sh
 
+  # The guide's site (docs/book.toml) builds, and its links and anchors
+  # resolve, as `make book` checks them.
+  book:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # mdbook at the version this release of the action pins; Dependabot's
+      # bumps of the action move it.
+      - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        with:
+          tool: mdbook
+      - run: mdbook build docs
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: --offline --no-progress --include-fragments --exclude-path docs/book/404.html docs/book
+          fail: true
+
   # Spell check, with the settings in _typos.toml. Same version as the prek
   # hook in .pre-commit-config.yaml; bump them together.
   typos:

@@ -7,8 +7,10 @@ program, program ID…) are defined in the [glossary](../GLOSSARY.md).
 New here? Start with the quickstart in the [README](../../README.md), then
 [Writing a panel](writing-a-panel.md).
 
-These pages follow `main`; for the release you installed, read
-[its copy of the guide](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/index.md).
+Which version: the guide's [site](https://cerclique.github.io/waybar-gpui/)
+is for the latest release, and its [`/dev/`](https://cerclique.github.io/waybar-gpui/dev/)
+copy follows `main`, as `docs/guide/` on the `main` branch does. For another
+release, read `docs/guide/` in the repository at its tag (`vX.Y.Z`).
 
 ## Building panels
 
@@ -36,6 +38,7 @@ These pages follow `main`; for the release you installed, read
 - [How it works](how-it-works.md): what happens on a click, in plain terms.
 - [Limits](limits.md): what isn't possible, and versioning.
 - [Troubleshooting](troubleshooting.md): symptoms and fixes.
+- [Glossary](../GLOSSARY.md): the terms, defined.
 
 Contributors changing the SDK itself: see
 [`docs/architecture.md`](../architecture.md).

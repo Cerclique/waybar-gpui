@@ -1,7 +1,7 @@
 PREFIX ?= $(HOME)/.local
 BINS := example-panels
 
-.PHONY: build test lint check-template dev install reload uninstall
+.PHONY: build test lint check-template book dev install reload uninstall
 
 build:
 	cargo build --release
@@ -20,6 +20,15 @@ lint:
 # The starter template, as CI checks it. Needs cargo-generate.
 check-template:
 	./scripts/check-template.sh
+
+# The guide as a site (docs/book.toml), into docs/book/, then its links and
+# anchors, offline; CI runs the same. Needs mdbook, python3 and lychee.
+# 404.html is left out: its links are rooted at the site's URL (`site-url`).
+# `mdbook serve docs` previews it with live reload.
+book:
+	mdbook build docs
+	lychee --offline --no-progress --include-fragments \
+		--exclude-path docs/book/404.html docs/book
 
 # A second, throwaway Waybar (top + left bars) wired to the freshly built
 # programs, first on PATH; your own bar is untouched. Built with the

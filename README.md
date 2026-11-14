@@ -1,9 +1,10 @@
 # waybar-gpui
 
 [![crates.io](https://img.shields.io/crates/v/waybar_gpui)](https://crates.io/crates/waybar_gpui)
+[![guide](https://img.shields.io/badge/guide-mdbook-informational)](https://cerclique.github.io/waybar-gpui/)
 [![docs.rs](https://img.shields.io/docsrs/waybar_gpui)](https://docs.rs/waybar_gpui)
 [![gpui-pre =0.3.11](https://img.shields.io/badge/gpui--pre-%3D0.3.11-blue)](https://docs.rs/gpui-pre/0.3.11)
-[![compositor: Hyprland](https://img.shields.io/badge/compositor-Hyprland-58e1ff)](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/limits.md)
+[![compositor: Hyprland](https://img.shields.io/badge/compositor-Hyprland-58e1ff)](https://cerclique.github.io/waybar-gpui/limits.html)
 [![CI](https://github.com/Cerclique/waybar-gpui/actions/workflows/ci.yml/badge.svg)](https://github.com/Cerclique/waybar-gpui/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/crates/l/waybar_gpui)](LICENSE)
 
@@ -58,12 +59,12 @@ placeholders by hand.
 
 ## Documentation
 
-- [The guide](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/index.md):
+- [The guide](https://cerclique.github.io/waybar-gpui/):
   writing panels, live data, theming, widgets, the dev loop, installing,
   limits, troubleshooting.
-- [Using a waybar-gpui program](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/using-a-program.md):
+- [Using a waybar-gpui program](https://cerclique.github.io/waybar-gpui/using-a-program.html):
   for people who install a program built with it.
-- [Using a coding agent](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/using-an-agent.md):
+- [Using a coding agent](https://cerclique.github.io/waybar-gpui/using-an-agent.html):
   an agent skill for writing panels.
 - [API reference](https://docs.rs/waybar_gpui) on docs.rs.
 - [Example panels](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/examples/example-panels/src/main.rs):
@@ -77,14 +78,15 @@ placeholders by hand.
 | `examples/example-panels` | A program built on the SDK the way yours would be; `waybar/` holds the test bars `make dev` runs. |
 | `template/` | The cargo-generate starter. |
 | `skills/waybar-gpui` | The agent skill authors copy into their program ([guide](docs/guide/using-an-agent.md)). |
-| `scripts/` | `check-template.sh`, shared by CI and `make check-template`; `check-skill.sh`, run by CI. |
-| `docs/` | The guide, the [architecture](docs/architecture.md) and ADRs. |
+| `scripts/` | `check-template.sh`, shared by CI and `make check-template`; `check-skill.sh`, run by CI; `book-links.py`, the guide site's link rewriter. |
+| `docs/` | The guide (and its site, `book.toml`), the [architecture](docs/architecture.md) and ADRs. |
 
 ```sh
 make dev              # a second Waybar (top + left bars) wired to example-panels; Ctrl-C stops it
 make test             # unit tests and doctests
 make lint             # clippy without and with --all-features, cargo doc -D warnings
 make check-template   # the starter template, as CI checks it (needs cargo-generate)
+make book             # the guide's site into docs/book/, links checked (needs mdbook, lychee)
 ```
 
 ## Versions
@@ -93,7 +95,7 @@ On crates.io as [`waybar_gpui`](https://crates.io/crates/waybar_gpui); each
 release is also tagged `vX.Y.Z`. GPUI is pre-1.0 and pinned exactly
 (`gpui-pre =0.3.11`). 0.x semver; every GPUI pin change is a breaking
 release. Details:
-[Limits](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/limits.md#versions).
+[Limits](https://cerclique.github.io/waybar-gpui/limits.html#versions).
 
 ## Contributing
 

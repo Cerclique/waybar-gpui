@@ -42,7 +42,9 @@ the ref, both source directories, and `components` on or off.
   Start at `docs/guide/index.md`; terms are in `docs/GLOSSARY.md`. A relative
   link in a page resolves against that page's URL. The guide's example panels
   are at `https://raw.githubusercontent.com/Cerclique/waybar-gpui/<ref>/examples/example-panels/src/<file>.rs`;
-  `main.rs` there lists which panel shows which pattern.
+  `main.rs` there lists which panel shows which pattern. The same guide is
+  a site at `https://cerclique.github.io/waybar-gpui/` (the latest release;
+  `/dev/` for `main`): link the user there, but read the raw pages at the ref.
 - **The SDK's source and rustdoc**: `src/` in its source directory. Read
   `lib.rs` first: its docs list the public API.
 - **GPUI's source**: its source directory. Read the definition of every GPUI

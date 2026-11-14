@@ -8,7 +8,8 @@ bar modules on Hyprland. Read before working:
   rejected designs. Read before changing `crates/waybar_gpui`.
 - `docs/adr/`: decisions that are hard to reverse.
 - `docs/CONTRIBUTING.md`: setup, checks and pull-request rules; read before opening a PR.
-- `docs/guide/`: the author-facing guide (README quickstart → guide → rustdoc).
+- `docs/guide/`: the author-facing guide (README quickstart → guide → rustdoc),
+  also published as an mdbook site (`docs/book.toml`).
   A behaviour change updates the one doc that owns the fact.
 - `skills/waybar-gpui/SKILL.md`: the agent skill shipped to authors, not for
   work on this repo. Renaming a guide page or a CLI verb updates it too.
@@ -17,7 +18,8 @@ Crates: `waybar_gpui` (SDK + runtime, with its private Hyprland IPC in
 `hypr.rs`) and `example-panels` (a program built on it).
 
 - Build/test: `cargo build`, `cargo test`, `make lint` (clippy without and with
-  `--all-features`, plus `cargo doc` with `-D warnings`).
+  `--all-features`, plus `cargo doc` with `-D warnings`), `make book` (the
+  guide as an mdbook site, links checked; see CONTRIBUTING).
 - Try it: `make dev` builds with the `components` feature and runs a second
   Waybar from `examples/example-panels/waybar/` wired to `example-panels`.
 - GPUI is `gpui-pre =0.3.11` and the API is pre-1.0: check the source in
