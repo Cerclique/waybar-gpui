@@ -35,7 +35,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-59846cee.js";
+            window.path_to_searchindex_js = "searchindex-10b06188.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-62b8afe8.js"></script>
@@ -226,10 +226,9 @@ focus and Esc goes straight to the runtime).</li>
     let focus = cx.focus_handle();
     window.focus(&amp;focus, cx);
     Self { focus, editing: false }
-}
-
-// in render
-card(cx)
+}</code></pre>
+<p>and in <code>render</code>:</p>
+<pre><code class="language-rust">card(cx)
     .track_focus(&amp;self.focus)
     .on_key_down(cx.listener(|this, event: &amp;gpui::KeyDownEvent, _, cx| {
         if event.keystroke.key == "escape" &amp;&amp; this.editing {

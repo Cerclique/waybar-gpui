@@ -35,7 +35,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-59846cee.js";
+            window.path_to_searchindex_js = "searchindex-10b06188.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-62b8afe8.js"></script>
@@ -194,10 +194,10 @@ there’s nothing to clean up.</p>
 <p><strong>From a timer</strong>, as in <a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/clock.rs"><code>clock.rs</code></a>:</p>
 <pre><code class="language-rust">pub struct ClockPanel {
     _tick: Task&lt;()&gt;,
-    …
-}
-
-let _tick = cx.spawn(async move |this, cx| loop {
+    // …
+}</code></pre>
+<p>and in <code>Panel::new</code>:</p>
+<pre><code class="language-rust">let _tick = cx.spawn(async move |this, cx| loop {
     cx.background_executor().timer(Duration::from_secs(1)).await;
     if this.update(cx, |_, cx| cx.notify()).is_err() {
         return; // the panel is gone
@@ -217,7 +217,7 @@ one, so bring your own or a crate.)</p>
             .spawn(async move { let event = events.next(); (events, event) })
             .await;
         events = back;
-        let Some(Ok(event)) = event else { return };
+        let Some(Ok(_event)) = event else { return };
         if this.update(cx, |panel, cx| { panel.refresh(); cx.notify(); }).is_err() {
             return;
         }
@@ -233,10 +233,10 @@ open, until the daemon quits (or is replaced by a rebuilt binary, see
 <a href="dev-loop.html">Dev loop</a>).</p>
 <pre><code class="language-rust">#[derive(Default)]
 struct Opens(u32);
-impl Global for Opens {}
 
-// in Panel::new
-let opens = {
+impl Global for Opens {}</code></pre>
+<p>and in <code>Panel::new</code>:</p>
+<pre><code class="language-rust">let opens = {
     let opens = cx.default_global::&lt;Opens&gt;();
     opens.0 += 1;
     opens.0

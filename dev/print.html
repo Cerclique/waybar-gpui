@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-59846cee.js";
+            window.path_to_searchindex_js = "searchindex-10b06188.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-62b8afe8.js"></script>
@@ -312,10 +312,10 @@ handed to <code>Panel::new</code> as <code>&amp;[String]</code>:</p>
 <pre><code class="language-rust">impl Panel for ClockPanel {
     const NAME: &amp;'static str = "clock";
 
-    fn new(args: &amp;[String], window: &amp;mut Window, cx: &amp;mut Context&lt;Self&gt;) -&gt; Self {
+    fn new(args: &amp;[String], _window: &amp;mut Window, _cx: &amp;mut Context&lt;Self&gt;) -&gt; Self {
         let label = args.first().cloned().unwrap_or_else(|| "UTC".into());
         let offset_hours = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
-        …
+        Self { label, offset_hours }
     }
 }</code></pre>
 <p>Full example: <a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/clock.rs"><code>clock.rs</code></a>.</p>
@@ -345,10 +345,10 @@ there’s nothing to clean up.</p>
 <p><strong>From a timer</strong>, as in <a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/clock.rs"><code>clock.rs</code></a>:</p>
 <pre><code class="language-rust">pub struct ClockPanel {
     _tick: Task&lt;()&gt;,
-    …
-}
-
-let _tick = cx.spawn(async move |this, cx| loop {
+    // …
+}</code></pre>
+<p>and in <code>Panel::new</code>:</p>
+<pre><code class="language-rust">let _tick = cx.spawn(async move |this, cx| loop {
     cx.background_executor().timer(Duration::from_secs(1)).await;
     if this.update(cx, |_, cx| cx.notify()).is_err() {
         return; // the panel is gone
@@ -368,7 +368,7 @@ one, so bring your own or a crate.)</p>
             .spawn(async move { let event = events.next(); (events, event) })
             .await;
         events = back;
-        let Some(Ok(event)) = event else { return };
+        let Some(Ok(_event)) = event else { return };
         if this.update(cx, |panel, cx| { panel.refresh(); cx.notify(); }).is_err() {
             return;
         }
@@ -384,10 +384,10 @@ open, until the daemon quits (or is replaced by a rebuilt binary, see
 <a href="#dev-loop">Dev loop</a>).</p>
 <pre><code class="language-rust">#[derive(Default)]
 struct Opens(u32);
-impl Global for Opens {}
 
-// in Panel::new
-let opens = {
+impl Global for Opens {}</code></pre>
+<p>and in <code>Panel::new</code>:</p>
+<pre><code class="language-rust">let opens = {
     let opens = cx.default_global::&lt;Opens&gt;();
     opens.0 += 1;
     opens.0
@@ -453,7 +453,10 @@ you.) It’s then available as <code>waybar_gpui::components</code>; don’t dep
 <pre><code class="language-rust">use waybar_gpui::components::{button::{Button, ButtonVariants as _}, switch::Switch};
 
 card(cx)
-    .child(Switch::new("wifi").checked(self.wifi).on_click(…))
+    .child(Switch::new("wifi").checked(self.wifi).on_click(cx.listener(|this, on, _, cx| {
+        this.wifi = *on;
+        cx.notify();
+    })))
     .child(Button::new("done").primary().label("Done").on_click(|_, _, cx| close(cx)))</code></pre>
 <p>Full example with switches and a dropdown:
 <a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/controls.rs"><code>controls.rs</code></a>.</p>
@@ -527,10 +530,9 @@ focus and Esc goes straight to the runtime).</li>
     let focus = cx.focus_handle();
     window.focus(&amp;focus, cx);
     Self { focus, editing: false }
-}
-
-// in render
-card(cx)
+}</code></pre>
+<p>and in <code>render</code>:</p>
+<pre><code class="language-rust">card(cx)
     .track_focus(&amp;self.focus)
     .on_key_down(cx.listener(|this, event: &amp;gpui::KeyDownEvent, _, cx| {
         if event.keystroke.key == "escape" &amp;&amp; this.editing {

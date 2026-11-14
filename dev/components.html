@@ -35,7 +35,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-59846cee.js";
+            window.path_to_searchindex_js = "searchindex-10b06188.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-62b8afe8.js"></script>
@@ -192,7 +192,10 @@ you.) It’s then available as <code>waybar_gpui::components</code>; don’t dep
 <pre><code class="language-rust">use waybar_gpui::components::{button::{Button, ButtonVariants as _}, switch::Switch};
 
 card(cx)
-    .child(Switch::new("wifi").checked(self.wifi).on_click(…))
+    .child(Switch::new("wifi").checked(self.wifi).on_click(cx.listener(|this, on, _, cx| {
+        this.wifi = *on;
+        cx.notify();
+    })))
     .child(Button::new("done").primary().label("Done").on_click(|_, _, cx| close(cx)))</code></pre>
 <p>Full example with switches and a dropdown:
 <a href="https://github.com/Cerclique/waybar-gpui/blob/main/examples/example-panels/src/controls.rs"><code>controls.rs</code></a>.</p>
