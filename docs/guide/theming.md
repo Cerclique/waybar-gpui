@@ -21,19 +21,13 @@ Give your program its own by changing the default's colours. (`Theme` may
 gain colours in a later release, so a `Theme { … }` literal doesn't compile.)
 
 ```rust
-use waybar_gpui::{gpui::{rgb, rgba}, Theme};
-
-let mut theme = Theme::default();
-theme.base = rgba(0x2e3440f0);
-theme.accent = rgb(0x88c0d0);
-waybar_gpui::Program::new("my-panels").theme(theme).panel::<Hello>().run()
+{{#include snippets/src/theming.rs:custom}}
 ```
 
 Use it in your panels so they follow it:
 
 ```rust
-let theme = Theme::get(cx);
-div().text_color(theme.subtext).child("secondary")
+{{#include snippets/src/theming.rs:use}}
 ```
 
 ## `card()`

@@ -16,17 +16,13 @@ there's nothing to clean up.
 **From a timer**, as in [`clock.rs`](../../examples/example-panels/src/clock.rs):
 
 ```rust
-pub struct ClockPanel {
-    _tick: Task<()>,
-    …
-}
+{{#include snippets/src/live_data_and_state.rs:tick_field}}
+```
 
-let _tick = cx.spawn(async move |this, cx| loop {
-    cx.background_executor().timer(Duration::from_secs(1)).await;
-    if this.update(cx, |_, cx| cx.notify()).is_err() {
-        return; // the panel is gone
-    }
-});
+and in `Panel::new`:
+
+```rust
+{{#include snippets/src/live_data_and_state.rs:tick}}
 ```
 
 **From a blocking source** (a socket, a pipe, a D-Bus call), as in
@@ -37,20 +33,7 @@ foreground one. (`hypr` is the example's own small Hyprland client,
 one, so bring your own or a crate.)
 
 ```rust
-let _events = cx.spawn(async move |this, cx| {
-    let Ok(mut events) = hypr::Events::connect() else { return };
-    loop {
-        let (back, event) = cx
-            .background_executor()
-            .spawn(async move { let event = events.next(); (events, event) })
-            .await;
-        events = back;
-        let Some(Ok(event)) = event else { return };
-        if this.update(cx, |panel, cx| { panel.refresh(); cx.notify(); }).is_err() {
-            return;
-        }
-    }
-});
+{{#include snippets/src/live_data_and_state.rs:events}}
 ```
 
 After the popover closes, a background read that is already waiting keeps its
@@ -65,16 +48,13 @@ open, until the daemon quits (or is replaced by a rebuilt binary, see
 [Dev loop](dev-loop.md)).
 
 ```rust
-#[derive(Default)]
-struct Opens(u32);
-impl Global for Opens {}
+{{#include snippets/src/live_data_and_state.rs:global}}
+```
 
-// in Panel::new
-let opens = {
-    let opens = cx.default_global::<Opens>();
-    opens.0 += 1;
-    opens.0
-};
+and in `Panel::new`:
+
+```rust
+{{#include snippets/src/live_data_and_state.rs:opens}}
 ```
 
 [`clock.rs`](../../examples/example-panels/src/clock.rs) counts its opens this

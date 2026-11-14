@@ -13,11 +13,7 @@ you.) It's then available as `waybar_gpui::components`; don't depend on
 `gpui-component` yourself, for the same reason as GPUI.
 
 ```rust
-use waybar_gpui::components::{button::{Button, ButtonVariants as _}, switch::Switch};
-
-card(cx)
-    .child(Switch::new("wifi").checked(self.wifi).on_click(…))
-    .child(Button::new("done").primary().label("Done").on_click(|_, _, cx| close(cx)))
+{{#include snippets/src/components.rs:widgets}}
 ```
 
 Full example with switches and a dropdown:

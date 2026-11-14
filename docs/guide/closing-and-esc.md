@@ -21,12 +21,7 @@ Call `close(cx)` from any event handler, typically after doing the thing the
 user clicked:
 
 ```rust
-div()
-    .id("row")
-    .on_click(move |_, _, cx| {
-        std::process::Command::new("hyprctl").args(["dispatch", "…"]).spawn().ok();
-        close(cx);
-    })
+{{#include snippets/src/closing_and_esc.rs:close}}
 ```
 
 The close is deferred until the current event finishes, so it's safe inside
@@ -46,22 +41,13 @@ closes the popover. To handle keys yourself:
 2. Handle the key; call `cx.stop_propagation()` to keep the popover open.
 
 ```rust
-fn new(_args: &[String], window: &mut Window, cx: &mut Context<Self>) -> Self {
-    let focus = cx.focus_handle();
-    window.focus(&focus, cx);
-    Self { focus, editing: false }
-}
+{{#include snippets/src/closing_and_esc.rs:focus}}
+```
 
-// in render
-card(cx)
-    .track_focus(&self.focus)
-    .on_key_down(cx.listener(|this, event: &gpui::KeyDownEvent, _, cx| {
-        if event.keystroke.key == "escape" && this.editing {
-            this.editing = false;
-            cx.notify();
-            cx.stop_propagation(); // first Esc leaves edit mode, the popover stays
-        }
-    }))
+and in `render`:
+
+```rust
+{{#include snippets/src/closing_and_esc.rs:keys}}
 ```
 
 [`clock.rs`](../../examples/example-panels/src/clock.rs) does this with an edit

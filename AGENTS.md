@@ -15,7 +15,8 @@ bar modules on Hyprland. Read before working:
   work on this repo. Renaming a guide page or a CLI verb updates it too.
 
 Crates: `waybar_gpui` (SDK + runtime, with its private Hyprland IPC in
-`hypr.rs`) and `example-panels` (a program built on it).
+`hypr.rs`), `example-panels` (a program built on it) and `guide-snippets`
+(`docs/guide/snippets/`: the guide's Rust code, compiled, never run).
 
 - Build/test: `cargo build`, `cargo test`, `make lint` (clippy without and with
   `--all-features`, plus `cargo doc` with `-D warnings`), `make book` (the
