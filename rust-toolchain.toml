@@ -4,5 +4,5 @@
 # week after it ships); bump it here. The minimum supported Rust is the
 # separate `rust-version` in Cargo.toml.
 [toolchain]
-channel = "1.99.1"
+channel = "1.100.0"
 components = ["clippy", "rustfmt"]
