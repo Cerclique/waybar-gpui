@@ -56,6 +56,14 @@ Click it. No cargo-generate? Copy the
 rename `Cargo.toml.liquid` to `Cargo.toml`, and replace the `{{…}}`
 placeholders by hand.
 
+To uninstall, stop the daemon first (it keeps running from the deleted binary
+otherwise), then remove the program and its bar modules from your Waybar config:
+
+```sh
+my-panels quit
+cargo uninstall my-panels
+```
+
 ## Documentation
 
 - [The guide](https://github.com/Cerclique/waybar-gpui/blob/v0.2.0/docs/guide/index.md):
